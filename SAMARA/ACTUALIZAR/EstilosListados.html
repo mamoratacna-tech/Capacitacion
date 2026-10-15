@@ -1,0 +1,75 @@
+<style>
+/* ===== Módulo Listados de asistencia ===== */
+#view-attendance .page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.att-actions{display:flex;gap:8px;flex-wrap:wrap}
+.att-sm{height:28px!important;padding:0 9px!important;font-size:10px!important;margin:0!important}
+.att-del{color:#c2483f!important}
+.att-nowrap{white-space:nowrap}
+.att-sub{color:#8b99a5;font-size:9px}
+.att-empty{text-align:center;color:#8b99a5;padding:26px!important}
+.status-pill.att-ok{background:#e8f7f0;color:#30866e}.status-pill.att-wa{background:#fdf1e3;color:#b46d24}.status-pill.att-no{background:#fdecea;color:#c2483f}.status-pill.att-nt{background:#eef2f5;color:#627383}
+.att-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:900px){.att-grid{grid-template-columns:1fr 1fr}}
+.att-mt{margin-top:14px}
+.att-h{font:700 14px Manrope,sans-serif;color:#20384d;margin:0 0 12px}
+#view-attendance .panel label,#att-dialog label{display:block;font-size:10px;font-weight:600;color:#647787;margin-bottom:12px}
+#view-attendance .panel input:not([type=checkbox]),#view-attendance .panel select,#att-dialog input:not([type=checkbox]){display:block;width:100%;height:36px;margin-top:5px;padding:0 10px;border:1px solid #dce4ea;border-radius:7px;background:#fff;font:500 11px "DM Sans",sans-serif;color:var(--ink,#10243a);box-sizing:border-box}
+#att-dialog input[type=file]{height:auto;padding:9px}
+.att-hint{font-size:10px;color:#8295a8;margin:4px 0 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.att-hgrid{display:grid;grid-template-columns:1fr;gap:0 16px}
+@media (min-width:760px){.att-hgrid{grid-template-columns:1fr 1fr}}
+.att-hrow label{margin-bottom:6px}.att-hrow{margin-bottom:10px}
+.att-block{background:#fdecea;color:#c2483f;border-radius:8px;padding:10px 12px;font-size:10.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:-4px}
+.att-arow{border-top:1px solid #edf1f4;padding:10px 0}
+.att-l1{display:flex;align-items:center;gap:10px}
+.att-num{font:700 12px Manrope,sans-serif;color:#20384d;width:48px;flex:none}
+.att-flex{flex:1;min-width:0}.att-flex input{margin-top:0!important}
+.att-chk{display:flex!important;align-items:center;gap:5px;margin:0!important;white-space:nowrap}
+.att-l2{margin:5px 0 0 58px;font-size:10px;color:#8295a8;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.att-add{margin-top:12px}
+.att-cb{position:relative}
+.att-cbl{position:absolute;left:0;right:0;top:calc(100% + 3px);z-index:30;background:#fff;border:1px solid #dce4ea;border-radius:8px;box-shadow:0 14px 34px #10243a26;max-height:280px;overflow:auto}
+.att-cbo{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #edf1f4;padding:8px 11px;cursor:pointer;font-family:"DM Sans",sans-serif}
+.att-cbo:first-child{border-top:0}.att-cbo:hover,.att-cbo:focus{background:#f3f7f9;outline:none}
+.att-cbo b{display:block;font-size:11px;color:#20384d}.att-cbo span{font-size:9.5px;color:#8295a8}
+.att-cbo.alta{color:#30866e;font-weight:700;font-size:11px}
+.att-cbn{padding:9px 11px;font-size:10px;color:#8295a8}
+.att-bar{position:sticky;bottom:0;background:#f6f8fa;border-top:1px solid #e9edf1;margin-top:14px;padding:12px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;z-index:5}
+.att-barbtns{display:flex;gap:8px}
+.att-err{color:#c2483f;font-size:10.5px}.att-warn{color:#b46d24;font-size:10.5px}.att-okt{color:#30866e;font-size:10.5px}
+#att-dialog{width:min(560px,calc(100% - 30px))}
+.att-dlg{padding:24px}
+.att-dlg .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.att-prev{max-width:100%;max-height:240px;border-radius:8px;display:block;margin:6px 0}
+.att-cola{margin-bottom:14px}
+.att-colah{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:#20384d;margin-bottom:8px}
+.att-cola ul{list-style:none;margin:0;padding:0}
+.att-cola li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #edf1f4;font-size:10.5px}
+.att-ico{width:18px;text-align:center;font-weight:700;color:#b46d24}
+.att-cn{flex:1;min-width:0;color:#20384d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-cs{color:#8295a8}.att-cs.listo{color:#b46d24;font-weight:600}.att-cs.error{color:#c2483f}.att-cs.leyendo{color:#30866e}
+
+.plant-filter input[type=date]{border:0;background:transparent;color:#3d5163;font:600 10px "DM Sans",sans-serif;outline:0;height:30px;padding:0}
+
+#employee-form input[name=names],#employee-form input[name=paternal],#employee-form input[name=maternal],#employee-form input[name=curp]{text-transform:uppercase}
+#employee-form .att-leido{margin:0 0 14px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+/* Puente de la app en Google: descargas, hoja SIRCE y lectura de fotos con Gemini */
+(function(){
+  const run=(fn,...a)=>new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a));
+  window.descargarArchivo=async(blob,nombre)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
+  window.leerHojaSIRCE=rango=>run('api_leerHojaSIRCE',rango);
+  window.leerListaFT=async(file,prompt)=>{const max=3500000;let bmp=null;
+    try{bmp=await createImageBitmap(file)}catch(e){bmp=await new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=URL.createObjectURL(file)})}
+    let img=file;if(!bmp||!bmp.width){if(!(/^image\/(jpeg|png|webp)$/.test(file.type)&&file.size<=max))throw{code:'formato'}}
+    else{const sc=Math.min(1,2200/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+      let q=.85;img=await new Promise(r=>cv.toBlob(r,'image/jpeg',q));while(img&&img.size>max&&q>.4){q-=.15;img=await new Promise(r=>cv.toBlob(r,'image/jpeg',q))}}
+    const b64=await new Promise((ok,ko)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=ko;fr.readAsDataURL(img)});
+    return await run('api_leerListaFT',b64,img.type||'image/jpeg',prompt)};
+})();
+
+</script>

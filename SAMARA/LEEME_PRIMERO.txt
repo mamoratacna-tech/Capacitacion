@@ -1,0 +1,27 @@
+SAMARA — RESTAURAR LA ACTUALIZACIÓN CON ARCHIVOS COMPLETOS
+
+Los archivos de ACTUALIZAR están completos. No se pegan por partes.
+
+1. Abre tu proyecto EXISTENTE en script.google.com.
+2. Sustituye el contenido de cada archivo de ACTUALIZAR por su archivo completo.
+   Code.gs es de tipo secuencia de comandos; los otros nueve son HTML.
+   Si falta un HTML, créalo con + > HTML y escribe el nombre SIN .html.
+3. CONSERVA tus archivos DatosIniciales y CatalogoSIRCE actuales. No estaban
+   completos entre los adjuntos. La carpeta SOLO_SI_NO_EXISTEN contiene bases
+   vacías de estos dos archivos, únicamente para un proyecto que no los tenga.
+   No son un catálogo SIRCE completo ni contienen tu programa de cursos.
+4. CONFIGURACION incluye un manifiesto de referencia. Conserva el actual si
+   ya funciona; no cambies ni borres las propiedades DB_ID, SIRCE_ID o claves.
+5. Guarda todos los archivos. Implementar > Gestionar implementaciones >
+   Editar (lápiz) > Nueva versión > Implementar. Abre y recarga la aplicación.
+
+Esta actualización conserva las funciones de los últimos Code.gs, App y
+Listados que enviaste. Restaura el módulo integrado avanzado de asistencia,
+las firmas históricas de CMCAP, los colores de vigencia y el alta general.
+La hoja original Listados se conserva y su histórico se incorpora una vez
+sin duplicar IDs. No borres tus hojas de Google ni crees una base nueva.
+
+Los catálogos y plantillas ya existentes siguen siendo la fuente de referencia.
+El resumen visual conserva indicadores de demostración del diseño original.
+La conexión real a tu cuenta y la lectura con Gemini requieren probarse allí.
+Las pruebas locales no equivalen a una publicación en Google.
