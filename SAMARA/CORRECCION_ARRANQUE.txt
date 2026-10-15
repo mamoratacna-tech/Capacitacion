@@ -1,0 +1,16 @@
+CORRECCIÓN DE ARRANQUE — SOLO DOS ARCHIVOS
+
+El diagnóstico de Google encontró errores de sintaxis en JSZip y App.
+
+1. En tu proyecto existente, sustituye TODO el contenido de JSZip.html
+   por JSZip.html de este paquete (ahora es pequeño: carga las bibliotecas).
+2. Sustituye TODO el contenido de App.html por el App.html completo
+   de este paquete. Está formateado en más líneas para facilitar la copia.
+3. Guarda. Ejecuta diagnosticarSAMARA desde el editor.
+4. Si no hay ERROR SINTAXIS: Implementar > Gestionar implementaciones >
+   Editar (lápiz) > Nueva versión > Implementar. Abre de nuevo la aplicación.
+
+Conserva DatosIniciales, CatalogoSIRCE, propiedades y hojas actuales.
+No borres ni reinstales la base de datos.
+Las bibliotecas usan versiones fijas e integridad SRI sobre HTTPS.
+La aplicación debe probarse de nuevo en la cuenta de Google propietaria.
