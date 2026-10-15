@@ -23,29 +23,30 @@ function diagnosticarSAMARA(){
     let coincidencia;
     while((coincidencia=includes.exec(index)))cargar(coincidencia[1]);
   }
-  const app=cargar('App');
-  if(app){
-    if(!app.trim().endsWith('</script>'))registrar('ERROR: App no termina con </script>.');
-    const bloque=app.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i);
-    if(!bloque){
-      registrar('ERROR: no se encontró un bloque script completo en App.');
-    }else{
+  cargar('App');
+  Object.keys(fuentes).forEach(nombre=>{
+    const texto=fuentes[nombre];
+    if(!texto)return;
+    const bloques=/<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+    let bloque,numero=0;
+    while((bloque=bloques.exec(texto))){
+      numero++;
+      if(/\bsrc\s*=/.test(bloque[1]))continue;
+      const inicio=texto.slice(0,bloque.index).split('\n').length;
       try{
-        new Function(bloque[1]);
-        registrar('OK sintaxis de App; el código se compiló sin ejecutarlo.');
+        new Function(bloque[2]);
+        registrar('OK sintaxis '+nombre+', bloque '+numero+' (desde línea '+inicio+').');
       }catch(error){
-        registrar('ERROR sintaxis de App: '+String(error.message));
+        registrar('ERROR SINTAXIS en '+nombre+', bloque '+numero+' (desde línea '+inicio+'): '+String(error.message));
       }
     }
-    registrar('Módulo integrado de asistencia: '+(app.includes('function renderAttendance(')?'presente':'NO ENCONTRADO'));
-  }
-  if(fuentes.Cmcap){
-    const bloque=fuentes.Cmcap.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i);
-    try{
-      if(!bloque)throw Error('Falta bloque script completo.');
-      new Function(bloque[1]);
-      registrar('OK sintaxis de Cmcap.');
-    }catch(error){registrar('ERROR sintaxis de Cmcap: '+String(error.message));}
+    const aperturas=(texto.match(/<script\b/gi)||[]).length;
+    const cierres=(texto.match(/<\/script>/gi)||[]).length;
+    if(aperturas!==cierres)registrar('ERROR en '+nombre+': etiquetas script sin cerrar ('+aperturas+' aperturas, '+cierres+' cierres).');
+  });
+  if(fuentes.App){
+    if(!fuentes.App.trim().endsWith('</script>'))registrar('ERROR: App no termina con </script>.');
+    registrar('Módulo integrado de asistencia: '+(fuentes.App.includes('function renderAttendance(')?'presente':'NO ENCONTRADO'));
   }
   const id=PropertiesService.getScriptProperties().getProperty('DB_ID');
   if(!id){
