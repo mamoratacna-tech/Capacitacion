@@ -1,0 +1,16 @@
+APP COMPATIBLE CON LA SALIDA HTMLSERVICE
+
+El localizador de Google encontró fuente original válida, pero salida
+procesada inválida en plantillas de texto sucesivas. Se convirtieron todas
+las 162 plantillas de texto de App a cadenas y concatenaciones equivalentes.
+Se conservaron las 133 funciones y el contenido exacto del prompt de lectura.
+
+Sustituye únicamente App.html por el archivo completo de este ZIP.
+Guarda y ejecuta localizarErrorApp.
+Comprueba App ORIGINAL, App lectura PROCESADA y PÁGINA GENERADA ACTUAL.
+Cuando todos indiquen 0 errores, publica Nueva versión y abre la aplicación.
+No cambies Code.gs, catálogos, propiedades ni hojas de datos.
+
+Las pruebas locales de CMCAP, firmas históricas, asistencia, alta manual,
+guardado/recarga, PDF de asistencia y cola de imágenes simuladas pasan.
+La salida real HtmlService debe comprobarse en la cuenta propietaria.
