@@ -3289,7 +3289,14 @@
         note.className = 'notice-box att-leido';
         f.querySelector('.form-grid').before(note);
       }
-      note.innerHTML = `<b>Datos leídos de la lista de asistencia</b><p>Escrito: “${atE(a.escrito || '')}”${a.pEsc ? ` · Puesto escrito: “${atE(a.pEsc)}”` : ''}. Revisa lo que se llenó y completa CURP, estudios, documento, institución y puesto.</p>`;
+      const tituloNota = document.createElement('b');
+      tituloNota.textContent = 'Datos leídos de la lista de asistencia';
+      const detalleNota = document.createElement('p');
+      const puestoLeido = a.pEsc ? ' · Puesto escrito: "' + a.pEsc + '"' : '';
+      detalleNota.textContent =
+        'Escrito: "' + (a.escrito || '') + '"' + puestoLeido +
+        '. Revisa lo que se llenó y completa CURP, estudios, documento, institución y puesto.';
+      note.replaceChildren(tituloNota, detalleNota);
     }
     employeeForm.addEventListener('submit', () => {
       if (AT.pendEmp) AT.pendEmp.no = String(employeeForm.elements.no.value || '').trim();

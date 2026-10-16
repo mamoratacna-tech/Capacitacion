@@ -1,0 +1,13 @@
+CORRECCIÓN LOCALIZADA DE LA NOTA DE ASISTENCIA
+
+El localizador de Google indicó App ORIGINAL sin errores y un error de
+sintaxis al generar la página en la asignación note.innerHTML de atAltaPersonal.
+Se sustituyó esa plantilla anidada por nodos b/p y textContent, manteniendo
+los datos mostrados y el autollenado del formulario de Personal.
+
+Si App ya está actualizado, basta sustituir esa asignación por el bloque
+correspondiente del App actual. No es necesario modificar catálogos ni datos.
+Ejecuta localizarErrorApp otra vez y verifica que PÁGINA GENERADA ACTUAL
+indique 0 errores antes de publicar Nueva versión.
+Las pruebas locales de la nota pasan; la nueva salida real de Google sigue
+pendiente de comprobar en la cuenta propietaria.
