@@ -32,7 +32,7 @@ function api_delete(entity,id){if(!SHEETS[entity])throw Error('Sección desconoc
 function api_importEmployees(rows){if(!Array.isArray(rows)||!rows.length)return 0;const ss=database_(),sh=ss.getSheetByName('empleados'),headers=SHEETS.empleados;let count=0;rows.slice(1).forEach(r=>{if(!r||!r.some(x=>String(x||'').trim()))return;const o={id:Utilities.getUuid(),no:String(sh.getLastRow()),curp:r[1]||'',nombres:r[2]||'',apellidoPaterno:r[3]||'',apellidoMaterno:r[4]||'',estudios:r[5]||'',docProbatorio:r[6]||'',tipoInstitucion:r[7]||'',puestoId:'',estado:'Activo'};sh.appendRow(headers.map(h=>o[h]||''));count++;});return count;}
 
 // Store the advanced Site's collections in the existing DB. Legacy tabs remain intact.
-const APP_KEYS_ = ['samara.attendanceMigration.v1','samara.attendance.v1','samara.matrixPositions.v2','samara.positions.v2','samara.occupationCatalog.v1','samara.employees.v2','samara.demoEmployees.v1','samara.instructors.v1','samara.cmcap.v2','samara.courses.v2'];
+const APP_KEYS_ = ['samara.legalRepresentative.v1','samara.attendanceMigration.v1','samara.attendance.v1','samara.matrixPositions.v2','samara.positions.v2','samara.occupationCatalog.v1','samara.employees.v2','samara.demoEmployees.v1','samara.instructors.v1','samara.cmcap.v2','samara.courses.v2'];
 function appSheet_(ss){
   let sheet=ss.getSheetByName('SAMARA_AppState');
   if(!sheet){sheet=ss.insertSheet('SAMARA_AppState');sheet.appendRow(['Colección','Parte','JSON']);sheet.setFrozenRows(1);sheet.getRange(1,1,1,3).setFontWeight('bold').setBackground('#eaf2f2');}
@@ -188,14 +188,18 @@ function api_cmcapFirmantes(fecha){
   if(isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==fecha)throw Error('Fecha del documento inválida.');
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
-    const rows=appRead_(appSheet_(database_())).state['samara.cmcap.v2']||[];
+    const state=appRead_(appSheet_(database_())).state;
+    const rows=state['samara.cmcap.v2']||[];
+    const representatives=state['samara.legalRepresentative.v1'];
+    const legal=representatives===undefined?'Mirna Ulbrich Labastida':String(representatives[0]&&representatives[0].name||'').trim();
+    if(!legal)throw Error('Completa el representante legal en CMCAP.');
     const role=value=>value==='Coordinador'?'Coordinador de CMCAP':value;
     const find=puesto=>{
       const matches=rows.filter(m=>role(m.role)===puesto&&m.name&&/^\d{4}-\d{2}-\d{2}$/.test(m.startDate||'')&&/^\d{4}-\d{2}-\d{2}$/.test(m.endDate||'')&&m.startDate<=fecha&&fecha<=m.endDate);
       if(matches.length!==1)throw Error(matches.length?'Hay vigencias superpuestas para '+puesto+'.':'No hay integrante vigente como '+puesto+' el '+fecha+'. Revisa la CMCAP.');
       return matches[0].name;
     };
-    return {legal:find('Coordinador de CMCAP'),trab:find('Representante de los trabajadores')};
+    return {legal:legal,trab:find('Representante de los trabajadores')};
   }finally{lock.releaseLock();}
 }
 

@@ -13,7 +13,7 @@
       blocked: false,
       timer: null
     };
-    const cloudKeys = ['samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    const cloudKeys = ['samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
     function googleCall(method, ...args) {
       return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args));
     }
@@ -312,6 +312,13 @@
     let activeInstructorModule = 'Interno';
     const cmcapRoles = Cmcap.roles;
     let cmcapMembers = loadStore('samara.cmcap.v2', []);
+    let legalRepresentative = loadStore('samara.legalRepresentative.v1', [{name: 'Mirna Ulbrich Labastida'}]);
+    let cmcapEditing = null;
+    function legalSigner() {
+      const name = String(legalRepresentative[0]?.name || '').trim();
+      if (!name) throw new Error('Completa el representante legal en CMCAP.');
+      return name;
+    }
     const icons = ['◎', '◉', '⚕', '↟', '▣', '◌', '⚡', '♧', '▤', '✓', '⌗', '✦'];
     let courses = loadStore('samara.courses.v2', seed.courses.map((course, index) => ({
       ...course,
@@ -754,37 +761,57 @@
     function cmcapSigner(role, date) {
       return Cmcap.member(cmcapMembers, role, date).name;
     }
-    function cmcapDraft() {
-      return cmcapMembers.map((member, index) => {
-        const employee = employees.find(e => e.curp === $("[data-cmcap-employee=\"".concat(index, "\"]")).value);
-        return {
-          ...member,
-          role: $("[data-cmcap-role=\"".concat(index, "\"]")).value,
-          employeeCurp: employee?.curp || member.employeeCurp || '',
-          name: employee ? fullEmployeeName(employee) : member.name,
-          startDate: $("[data-cmcap-start=\"".concat(index, "\"]")).value,
-          endDate: $("[data-cmcap-end=\"".concat(index, "\"]")).value
-        };
-      });
-    }
     function renderCmcap() {
-      const today = Cmcap.today();
-      $('#cmcap-grid').innerHTML = '<p style="grid-column:1/-1">Un integrante vigente por puesto. Agrega un nuevo nombramiento sin borrar los anteriores.</p>' + cmcapMembers.map((member, index) => {
-        const status = Cmcap.status(member, today);
-        return "<article class=\"panel cmcap-card\"><label>Puesto<select data-cmcap-role=\"".concat(index, "\">").concat(!cmcapRoles.includes(Cmcap.role(member.role)) ? "<option value=\"\">Selecciona el puesto · Anterior: ".concat(escapeHtml(member.role), "</option>") : '').concat(cmcapRoles.map(role => "<option ".concat(role === Cmcap.role(member.role) ? 'selected' : '', ">").concat(escapeHtml(role), "</option>")).join(''), "</select></label><label>Integrante del personal<select data-cmcap-employee=\"").concat(index, "\"><option value=\"\">").concat(member.name ? escapeHtml(member.name) + ' · Registro conservado' : 'Selecciona una persona', "</option>").concat(employees.map(e => "<option value=\"".concat(escapeHtml(e.curp), "\" ").concat(e.curp === member.employeeCurp ? 'selected' : '', ">").concat(escapeHtml(e.no), " · ").concat(escapeHtml(fullEmployeeName(e)), "</option>")).join(''), "</select></label><label>Desde<input type=\"date\" data-cmcap-start=\"").concat(index, "\" value=\"").concat(escapeHtml(member.startDate || ''), "\"></label><label>Hasta (inclusive)<input type=\"date\" data-cmcap-end=\"").concat(index, "\" value=\"").concat(escapeHtml(member.endDate || ''), "\"></label><div class=\"signature-preview\"><span class=\"cmcap-status cmcap-").concat(status.kind, "\">").concat(status.text, "</span><b>").concat(escapeHtml(member.name || 'Sin asignar'), "</b><small>").concat(escapeHtml(member.startDate || '—'), " al ").concat(escapeHtml(member.endDate || '—'), "</small>").concat(member.term && !member.startDate ? "<p>Vigencia anterior: ".concat(escapeHtml(member.term), ". Completa las fechas exactas.</p>") : '', "</div></article>");
-      }).join('');
+      $('#legal-name').value = legalRepresentative[0]?.name || '';
+      $('#cmcap-grid').innerHTML = '<div class="table-scroll"><table class="cmcap-table"><thead><tr><th>Integrante</th><th>Puesto</th><th>Desde</th><th>Hasta (inclusive)</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' + cmcapMembers.map((member,index) => {
+        const status = Cmcap.status(member);
+        return '<tr><td><b>'+escapeHtml(member.name||'Sin asignar')+'</b></td><td>'+escapeHtml(Cmcap.role(member.role))+'</td><td>'+escapeHtml(member.startDate||'—')+'</td><td>'+escapeHtml(member.endDate||'—')+'</td><td><span class="cmcap-status cmcap-'+status.kind+'">'+status.text+'</span></td><td><button class="button outline" data-cmcap-edit="'+index+'" aria-label="Editar integrante">✎</button> <button class="button outline" data-cmcap-delete="'+index+'" aria-label="Eliminar integrante">Eliminar</button></td></tr>';
+      }).join('') + (cmcapMembers.length?'':'<tr><td colspan="6">Aún no hay integrantes registrados.</td></tr>')+'</tbody></table></div>';
     }
-    $('#cmcap-grid').addEventListener('change', event => {
-      const index = event.target.dataset.cmcapStart;
-      if (index !== undefined) $("[data-cmcap-end=\"".concat(index, "\"]")).value = Cmcap.end(event.target.value);
-    });
-    $('#add-cmcap').addEventListener('click', () => {
-      const form = $('#cmcap-add-form');
+    function cmcapEmployeeLabel(employee) { return fullEmployeeName(employee) + ' · ' + employee.curp; }
+    function openCmcapEditor(index = null) {
+      cmcapEditing = index;
+      const form = $('#cmcap-add-form'), member = index === null ? null : cmcapMembers[index];
       form.reset();
-      form.elements.role.innerHTML = '<option value="">Selecciona un puesto</option>' + cmcapRoles.map(role => "<option>".concat(escapeHtml(role), "</option>")).join('');
-      form.elements.employee.innerHTML = '<option value="">Selecciona una persona</option>' + employees.map(e => "<option value=\"".concat(escapeHtml(e.curp), "\">").concat(escapeHtml(e.no), " · ").concat(escapeHtml(fullEmployeeName(e)), "</option>")).join('');
+      $('#cmcap-form-title').textContent = member ? 'Editar integrante de CMCAP' : 'Agregar integrante de CMCAP';
+      form.elements.role.innerHTML = '<option value="">Selecciona un puesto</option>' + cmcapRoles.map(role => '<option>'+escapeHtml(role)+'</option>').join('');
+      $('#cmcap-personnel').innerHTML = employees.map(e => '<option value="'+escapeHtml(cmcapEmployeeLabel(e))+'"></option>').join('');
+      if (member) {
+        form.elements.role.value = Cmcap.role(member.role);
+        const employee = employees.find(e=>e.curp === member.employeeCurp);
+        form.elements.employee.value = employee ? cmcapEmployeeLabel(employee) : member.name;
+        form.elements.startDate.value = member.startDate || '';
+        form.elements.endDate.value = member.endDate || '';
+      }
       $('#cmcap-add-error').textContent = '';
       $('#cmcap-add-dialog').showModal();
+    }
+    $('#add-cmcap').addEventListener('click', () => openCmcapEditor());
+    $('#cmcap-grid').addEventListener('click', async event => {
+      const edit = event.target.closest('[data-cmcap-edit]');
+      if (edit) { openCmcapEditor(Number(edit.dataset.cmcapEdit)); return; }
+      const button = event.target.closest('[data-cmcap-delete]');
+      if (!button || button.disabled) return;
+      const index = Number(button.dataset.cmcapDelete);
+      if (!confirm('¿Eliminar a '+cmcapMembers[index].name+' de la CMCAP? También dejará de aparecer como firmante en documentos de su vigencia.')) return;
+      button.disabled = true;
+      try {
+        const draft = cmcapMembers.filter((_,i)=>i !== index);
+        await persistCmcap(draft); cmcapMembers = draft; renderCmcap(); toast('Integrante eliminado.');
+      } catch(error) { toast(error.message); button.disabled = false; }
+    });
+    $('#legal-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = event.target.querySelector('button'); button.disabled = true;
+      try {
+        const name = $('#legal-name').value.trim();
+        if (!name) throw new Error('Escribe el nombre completo del representante legal.');
+        const draft = [{name}];
+        await persistCollection('samara.legalRepresentative.v1',draft);
+        legalRepresentative = draft;
+        $('#legal-message').textContent = 'Representante legal guardado. Se usará para firmar las DC-3.';
+      } catch(error) { $('#legal-message').textContent = error.message; }
+      finally { button.disabled = false; }
     });
     $('#cmcap-add-form').elements.startDate.addEventListener('change', event => {
       $('#cmcap-add-form').elements.endDate.value = Cmcap.end(event.target.value);
@@ -815,16 +842,21 @@
       button.disabled = true;
       button.textContent = 'Guardando…';
       try {
-        const employee = employees.find(e => e.curp === form.elements.employee.value);
-        if (!employee) throw Error('Selecciona una persona de la lista de personal.');
+        const employee = employees.find(e => cmcapEmployeeLabel(e) === form.elements.employee.value);
+        const previous = cmcapEditing === null ? null : cmcapMembers[cmcapEditing];
+        if (!employee && (!previous || form.elements.employee.value !== previous.name)) throw Error('Busca por nombre y selecciona una persona de las sugerencias.');
         const member = {
+          ...(previous || {}),
           role: form.elements.role.value,
-          employeeCurp: employee.curp,
-          name: fullEmployeeName(employee),
+          employeeCurp: employee ? employee.curp : previous.employeeCurp,
+          name: employee ? fullEmployeeName(employee) : previous.name,
           startDate: form.elements.startDate.value,
           endDate: form.elements.endDate.value
         };
-        const draft = Cmcap.validateAddition(cmcapMembers, member);
+        const others = cmcapMembers.filter((_,index) => index !== cmcapEditing);
+        Cmcap.validateAddition(others, member);
+        if (Cmcap.needsConfirmation(others,member) && !confirm('Habrá más de dos '+(member.role.startsWith('Vocal')?'vocales':'secretarios')+' vigentes al mismo tiempo. ¿Estás de acuerdo?')) return;
+        const draft = cmcapEditing === null ? [...cmcapMembers,member] : cmcapMembers.map((item,index)=>index === cmcapEditing ? member : item);
         await persistCmcap(draft);
         cmcapMembers = draft;
         renderCmcap();
@@ -861,7 +893,7 @@
         people: 'Empleados',
         positions: 'Puestos en SIRCE',
         instructors: 'Instructores certificados',
-        cmcap: 'CMCAP y firmas',
+        cmcap: 'CMCAP',
         reports: 'Reportes'
       };
       $('#crumb').textContent = labels[name] || 'Resumen';
@@ -1580,7 +1612,7 @@
       }
       let legal, trab;
       try {
-        legal = cmcapSigner('Coordinador de CMCAP', $('#dc3-end').value);
+        legal = legalSigner();
         trab = cmcapSigner('Representante de los trabajadores', $('#dc3-end').value);
       } catch (error) {
         toast(error.message);
@@ -1713,22 +1745,6 @@
     $('#positions-table').addEventListener('click', event => {
       const button = event.target.closest('[data-edit-position]');
       if (button) openPositionEditor(button.dataset.editPosition);
-    });
-    $('#save-cmcap').addEventListener('click', async () => {
-      const button = $('#save-cmcap');
-      button.disabled = true;
-      try {
-        const draft = cmcapDraft();
-        Cmcap.validate(draft);
-        await persistCmcap(draft);
-        cmcapMembers = draft;
-        renderCmcap();
-        toast('Historial de la CMCAP guardado.');
-      } catch (error) {
-        toast(error.message);
-      } finally {
-        button.disabled = false;
-      }
     });
     $('#plant-filter').addEventListener('change', event => {
       const plant = event.target.value;
