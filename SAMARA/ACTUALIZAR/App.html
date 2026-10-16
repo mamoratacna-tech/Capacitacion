@@ -8,6 +8,8 @@
       pending: {},
       revision: 0,
       saving: false,
+      inFlight: null,
+      lastError: null,
       blocked: false,
       timer: null
     };
@@ -30,34 +32,39 @@
       document.getElementById('cloud-reload').hidden = !conflict;
       console.error('Google save:', error?.message || String(error));
     }
-    async function flushCloud() {
-      if (cloud.saving || cloud.blocked || !Object.keys(cloud.pending).length) return;
-      const batch = cloud.pending;
-      cloud.pending = {};
+    function flushCloud() {
+      if (cloud.inFlight) return cloud.inFlight;
+      if (cloud.blocked || !Object.keys(cloud.pending).length) return Promise.resolve();
+      clearTimeout(cloud.timer);
       cloud.saving = true;
-      cloudLabel('Guardando en Google…');
-      try {
-        const result = await googleCall('api_saveAppState', batch, cloud.revision);
-        if (result.conflict) {
-          cloud.pending = {
-            ...batch,
-            ...cloud.pending
-          };
-          cloudError(new Error('Conflicto de versión'), true);
-          return;
+      cloud.inFlight = (async function () {
+        try {
+          while (!cloud.blocked && Object.keys(cloud.pending).length) {
+            const batch = cloud.pending;
+            cloud.pending = {};
+            cloudLabel('Guardando en Google…');
+            try {
+              const result = await googleCall('api_saveAppState', batch, cloud.revision);
+              if (result.conflict) {
+                const error = new Error('Otra ventana actualizó la información. Descarga tus cambios pendientes antes de volver a cargar.');
+                error.conflict = true;
+                throw error;
+              }
+              cloud.revision = result.revision;
+              cloud.lastError = null;
+            } catch (error) {
+              cloud.pending = { ...batch, ...cloud.pending };
+              cloud.lastError = error;
+              cloudError(error, !!error.conflict);
+            }
+          }
+          if (!cloud.blocked) cloudLabel('Guardado en Google');
+        } finally {
+          cloud.saving = false;
+          cloud.inFlight = null;
         }
-        cloud.revision = result.revision;
-        cloudLabel('Guardado en Google');
-      } catch (error) {
-        cloud.pending = {
-          ...batch,
-          ...cloud.pending
-        };
-        cloudError(error);
-      } finally {
-        cloud.saving = false;
-        if (!cloud.blocked && Object.keys(cloud.pending).length) cloud.timer = setTimeout(flushCloud, 0);
-      }
+      })();
+      return cloud.inFlight;
     }
     function loadStore(key, fallback) {
       if (!Object.prototype.hasOwnProperty.call(cloud.cache, key)) saveStore(key, structuredClone(fallback));
@@ -786,30 +793,12 @@
       return persistCollection('samara.cmcap.v2', draft);
     }
     async function persistCollection(key, draft) {
-      const deadline = Date.now() + 15000;
-      while (cloud.saving || Object.keys(cloud.pending).length) {
-        if (cloud.blocked) throw Error('Hay cambios pendientes que no se pudieron guardar. Reintenta el guardado desde el aviso de conexión.');
-        if (Date.now() > deadline) throw Error('El guardado anterior tarda demasiado. Espera un momento y vuelve a intentar.');
-        if (!cloud.saving) await flushCloud();else await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      if (cloud.blocked) throw Error('La conexión tiene cambios pendientes. Revisa el aviso de conexión.');
-      cloud.saving = true;
-      cloudLabel('Guardando cambios…');
-      try {
-        const result = await googleCall('api_saveAppState', {
-          [key]: draft
-        }, cloud.revision);
-        if (result.conflict) throw Error('Otra ventana cambió los datos. Descarga tus cambios pendientes y vuelve a cargar antes de agregar al integrante.');
-        cloud.revision = result.revision;
-        cloud.cache[key] = structuredClone(draft);
-        cloudLabel('Guardado en Google');
-      } catch (error) {
-        cloudLabel('No se pudieron guardar los cambios');
-        throw error;
-      } finally {
-        cloud.saving = false;
-        if (Object.keys(cloud.pending).length && !cloud.blocked) cloud.timer = setTimeout(flushCloud, 0);
-      }
+      if (cloud.blocked) throw cloud.lastError || new Error('Hay cambios pendientes. Reintenta el guardado desde el aviso de conexión.');
+      // Join the same queue as automatic saves, including an already running request.
+      // Keep the draft pending until Google confirms it; slow saves are not failures.
+      saveStore(key, draft);
+      await flushCloud();
+      if (cloud.blocked) throw cloud.lastError || new Error('No se pudieron guardar los cambios.');
     }
     $('#cmcap-add-form').addEventListener('invalid', event => {
       const label = event.target.closest('label')?.childNodes[0]?.textContent?.trim() || 'Campo';
