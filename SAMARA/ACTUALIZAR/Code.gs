@@ -15,7 +15,9 @@ function doGet(e){
   return t.evaluate().setTitle(page==='listados'?'Listados de asistencia | SAMARA':'Entrenamiento | SAMARA').addMetaTag('viewport','width=device-width, initial-scale=1');
 }
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
-function include(nombre){ return HtmlService.createHtmlOutputFromFile(nombre).getContent(); }
+function include(nombre){
+  return HtmlService.createTemplateFromFile(nombre).getRawContent();
+}
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.
 function instalar(){ const ss=database_(); Logger.log('Listo. Hoja de datos: '+ss.getUrl()); }
 function getDb_(){const p=PropertiesService.getScriptProperties();let id=p.getProperty('DB_ID');if(id)return SpreadsheetApp.openById(id);let ss=SpreadsheetApp.create('SAMARA | Gestión de Capacitación — Datos');p.setProperty('DB_ID',ss.getId());setup_();return ss;}

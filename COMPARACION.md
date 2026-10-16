@@ -7,7 +7,7 @@ bloques del chat se mostraron expandidos y los archivos conservan líneas largas
 
 | Archivo | Líneas recibidas | Líneas publicadas | Resultado |
 | --- | ---: | ---: | --- |
-| Code.gs | 162 | 206 | 26 funciones originales conservadas: 24 sin cambios en su estructura de código y 2 actualizadas; 4 funciones nuevas |
+| Code.gs | 162 | 208 | 26 funciones originales conservadas: 23 sin cambios en su estructura de código y 3 actualizadas; 4 funciones nuevas |
 | App.html | 385 | 4155 | 87 funciones originales conservadas: 80 sin cambios en su estructura de código y 7 actualizadas; 46 funciones nuevas |
 | Listados.html | 416 | 417 | 45 funciones originales conservadas: 44 sin cambios en su estructura de código y 1 actualizada |
 | Index.html | 84 | 90 | Incluye el menú y contenedores del módulo integrado y el formulario de CMCAP |

@@ -6,9 +6,23 @@ function diagnosticarSAMARA(){
   const cargar=nombre=>{
     if(Object.prototype.hasOwnProperty.call(fuentes,nombre))return fuentes[nombre];
     try{
-      const texto=HtmlService.createHtmlOutputFromFile(nombre).getContent();
+      const texto=HtmlService.createTemplateFromFile(nombre).getRawContent();
       fuentes[nombre]=texto;
-      registrar('OK archivo '+nombre+' ('+texto.length+' caracteres)');
+      registrar('OK archivo '+nombre+' ('+texto.length+' caracteres sin procesar)');
+      if(nombre==='App'){
+        const procesado=HtmlService.createHtmlOutputFromFile(nombre).getContent();
+        if(procesado!==texto){
+          let posicion=0;
+          while(posicion<Math.min(texto.length,procesado.length)&&texto[posicion]===procesado[posicion])posicion++;
+          const linea=texto.slice(0,posicion).split('\n').length;
+          registrar('AVISO: getContent cambia App. Raw: '+texto.length+' caracteres; procesado: '+procesado.length+'; primera diferencia cerca de línea '+linea+'.');
+          const bloqueProcesado=procesado.match(/<script\b[^>]*>([\s\S]*?)<\/script>/i);
+          if(bloqueProcesado){
+            try{new Function(bloqueProcesado[1]);registrar('Lectura procesada de App: sintaxis válida.');}
+            catch(error){registrar('Lectura procesada de App: '+String(error.message));}
+          }
+        }else registrar('OK: las dos lecturas de App coinciden.');
+      }
       return texto;
     }catch(error){
       registrar('ERROR: falta o no se puede leer el archivo HTML '+nombre+'.');

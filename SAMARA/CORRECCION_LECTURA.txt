@@ -1,0 +1,21 @@
+REVISIÓN DE LECTURA DE ARCHIVOS
+
+La copia de App recibida del editor coincide con la fuente de GitHub tras
+normalizar saltos de línea y espacio final. Su sintaxis es válida localmente.
+El diagnóstico en Google reportó una longitud diferente al leer con
+HtmlService.createHtmlOutputFromFile(...).getContent(). La causa de esa
+diferencia requiere comparar las dos lecturas dentro de Google.
+
+Cambio mínimo en Code.gs: sustituir la función include por:
+
+function include(nombre){
+  return HtmlService.createTemplateFromFile(nombre).getRawContent();
+}
+
+Actualizar también Diagnostico.gs desde SAMARA/Diagnostico.gs y ejecutar
+la función diagnosticarSAMARA. Ahora lee la fuente original y compara la
+lectura procesada. No modifica hojas, registros ni propiedades.
+
+No hace falta volver a reemplazar App ni los catálogos.
+Si la fuente sin procesar pasa la sintaxis, publicar Nueva versión y comprobar
+el arranque real. Esta prueba aún requiere la cuenta propietaria de Google.
