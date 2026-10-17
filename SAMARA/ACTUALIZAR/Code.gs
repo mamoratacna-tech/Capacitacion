@@ -38,6 +38,21 @@ function appSheet_(ss){
   if(!sheet){sheet=ss.insertSheet('SAMARA_AppState');sheet.appendRow(['Colección','Parte','JSON']);sheet.setFrozenRows(1);sheet.getRange(1,1,1,3).setFontWeight('bold').setBackground('#eaf2f2');}
   return sheet;
 }
+function normalizePersonNames(key, value) {
+  if (!Array.isArray(value)) return value;
+  const fields = {'samara.employees.v2':['names','paternal','maternal'],'samara.instructors.v1':['employeeName','externalName'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner']};
+  if (!fields[key] && key !== 'samara.attendance.v1') return value;
+  const upper = text => typeof text === 'string' ? text.toLocaleUpperCase('es-MX') : text;
+  return value.map(record => {
+    const item = {...record};
+    (fields[key] || []).forEach(field => {if(typeof item[field] === 'string') item[field] = upper(item[field]);});
+    if(key === 'samara.attendance.v1') {
+      if(item.encabezado) item.encabezado = {...item.encabezado,instructor:upper(item.encabezado.instructor)};
+      if(Array.isArray(item.asistentes)) item.asistentes = item.asistentes.map(person=>({...person,nombre:upper(person.nombre),name:upper(person.name)}));
+    }
+    return item;
+  });
+}
 function appRead_(sheet){
   const fragments={},state={};let revision=0;
   sheet.getDataRange().getValues().slice(1).forEach(row=>{
@@ -46,7 +61,7 @@ function appRead_(sheet){
     if(!fragments[row[0]])fragments[row[0]]=[];
     const fragment=String(row[2]);fragments[row[0]][Number(row[1])]=fragment.startsWith('JSON:')?fragment.slice(5):fragment;
   });
-  Object.keys(fragments).forEach(key=>{state[key]=JSON.parse(fragments[key].join(''));});
+  Object.keys(fragments).forEach(key=>{state[key]=normalizePersonNames(key,JSON.parse(fragments[key].join('')));});
   return {state:state,revision:revision};
 }
 function api_loadAppState(){
@@ -65,6 +80,7 @@ function api_saveAppState(updates,expectedRevision){
     const sheet=appSheet_(database_()),current=appRead_(sheet);
     if(Number(expectedRevision)!==current.revision)return {conflict:true,revision:current.revision};
     const next=Object.assign({},current.state,updates),revision=current.revision+1;
+    keys.forEach(key=>next[key]=normalizePersonNames(key,next[key]));
     const rows=[['Colección','Parte','JSON'],['_revision',0,String(revision)]];
     APP_KEYS_.forEach(key=>{if(!Object.prototype.hasOwnProperty.call(next,key))return;const json=JSON.stringify(next[key]);for(let start=0,part=0;start<json.length;start+=40000,part++)rows.push([key,part,'JSON:'+json.slice(start,start+40000)]);});
     const previousRows=sheet.getLastRow();

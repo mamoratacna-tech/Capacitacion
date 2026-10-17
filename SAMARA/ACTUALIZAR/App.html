@@ -83,12 +83,28 @@
       })();
       return cloud.inFlight;
     }
+function normalizePersonNames(key, value) {
+  if (!Array.isArray(value)) return value;
+  const fields = {'samara.employees.v2':['names','paternal','maternal'],'samara.instructors.v1':['employeeName','externalName'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner']};
+  if (!fields[key] && key !== 'samara.attendance.v1') return value;
+  const upper = text => typeof text === 'string' ? text.toLocaleUpperCase('es-MX') : text;
+  return value.map(record => {
+    const item = {...record};
+    (fields[key] || []).forEach(field => {if(typeof item[field] === 'string') item[field] = upper(item[field]);});
+    if(key === 'samara.attendance.v1') {
+      if(item.encabezado) item.encabezado = {...item.encabezado,instructor:upper(item.encabezado.instructor)};
+      if(Array.isArray(item.asistentes)) item.asistentes = item.asistentes.map(person=>({...person,nombre:upper(person.nombre),name:upper(person.name)}));
+    }
+    return item;
+  });
+}
     function loadStore(key, fallback) {
       if (!Object.prototype.hasOwnProperty.call(cloud.cache, key)) saveStore(key, structuredClone(fallback));
-      return structuredClone(cloud.cache[key]);
+      return normalizePersonNames(key,structuredClone(cloud.cache[key]));
     }
     function saveStore(key, value) {
       if (!cloudKeys.includes(key)) throw new Error('Colección desconocida');
+      value = normalizePersonNames(key,value);
       cloud.cache[key] = structuredClone(value);
       cloud.pending[key] = structuredClone(value);
       cloudLabel('Cambios pendientes…');
@@ -404,7 +420,7 @@
       return status === 'En regla' ? 'full' : status === 'Pendiente' ? 'pending' : 'scheduled';
     }
     function fullEmployeeName(e) {
-      return [e.names, e.paternal, e.maternal].filter(Boolean).join(' ');
+      return [e.names, e.paternal, e.maternal].filter(Boolean).join(' ').toLocaleUpperCase('es-MX');
     }
     function objectiveCode(course) {
       const text = String(course?.objective || '').toLowerCase();
@@ -425,7 +441,7 @@
       }[String(code)] || '';
     }
     function fullInstructorName(item) {
-      return item.type === 'Interno' ? item.employeeName : item.externalName;
+      return String(item.type === 'Interno' ? item.employeeName || '' : item.externalName || '').toLocaleUpperCase('es-MX');
     }
     function renderSessions() {
       $('#sessions-table').innerHTML = courses.slice(0, 4).map(c => "<tr><td><div class=\"course-cell\"><span class=\"course-symbol\">".concat(c.symbol || '▤', "</span><div><div class=\"course-title\">").concat(escapeHtml(c.name), "</div><div class=\"course-sub\">").concat(escapeHtml(c.code), " · ").concat(escapeHtml(c.duration), " h</div></div></div></td><td><div class=\"date-main\">").concat(escapeHtml(c.date), "</div><div class=\"date-sub\">").concat(escapeHtml(c.time), "</div></td><td>").concat(escapeHtml(c.plant), "</td><td><span class=\"person-count\">Según matriz</span></td><td><div class=\"owner-cell\"><span class=\"mini-avatar\">").concat(initials(c.owner), "</span>").concat(escapeHtml(c.owner || 'Por asignar'), "</div></td><td><span class=\"status-pill ").concat(pillClass(c.status), "\">").concat(escapeHtml(c.status), "</span></td><td><button class=\"row-more\" data-edit-course=\"").concat(escapeHtml(c.code), "\" aria-label=\"Editar curso\">✎</button></td></tr>")).join('');
@@ -551,7 +567,7 @@
     function renderPeople() {
       const query = ($('#people-search')?.value || '').toLowerCase();
       const filtered = employees.filter(e => [e.no, e.curp, fullEmployeeName(e), e.studies, e.proofDocType, e.institutionType, e.position].join(' ').toLowerCase().includes(query));
-      $('#people-table').innerHTML = filtered.length ? filtered.map(e => "<tr><td>".concat(escapeHtml(e.no), "</td><td>").concat(escapeHtml(e.curp), "</td><td>").concat(escapeHtml(e.names), "</td><td>").concat(escapeHtml(e.paternal), "</td><td>").concat(escapeHtml(e.maternal), "</td><td>").concat(escapeHtml(employeeCatalogLabel('studies', e.studies)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('proofDocType', e.proofDocType)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('institutionType', e.institutionType)), "</td><td>").concat(escapeHtml(e.position), "</td><td><button class=\"row-more\" data-edit-employee=\"").concat(escapeHtml(e.curp), "\" aria-label=\"Editar empleado\">✎</button></td></tr>")).join('') : '<tr><td colspan="10" class="empty-state">Aún no hay empleados. Agrega uno o importa un archivo Excel.</td></tr>';
+      $('#people-table').innerHTML = filtered.length ? filtered.map(e => "<tr><td>".concat(escapeHtml(e.no), "</td><td>").concat(escapeHtml(e.curp), "</td><td>").concat(escapeHtml(String(e.names || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(String(e.paternal || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(String(e.maternal || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(employeeCatalogLabel('studies', e.studies)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('proofDocType', e.proofDocType)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('institutionType', e.institutionType)), "</td><td>").concat(escapeHtml(e.position), "</td><td><button class=\"row-more\" data-edit-employee=\"").concat(escapeHtml(e.curp), "\" aria-label=\"Editar empleado\">✎</button></td></tr>")).join('') : '<tr><td colspan="10" class="empty-state">Aún no hay empleados. Agrega uno o importa un archivo Excel.</td></tr>';
       $('#employee-count').textContent = "".concat(employees.length, " empleados");
     }
     function renderPositions() {
@@ -579,21 +595,27 @@
       if (!select) return;
       select.innerHTML = '<option value="">Selecciona del catálogo SIRCE</option>' + window.sirceAreaThemes.map(theme => "<option value=\"".concat(escapeHtml(theme.value), "\">").concat(escapeHtml(theme.value), "</option>")).join('');
     }
-    function fillCourseInstructorOptions(course = null) {
-      const type = $('#course-instructor-class').value || 'Interno';
-      const selected = new Set(course?.instructorIds || [course?.instructorId].filter(Boolean));
-      if (!selected.size && course?.instructor) {
-        const match = instructors.find(item => item.type === type && norm(fullInstructorName(item)) === norm(course.instructor));
-        if (match) selected.add(match.id);
-      }
-      const matching = instructors.filter(item => item.type === type);
-      $('#course-instructor-options').innerHTML = matching.map(item => "<label class=\"instructor-option\"><input type=\"checkbox\" name=\"instructorIds\" value=\"".concat(escapeHtml(item.id), "\" ").concat(selected.has(item.id) ? 'checked' : '', "><span>").concat(escapeHtml(fullInstructorName(item)), "</span></label>")).join('') || '<p class="form-hint">Da de alta instructores certificados para seleccionarlos aquí.</p>';
-      filterCourseInstructors();
-      updateInstructorSelectionLabel();
+    function courseInstructorIds() {return $$('#course-instructor-options input[name="instructorIds"]').map(input=>input.value).filter(Boolean);}
+    function instructorLookupLabel(item) {
+      const name = fullInstructorName(item);
+      const duplicates = instructors.filter(other=>other.type===item.type && fullInstructorName(other)===name).length;
+      return duplicates>1 ? name+' · '+(item.employeeNo || item.rfc || item.id) : name;
     }
-    function updateInstructorSelectionLabel() {
-      const count = $$('#course-instructor-options input:checked').length;
-      $('#course-instructor summary').textContent = count ? "".concat(count, " instructor").concat(count === 1 ? '' : 'es', " seleccionado").concat(count === 1 ? '' : 's') : 'Selecciona instructores';
+    function appendCourseInstructorRow(id = '') {
+      const item=instructors.find(record=>record.id===id),row=document.createElement('div');row.className='course-instructor-row';
+      row.innerHTML='<input class="course-instructor-lookup" list="course-instructor-names" placeholder="Buscar instructor por nombre" aria-label="Instructor por nombre" required autocomplete="off"><input type="hidden" name="instructorIds"><button type="button" class="button outline" data-remove-course-instructor aria-label="Quitar instructor">×</button>';
+      row.querySelector('.course-instructor-lookup').value=item?instructorLookupLabel(item):'';
+      row.querySelector('[name="instructorIds"]').value=id;
+      $('#course-instructor-options').append(row);
+    }
+    function fillCourseInstructorOptions(course = null) {
+      const type=$('#course-instructor-class').value || 'Interno';
+      const selected=new Set(course?.instructorIds || [course?.instructorId].filter(Boolean));
+      if(!selected.size && course?.instructor){const item=instructors.find(record=>record.type===type && norm(fullInstructorName(record))===norm(course.instructor));if(item)selected.add(item.id);}
+      $('#course-instructor-names').innerHTML=instructors.filter(item=>item.type===type).map(item=>'<option value="'+escapeHtml(instructorLookupLabel(item))+'"></option>').join('');
+      $('#course-instructor-options').innerHTML='';
+      const ids=[...selected].filter(id=>instructors.some(item=>item.id===id&&item.type===type));
+      if(ids.length)ids.forEach(id=>appendCourseInstructorRow(id));else appendCourseInstructorRow();
     }
     function renderInstructorCourseRows(selected = []) {
       const wrap = $('#instructor-course-rows'),
@@ -709,7 +731,7 @@
         employeeName: employee ? fullEmployeeName(employee) : '',
         employeePosition: employee?.position || '',
         employeeDepartment: type === 'Interno' ? String(form.get('employeeDepartment') || '') : '',
-        externalName: type === 'Externo' ? String(form.get('externalName') || '').trim() : '',
+        externalName: type === 'Externo' ? String(form.get('externalName') || '').trim().toLocaleUpperCase('es-MX') : '',
         rfc: type === 'Externo' ? String(form.get('rfc') || '').trim().toUpperCase() : '',
         stpsRegistration: type === 'Externo' ? String(form.get('stpsRegistration') || '').trim() : '',
         phone: type === 'Externo' ? String(form.get('phone') || '').trim() : '',
@@ -734,7 +756,7 @@
       }
       saveStore('samara.instructors.v1', instructors);
       if(courseDialog.open){
-        const selected=$$('#course-instructor-options input:checked').map(input=>input.value);
+        const selected=courseInstructorIds();
         if(item.type===$('#course-instructor-class').value) selected.push(item.id);
         fillCourseInstructorOptions({instructorIds:[...new Set(selected)]});
       }
@@ -1072,7 +1094,6 @@
       selectedCoursePositions = new Set(c?.applicablePositions || []);
       courseForm.reset();
       fillCourseDepartmentOptions(c?.department || c?.code?.split('-')[0] || '');
-      $('#course-instructor-search').value = '';
       $('#course-form-title').textContent = c ? 'Editar curso' : 'Agregar curso';
       for (const key of ['name', 'duration', 'modality', 'official', 'category', 'frequency', 'ec', 'revision', 'theme', 'sirce']) courseForm.elements[key].value = c?.[key] ?? '';
       courseForm.elements.activeStatus.value = c?.activeStatus || 'Activo';
@@ -1092,14 +1113,22 @@
       updateCourseCodePreview();
       courseDialog.showModal();
     }
-    $('#course-add-instructor').addEventListener('click',()=>openInstructorEditor('', $('#course-instructor-class').value));
-    $('#course-instructor-search').addEventListener('input',filterCourseInstructors);
-    function filterCourseInstructors(){
-      const query=norm($('#course-instructor-search').value);
-      $$('#course-instructor-options .instructor-option').forEach(option=>option.hidden=!norm(option.textContent).includes(query));
-    }
-    $('#course-instructor-class').addEventListener('change', () => fillCourseInstructorOptions());
-    $('#course-instructor').addEventListener('change', updateInstructorSelectionLabel);
+    $('#course-add-instructor').addEventListener('click',()=>appendCourseInstructorRow());
+    $('#course-register-instructor').addEventListener('click',()=>openInstructorEditor('', $('#course-instructor-class').value));
+    $('#course-instructor-options').addEventListener('input',event=>{
+      if(!event.target.matches('.course-instructor-lookup'))return;
+      const input=event.target,row=input.closest('.course-instructor-row');
+      const start=input.selectionStart,end=input.selectionEnd;input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
+      const match=instructors.find(item=>item.type===$('#course-instructor-class').value && norm(instructorLookupLabel(item))===norm(input.value));
+      row.querySelector('[name="instructorIds"]').value=match?.id || '';
+      input.setCustomValidity(match?'':'Busca por nombre y selecciona un instructor registrado.');
+    });
+    $('#course-instructor-options').addEventListener('click',event=>{
+      if(!event.target.closest('[data-remove-course-instructor]'))return;
+      event.target.closest('.course-instructor-row').remove();
+      if(!$('#course-instructor-options').children.length)appendCourseInstructorRow();
+    });
+    $('#course-instructor-class').addEventListener('change',()=>fillCourseInstructorOptions());
     courseForm.addEventListener('change', event => {
       if (event.target.matches('[name="applicablePositions"]')) {
         if (event.target.checked) selectedCoursePositions.add(event.target.value);else selectedCoursePositions.delete(event.target.value);
@@ -1125,12 +1154,12 @@
         return;
       }
       courseForm.elements.code.value = code;
-      const instructorIds = form.getAll('instructorIds').map(String),
+      const instructorIds = [...new Set(form.getAll('instructorIds').map(String).filter(Boolean))],
         instructorRecords = instructorIds.map(id => instructors.find(item => item.id === id)).filter(Boolean),
         instructorId = instructorIds[0] || '',
         instructorName = instructorRecords.map(fullInstructorName).join(', ');
       if (!instructorRecords.length) {
-        $('#course-instructor').open = true;
+        $('#course-form > .course-fold').open = true;
         toast('Selecciona al menos un instructor certificado.');
         return;
       }
@@ -1236,15 +1265,20 @@
       fillEmployeePositionOptions(employee?.position || '');
       employeeDialog.showModal();
     }
+    document.addEventListener('input',event=>{
+      if(!event.target.matches('#employee-form [name="names"],#employee-form [name="paternal"],#employee-form [name="maternal"],#instructor-form [name="externalName"]'))return;
+      const input=event.target,start=input.selectionStart,end=input.selectionEnd;
+      input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
+    });
     employeeForm.addEventListener('submit', event => {
       event.preventDefault();
       const form = new FormData(employeeForm),
         item = {
           no: String(form.get('no') || '').trim(),
           curp: String(form.get('curp') || '').trim().toUpperCase(),
-          names: String(form.get('names') || '').trim(),
-          paternal: String(form.get('paternal') || '').trim(),
-          maternal: String(form.get('maternal') || '').trim(),
+          names: String(form.get('names') || '').trim().toLocaleUpperCase('es-MX'),
+          paternal: String(form.get('paternal') || '').trim().toLocaleUpperCase('es-MX'),
+          maternal: String(form.get('maternal') || '').trim().toLocaleUpperCase('es-MX'),
           studies: String(form.get('studies') || '').trim(),
           proofDocType: String(form.get('proofDocType') || '').trim(),
           institutionType: String(form.get('institutionType') || '').trim(),

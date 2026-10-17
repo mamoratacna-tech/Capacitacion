@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const source = readFileSync(require('node:path').join(__dirname, '../SAMARA/ACTUALIZAR/App.html'), 'utf8');
 const queue = source.slice(source.indexOf('    function flushCloud()'), source.indexOf('    function loadStore('));
 const store = source.slice(source.indexOf('    function saveStore('), source.indexOf('    function migrateLegacy('));
+const names = source.slice(source.indexOf('function normalizePersonNames('),source.indexOf('    function loadStore('));
 const persist = source.slice(source.indexOf('    async function persistCollection('), source.indexOf("    $('#cmcap-add-form').addEventListener('invalid'"));
 function setup() {
   const calls = [];
@@ -11,7 +12,7 @@ function setup() {
   const context = vm.createContext({cloud, cloudKeys:['attendance','employees'], structuredClone, setTimeout, clearTimeout,
     cloudLabel(){}, cloudError(error){cloud.blocked=true;},
     googleCall(method,batch,revision){return new Promise((resolve,reject)=>calls.push({batch,revision,resolve,reject}));}});
-  vm.runInContext(queue + store + persist + ';globalThis.api={persistCollection,flushCloud,saveStore};',context);
+  vm.runInContext(names + queue + store + persist + ';globalThis.api={persistCollection,flushCloud,saveStore};',context);
   return {cloud,calls,...context.api};
 }
 (async()=>{
