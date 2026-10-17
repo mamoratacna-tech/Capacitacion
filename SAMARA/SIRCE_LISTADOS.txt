@@ -12,7 +12,7 @@ Se quitaron Descargar CSV e Imprimir de esa ventana y el botón Importar padrón
 Se conserva la impresión de Lista y DC-3.
 
 EXPORTAR LISTADOS
-El botón está en la barra de búsqueda y filtros, junto a Ver todos.
+El botón Exportar listados está en el encabezado, junto a Cargar claves SIRCE.
 Genera CSV con el título, fila vacía y diez columnas del archivo de ejemplo:
 Nombre del curso, Duración (hrs), Area tematica del curso, Tipo de agente Capacitador,
 Objetivo de la capacitación, Modalidad de la capacitación, Fecha de inicio(DD-MM-AA),
@@ -32,3 +32,11 @@ Si dos listados son indistinguibles, completa la clave manualmente desde el bot�
 La clave también puede editarse manualmente en los datos SIRCE del listado.
 
 El Excel individual de asistentes conserva las 21 columnas oficiales, el establecimiento 862341 y el RFC vacío para internos.
+
+EXPORTAR EXCEL SIRCE EN ZIP
+En la barra de filtros, junto a Ver todos, usa Exportar listados de cursos Sirce.
+Descarga un ZIP con un archivo Excel por cada listado visible según los filtros actuales.
+Los libros contienen el mismo formato de 21 columnas que Descargar Excel SIRCE de cada listado.
+Se conservan clave del listado, establecimiento 862341 y RFC vacío para instructores internos.
+Si algún listado tiene datos pendientes, se muestran antes de generar el ZIP; no se descarga un lote incompleto.
+Puedes cancelar durante la generación. La exportación no cambia los registros.
