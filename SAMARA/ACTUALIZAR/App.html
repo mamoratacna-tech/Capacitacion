@@ -528,11 +528,16 @@ function normalizePersonNames(key, value) {
       renderCourses();
       toast('Puesto eliminado de la matriz.');
     }
+    function positionIsActive(position) {return norm(position.activeStatus || position.status || position._legacy?.estado || 'Activo') !== 'inactivo';}
+    function activeMatrixPositions() {
+      const inactive=new Set(positions.filter(position=>!positionIsActive(position)).map(position=>norm(position.job)));
+      return matrixPositions.filter(position=>!inactive.has(norm(position.job)));
+    }
     function filteredMatrixRows() {
       const query = ($('#matrix-search').value || '').toLowerCase(),
         status = $('#matrix-status').value,
         sirce = $('#matrix-sirce').value;
-      return matrixPositions.filter(position => (position.job + ' ' + position.department).toLowerCase().includes(query)).map(position => ({
+      return activeMatrixPositions().filter(position => (position.job + ' ' + position.department).toLowerCase().includes(query)).map(position => ({
         position,
         applicable: courses.filter(course => ((course.applicablePositions || []).includes(position.id) || course.cmcapOnly || course.safetyCommissionOnly || course.emergencyBrigadesOnly) && (status === 'Todos' || (course.activeStatus || 'Activo') === status) && (sirce === 'Todos' || norm(course.sirce) === norm(sirce)))
       })).filter(row => row.applicable.length || status === 'Todos' && sirce === 'Todos');
@@ -573,7 +578,7 @@ function normalizePersonNames(key, value) {
     function renderPositions() {
       const query = ($('#position-search')?.value || '').toLowerCase();
       const filtered = positions.filter(p => (p.job + ' ' + p.sirceCode + ' ' + p.sirceOccupation).toLowerCase().includes(query));
-      $('#positions-table').innerHTML = filtered.map(p => "<tr><td><b>".concat(escapeHtml(p.job), "</b></td><td>").concat(escapeHtml(p.sirceCode), "</td><td>").concat(escapeHtml(p.sirceOccupation), "</td><td>").concat(employees.filter(e => norm(e.position) === norm(p.job)).length, "</td><td><button class=\"row-more\" data-edit-position=\"").concat(escapeHtml(p.job), "\" aria-label=\"Editar puesto\">✎</button></td></tr>")).join('') || '<tr><td colspan="5" class="empty-state">No hay puestos que coincidan.</td></tr>';
+      $('#positions-table').innerHTML = filtered.map(p => "<tr><td><b>".concat(escapeHtml(p.job), "</b></td><td>").concat(escapeHtml(p.sirceCode), "</td><td>").concat(escapeHtml(p.sirceOccupation), "</td><td>").concat(employees.filter(e => norm(e.position) === norm(p.job)).length, "</td><td><span class=\"tag "+(positionIsActive(p)?"green":"soft")+"\">"+(positionIsActive(p)?"Activo":"Inactivo")+"</span></td><td><button class=\"row-more\" data-edit-position=\"").concat(escapeHtml(p.job), "\" aria-label=\"Editar puesto\">✎</button></td></tr>")).join('') || '<tr><td colspan="6" class="empty-state">No hay puestos que coincidan.</td></tr>';
     }
     function renderInstructors() {
       $('#view-instructors').classList.toggle('external-instructor-view', activeInstructorModule === 'Externo');
@@ -612,9 +617,9 @@ function normalizePersonNames(key, value) {
       const type=$('#course-instructor-class').value || 'Interno';
       const selected=new Set(course?.instructorIds || [course?.instructorId].filter(Boolean));
       if(!selected.size && course?.instructor){const item=instructors.find(record=>record.type===type && norm(fullInstructorName(record))===norm(course.instructor));if(item)selected.add(item.id);}
-      $('#course-instructor-names').innerHTML=instructors.filter(item=>item.type===type).map(item=>'<option value="'+escapeHtml(instructorLookupLabel(item))+'"></option>').join('');
+      $('#course-instructor-names').innerHTML=instructors.filter(item=>item.type===type||selected.has(item.id)).map(item=>'<option value="'+escapeHtml(instructorLookupLabel(item))+'"></option>').join('');
       $('#course-instructor-options').innerHTML='';
-      const ids=[...selected].filter(id=>instructors.some(item=>item.id===id&&item.type===type));
+      const ids=[...selected].filter(id=>instructors.some(item=>item.id===id));
       if(ids.length)ids.forEach(id=>appendCourseInstructorRow(id));else appendCourseInstructorRow();
     }
     function renderInstructorCourseRows(selected = []) {
@@ -739,21 +744,9 @@ function normalizePersonNames(key, value) {
         createdAt: previous?.createdAt || new Date().toISOString()
       };
       instructors = previous ? instructors.map(row => row.id === id ? item : row) : [item, ...instructors];
-      if (previous) {
-        courses = courses.map(course => {
-          const ids = course.instructorIds || [course.instructorId].filter(Boolean);
-          if (!ids.includes(id)) return course;
-          const names = ids.map(instructorId => instructors.find(record => record.id === instructorId)).filter(Boolean).map(fullInstructorName).join(', ');
-          return {
-            ...course,
-            instructor: names,
-            owner: names
-          };
-        });
-        saveStore('samara.courses.v2', courses);
-        renderCourses();
-        renderSessions();
-      }
+      courses = syncInstructorCourseAssignments(courses,item,instructors);
+      saveStore('samara.courses.v2',courses);
+      renderCourses();renderSessions();renderMatrix();
       saveStore('samara.instructors.v1', instructors);
       if(courseDialog.open){
         const selected=courseInstructorIds();
@@ -763,6 +756,17 @@ function normalizePersonNames(key, value) {
       instructorDialog.close();
       renderInstructors();
       toast('Instructor actualizado.');
+    }
+    function syncInstructorCourseAssignments(catalog,instructor,records) {
+      const authorized=new Set((instructor.authorizedCourses||[]).map(row=>row.courseCode).filter(code=>code&&code!=='__other__'));
+      return catalog.map(course=>{
+        const ids=[...(course.instructorIds||[course.instructorId].filter(Boolean))];
+        if(authorized.has(course.code)&&!ids.includes(instructor.id))ids.push(instructor.id);
+        if(!ids.includes(instructor.id))return course;
+        const linked=ids.map(id=>records.find(record=>record.id===id)).filter(Boolean),names=linked.map(fullInstructorName).join(', ');
+        const types=[...new Set(linked.map(record=>record.type))];
+        return {...course,instructorIds:ids,instructorId:ids[0]||'',instructor:names,owner:names,...(types.length===1?{instructorClass:types[0],agent:types[0]}:{})};
+      });
     }
     function instructorApprovalHtml(item) {
       const internal = item.type === 'Interno',
@@ -1051,7 +1055,7 @@ function normalizePersonNames(key, value) {
     // Course editor and position-by-course assignment
     function updatePositionGroupCounts() {
       $$('#course-job-checklist .position-group').forEach(group=>{
-        const items=matrixPositions.filter(item=>(item.department||'Sin departamento')===group.dataset.department);
+        const items=activeMatrixPositions().filter(item=>(item.department||'Sin departamento')===group.dataset.department);
         const marked=items.filter(item=>selectedCoursePositions.has(item.id)).length;
         group.querySelector('small').textContent=marked+'/'+items.length+' seleccionados';
         const check=group.querySelector('[data-select-department]');check.checked=marked===items.length;check.indeterminate=marked>0&&marked<items.length;
@@ -1060,7 +1064,7 @@ function normalizePersonNames(key, value) {
     }
     function renderCoursePositionChecklist(selected = [], query = '') {
       const q=query.toLowerCase(),selectedSet=new Set(selected),groups=new Map();
-      matrixPositions.forEach(item=>{const department=item.department||'Sin departamento';if(!groups.has(department))groups.set(department,[]);groups.get(department).push(item);});
+      activeMatrixPositions().forEach(item=>{const department=item.department||'Sin departamento';if(!groups.has(department))groups.set(department,[]);groups.get(department).push(item);});
       $('#course-job-checklist').innerHTML=[...groups].map(([department,items])=>{
         const matches=items.filter(item=>(item.job+' '+item.department).toLowerCase().includes(q));if(!matches.length)return '';
         return '<details class="position-group" data-department="'+escapeHtml(department)+'" '+(q?'open':'')+'><summary><input type="checkbox" data-select-department="'+escapeHtml(department)+'" aria-label="Seleccionar todos los puestos de '+escapeHtml(department)+'"><span class="position-group-name">'+escapeHtml(department)+'</span><small></small></summary><div class="position-group-list">'+matches.map(item=>'<label class="position-check"><input type="checkbox" name="applicablePositions" value="'+escapeHtml(item.id)+'" '+(selectedSet.has(item.id)?'checked':'')+'><span>'+escapeHtml(item.job)+'</span></label>').join('')+'</div></details>';
@@ -1071,7 +1075,7 @@ function normalizePersonNames(key, value) {
     $('#course-job-checklist').addEventListener('change',event=>{
       if(!event.target.matches('[data-select-department]'))return;
       const department=event.target.dataset.selectDepartment;
-      matrixPositions.filter(item=>(item.department||'Sin departamento')===department).forEach(item=>{if(event.target.checked)selectedCoursePositions.add(item.id);else selectedCoursePositions.delete(item.id);});
+      activeMatrixPositions().filter(item=>(item.department||'Sin departamento')===department).forEach(item=>{if(event.target.checked)selectedCoursePositions.add(item.id);else selectedCoursePositions.delete(item.id);});
       $$('#course-job-checklist [name="applicablePositions"]').forEach(input=>input.checked=selectedCoursePositions.has(input.value));
       updatePositionGroupCounts();
     });
@@ -1303,44 +1307,61 @@ function normalizePersonNames(key, value) {
       renderMatrix();
       toast('Empleado actualizado.');
     });
-    let positionOccupationRecords = [];
-    function occupationLookupLabel(item) {
-      const duplicates=positionOccupationRecords.filter(other=>norm(other.occupation)===norm(item.occupation)).length;
-      return duplicates>1 ? item.occupation+' · '+item.code : item.occupation;
+    let positionOccupationRecords=[],positionLookup=new Map(),positionByCode=new Map(),occupationByName=new Map(),occupationLabelCounts=new Map(),indexedOccupationCatalog=null;
+    const occupationCollator=new Intl.Collator('es',{numeric:true,sensitivity:'base'});
+    function occupationLookupLabel(item) {return (occupationLabelCounts.get(norm(item.occupation))||0)>1 ? item.occupation+' · '+item.code : item.occupation;}
+    function indexPositionOccupations(position) {
+      if(indexedOccupationCatalog!==occupationCatalog){
+        positionOccupationRecords=occupationCatalog.filter(item=>item.code&&item.occupation).map(item=>({...item,code:String(item.code),search:norm(item.occupation)})).sort((a,b)=>occupationCollator.compare(a.occupation,b.occupation));
+        occupationLabelCounts=new Map();positionLookup=new Map();positionByCode=new Map();occupationByName=new Map();
+        positionOccupationRecords.forEach(item=>occupationLabelCounts.set(item.search,(occupationLabelCounts.get(item.search)||0)+1));
+        positionOccupationRecords.forEach(item=>{positionLookup.set(norm(occupationLookupLabel(item)),item);positionByCode.set(item.code,item);occupationByName.set(item.search,item);});
+        indexedOccupationCatalog=occupationCatalog;
+      }
+      if(position?.sirceCode && position.sirceOccupation && !positionByCode.has(String(position.sirceCode))){
+        const item={code:String(position.sirceCode),occupation:position.sirceOccupation,search:norm(position.sirceOccupation)};
+        positionByCode.set(item.code,item);positionLookup.set(norm(occupationLookupLabel(item)),item);
+      }
     }
-    function fillOccupationSelectors(position = null) {
-      const records=[...occupationCatalog];
-      if(position?.sirceCode && !records.some(item=>item.code===position.sirceCode))records.push({code:position.sirceCode,occupation:position.sirceOccupation});
-      positionOccupationRecords=records.filter(item=>item.code&&item.occupation).sort((a,b)=>a.occupation.localeCompare(b.occupation,'es',{numeric:true}));
-      $('#position-occupation-suggestions').innerHTML=positionOccupationRecords.map(item=>'<option value="'+escapeHtml(occupationLookupLabel(item))+'"></option>').join('');
-      const jobs=[...new Set([...positions.map(item=>item.job),...matrixPositions.map(item=>item.job),...records.map(item=>item.occupation)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-      $('#position-job-suggestions').innerHTML=jobs.map(job=>'<option value="'+escapeHtml(job)+'"></option>').join('');
-      const selected=positionOccupationRecords.find(item=>item.code===position?.sirceCode);
-      positionForm.elements.sirceCode.value=selected?.code || '';
-      positionForm.elements.sirceOccupation.value=selected?occupationLookupLabel(selected):'';
+    function renderOccupationSuggestions(query='') {
+      const search=norm(query),matches=[];
+      for(const item of positionOccupationRecords){if(!search||item.search.includes(search)||item.code.includes(query)){matches.push(item);if(matches.length===50)break;}}
+      $('#position-occupation-suggestions').innerHTML=matches.map(item=>'<option value="'+escapeHtml(occupationLookupLabel(item))+'"></option>').join('');
+    }
+    function renderJobSuggestions(query='') {
+      const search=norm(query),jobs=new Set();
+      for(const item of [...positions,...matrixPositions]){if(item.job&&(!search||norm(item.job).includes(search)))jobs.add(item.job);if(jobs.size>=50)break;}
+      if(jobs.size<50)for(const item of positionOccupationRecords){if(!search||item.search.includes(search))jobs.add(item.occupation);if(jobs.size>=50)break;}
+      $('#position-job-suggestions').innerHTML=[...jobs].map(job=>'<option value="'+escapeHtml(job)+'"></option>').join('');
+    }
+    function setPositionOccupation(record) {
+      positionForm.elements.sirceCode.value=record?.code||'';
+      positionForm.elements.sirceOccupation.value=record?occupationLookupLabel(record):'';
       positionForm.elements.sirceOccupation.setCustomValidity('');
     }
+    function fillOccupationSelectors(position = null) {
+      indexPositionOccupations(position);renderOccupationSuggestions();renderJobSuggestions();
+      setPositionOccupation(positionByCode.get(String(position?.sirceCode||'')));
+    }
     function openPositionEditor(job = '') {
-      editingPositionJob=job;
-      const position=positions.find(item=>norm(item.job)===norm(job));
+      editingPositionJob=job;const position=positions.find(item=>norm(item.job)===norm(job));
       positionForm.reset();$('#position-form-title').textContent=position?'Editar puesto':'Agregar puesto';
-      positionForm.elements.job.value=position?.job || job;
+      positionForm.elements.job.value=position?.job||job;
+      positionForm.elements.activeStatus.value=position && !positionIsActive(position)?'Inactivo':'Activo';
       fillOccupationSelectors(position);positionDialog.showModal();
     }
     function selectSirceOccupation() {
-      const input=positionForm.elements.sirceOccupation;
-      const record=positionOccupationRecords.find(item=>norm(occupationLookupLabel(item))===norm(input.value));
-      positionForm.elements.sirceCode.value=record?.code || '';
-      input.setCustomValidity(record?'':'Selecciona una ocupación del catálogo SIRCE para asignar su código.');
-      return record;
+      const input=positionForm.elements.sirceOccupation,record=positionLookup.get(norm(input.value));
+      positionForm.elements.sirceCode.value=record?.code||'';
+      input.setCustomValidity(record?'':'Selecciona una ocupación del catálogo SIRCE para asignar su código.');return record;
     }
-    $('#position-sirce-occupation').addEventListener('input',selectSirceOccupation);
+    $('#position-sirce-occupation').addEventListener('input',event=>{renderOccupationSuggestions(event.target.value);selectSirceOccupation();});
     $('#position-sirce-occupation').addEventListener('change',selectSirceOccupation);
     $('#position-job').addEventListener('input',event=>{
+      renderJobSuggestions(event.target.value);
       const existing=positions.find(item=>norm(item.job)===norm(event.target.value));
-      if(existing){fillOccupationSelectors(existing);return;}
-      const occupation=positionOccupationRecords.find(item=>norm(item.occupation)===norm(event.target.value));
-      if(occupation){positionForm.elements.sirceOccupation.value=occupationLookupLabel(occupation);selectSirceOccupation();}
+      if(existing){indexPositionOccupations(existing);setPositionOccupation(positionByCode.get(String(existing.sirceCode)));return;}
+      const occupation=occupationByName.get(norm(event.target.value));if(occupation)setPositionOccupation(occupation);
     });
     $('#import-occupation-catalog').addEventListener('click', () => $('#occupation-catalog-file').click());
     $('#occupation-catalog-file').addEventListener('change', async event => {
@@ -1385,6 +1406,7 @@ function normalizePersonNames(key, value) {
         job = String(form.get('job') || '').trim().toUpperCase(),
         sirceCode = String(occupation.code),
         sirceOccupation = String(occupation.occupation),
+        activeStatus = String(form.get('activeStatus') || 'Activo'),
         previous = positions.find(item => norm(item.job) === norm(editingPositionJob));
       if (positions.some(item => norm(item.job) === norm(job) && norm(item.job) !== norm(editingPositionJob))) {
         toast('Ya existe ese puesto.');
@@ -1413,13 +1435,9 @@ function normalizePersonNames(key, value) {
         } : employee);
       }
       positions = previous ? positions.map(item => norm(item.job) === norm(editingPositionJob) ? {
-        job,
-        sirceCode,
-        sirceOccupation
+        ...item, job, sirceCode, sirceOccupation, activeStatus
       } : item) : [...positions, {
-        job,
-        sirceCode,
-        sirceOccupation
+        job, sirceCode, sirceOccupation, activeStatus
       }].sort((a, b) => a.job.localeCompare(b.job));
       if (!previous) matrixPositions = [...matrixPositions, {
         id: "".concat(job, "|Por asignar"),
