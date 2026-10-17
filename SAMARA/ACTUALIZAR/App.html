@@ -305,6 +305,11 @@ function normalizePersonNames(key, value) {
       code: position.sirceCode,
       occupation: position.sirceOccupation
     }])).values()]);
+    if(window.SirceListados){
+      const official=SirceListados.catalogs.occupations.map(row=>({code:row.code,occupation:row.name.toUpperCase()}));
+      const combined=[...new Map([...occupationCatalog,...official].map(row=>[String(row.code),row])).values()];
+      if(JSON.stringify(combined)!==JSON.stringify(occupationCatalog)){occupationCatalog=combined;saveStore('samara.occupationCatalog.v1',occupationCatalog);}
+    }
     let employees = loadStore('samara.employees.v2', []);
     if (!loadStore('samara.demoEmployees.v1', false)) {
       const demos = [{
@@ -2495,6 +2500,8 @@ function normalizePersonNames(key, value) {
           curso: s.listaCurso || ''
         },
         cursoCodigo: s.cursoCodigo,
+        sirceDatos: ssDefaults(s),
+        sirceInstructorId: s.sirceInstructorId || '',
         fecha: s.fecha,
         enc: {
           ...(s.encabezado || {})
@@ -2545,14 +2552,14 @@ function normalizePersonNames(key, value) {
       }
       const all = attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
         l = atFiltrados();
-      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button class=\"button outline\" data-att=\"importar\">⇣ Importar padrón SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Usa “Importar padrón SIRCE” para traerlo de tu hoja SAMARA - SIRCE 2026.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? l.map(s => {
+      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button outline\" data-att=\"importar\">⇣ Importar padrón SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Usa “Importar padrón SIRCE” para traerlo de tu hoja SAMARA - SIRCE 2026.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? l.map(s => {
         const v = (s.asistentes || []).filter(a => a.estado === 'ok').length;
-        return "<tr><td><b>".concat(atE(s.cursoNombre || (s.listaCurso ? '“' + s.listaCurso + '” (sin vincular)' : 'Curso sin vincular')), "</b><br><small class=\"att-sub\">").concat(atE(s.cursoCodigo || ''), "</small></td><td>").concat(atFmt(s.fecha), "<br><small class=\"att-sub\">").concat(atE(s.encabezado?.lugar || ''), "</small></td><td>").concat(atE(s.encabezado?.instructor || '—'), "</td><td>").concat((s.asistentes || []).length, "<br><small class=\"att-sub\">").concat(v, " validados</small></td><td>").concat(atPill(atSirce(s) ? 'ok' : 'nt', atSirce(s) ? 'Sí' : 'No'), "</td><td>").concat(s.estado === 'Borrador' ? atPill('wa', '⚠ Borrador · ' + atConteo(s) + ' por revisar') + (s.origen ? "<br><small class=\"att-sub\">".concat(atE(s.origen), "</small>") : '') : atPill(s.estado === 'Validada' ? 'ok' : 'wa', s.estado), "</td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"pdflista\" data-id=\"").concat(s.id, "\">Lista</button> <button class=\"button outline att-sm\" data-att=\"pdfdc3\" data-id=\"").concat(s.id, "\">DC-3</button></td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"").concat(s.id, "\" title=\"Editar\" aria-label=\"Editar\">✎</button> <button class=\"button outline att-sm att-del\" data-att=\"borrar\" data-id=\"").concat(s.id, "\" title=\"Eliminar\" aria-label=\"Eliminar\">🗑</button></td></tr>");
+        return "<tr><td><b>".concat(atE(s.cursoNombre || (s.listaCurso ? '“' + s.listaCurso + '” (sin vincular)' : 'Curso sin vincular')), "</b><br><small class=\"att-sub\">").concat(atE(s.cursoCodigo || ''), "</small><br><small class=\"att-sub\">Clave SIRCE: ").concat(atE(s.sirceDatos?.claveCurso || 'Pendiente'), "</small></td><td>").concat(atFmt(s.fecha), "<br><small class=\"att-sub\">").concat(atE(s.encabezado?.lugar || ''), "</small></td><td>").concat(atE(s.encabezado?.instructor || '—'), "</td><td>").concat((s.asistentes || []).length, "<br><small class=\"att-sub\">").concat(v, " validados</small></td><td>").concat(atPill(atSirce(s) ? 'ok' : 'nt', atSirce(s) ? 'Sí' : 'No'), "</td><td>").concat(s.estado === 'Borrador' ? atPill('wa', '⚠ Borrador · ' + atConteo(s) + ' por revisar') + (s.origen ? "<br><small class=\"att-sub\">".concat(atE(s.origen), "</small>") : '') : atPill(s.estado === 'Validada' ? 'ok' : 'wa', s.estado), "</td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"pdflista\" data-id=\"").concat(s.id, "\">Lista</button> <button class=\"button outline att-sm\" data-att=\"pdfdc3\" data-id=\"").concat(s.id, "\">DC-3</button> <button class=\"button outline att-sm\" data-sirce-open=\"").concat(atE(s.id), "\">SIRCE</button></td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"").concat(s.id, "\" title=\"Editar\" aria-label=\"Editar\">✎</button> <button class=\"button outline att-sm att-del\" data-att=\"borrar\" data-id=\"").concat(s.id, "\" title=\"Eliminar\" aria-label=\"Eliminar\">🗑</button></td></tr>");
       }).join('') : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
     }
     function atVistaEditor() {
       const e = AT.ed;
-      return "<div class=\"page-heading\"><div><div class=\"eyebrow\">FT-RH-010 · ".concat(e.leida ? 'LEÍDO DE FOTO' : 'CAPTURA MANUAL').concat(e.origen ? ' · ' + atE(e.origen) : '', "</div><h1>").concat(e.id ? 'Editar listado' : 'Revisar listado', "</h1><p>").concat(e.leida ? 'Revisa lo marcado antes de guardar.' : 'Completa el encabezado y agrega a los asistentes.', "</p></div><button class=\"button outline\" data-att=\"cancelar\">Cancelar</button></div>\n  <div class=\"att-grid\"><article class=\"panel\"><h3 class=\"att-h\">Curso</h3><label>Curso<select id=\"att-curso\"><option value=\"\">Elige un curso</option>").concat(atCursos().map(c => "<option value=\"".concat(atE(c.codigo), "\" ").concat(c.codigo === e.cursoCodigo ? 'selected' : '', ">").concat(atE(c.codigo + ' · ' + c.nombre), "</option>")).join(''), "</select></label>\n  ").concat(e.leida && e.lista.curso ? "<p class=\"att-hint\">En la lista dice: “".concat(atE(e.lista.curso), "”</p>") : '', "<div id=\"att-cinfo\"></div><label>Fecha de ejecución<input type=\"date\" id=\"att-fecha\" value=\"").concat(atE(e.fecha || ''), "\"></label></article>\n  <article class=\"panel\"><h3 class=\"att-h\">Instructor</h3><div id=\"att-ins\"></div></article></div>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Encabezado</h3><div class=\"att-hgrid\" id=\"att-hd\"></div></article>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Asistentes</h3><p class=\"att-hint\">El número de empleado manda: nombre y puesto se toman de Personal. Escribe nombre o número para buscar.</p><div id=\"att-rw\"></div><div class=\"att-add\"><label>Agregar colaborador").concat(atCb('emp', 'new', '', 'Escribe nombre o número…'), "</label></div></article>\n  <div class=\"att-bar\"><div id=\"att-msg\"></div><div class=\"att-barbtns\">").concat(e.id ? "<button class=\"button outline att-del\" data-att=\"borrarlista\">Eliminar</button>" : '', "<button class=\"button primary\" id=\"att-save\" data-att=\"guardar\">Guardar listado</button></div></div>");
+      return "<div class=\"page-heading\"><div><div class=\"eyebrow\">FT-RH-010 · ".concat(e.leida ? 'LEÍDO DE FOTO' : 'CAPTURA MANUAL').concat(e.origen ? ' · ' + atE(e.origen) : '', "</div><h1>").concat(e.id ? 'Editar listado' : 'Revisar listado', "</h1><p>").concat(e.leida ? 'Revisa lo marcado antes de guardar.' : 'Completa el encabezado y agrega a los asistentes.', "</p></div><button class=\"button outline\" data-att=\"cancelar\">Cancelar</button></div>\n  <div class=\"att-grid\"><article class=\"panel\"><h3 class=\"att-h\">Curso</h3><label>Curso<select id=\"att-curso\"><option value=\"\">Elige un curso</option>").concat(atCursos().map(c => "<option value=\"".concat(atE(c.codigo), "\" ").concat(c.codigo === e.cursoCodigo ? 'selected' : '', ">").concat(atE(c.codigo + ' · ' + c.nombre), "</option>")).join(''), "</select></label>\n  ").concat(e.leida && e.lista.curso ? "<p class=\"att-hint\">En la lista dice: “".concat(atE(e.lista.curso), "”</p>") : '', "<div id=\"att-cinfo\"></div><label>Fecha de ejecución<input type=\"date\" id=\"att-fecha\" value=\"").concat(atE(e.fecha || ''), "\"></label></article>\n  <article class=\"panel\"><h3 class=\"att-h\">Instructor</h3><div id=\"att-ins\"></div></article></div>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Encabezado</h3><div class=\"att-hgrid\" id=\"att-hd\"></div></article>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Asistentes</h3><p class=\"att-hint\">El número de empleado manda: nombre y puesto se toman de Personal. Escribe nombre o número para buscar.</p><div id=\"att-rw\"></div><div class=\"att-add\"><label>Agregar colaborador").concat(atCb('emp', 'new', '', 'Escribe nombre o número…'), "</label></div></article>\n  <article class=\"panel att-mt\"><h3>Datos SIRCE</h3><div id=\"att-sirce-fields\">").concat(ssFields(e), "</div></article><div class=\"att-bar\"><div id=\"att-msg\"></div><div class=\"att-barbtns\">").concat(e.id ? "<button class=\"button outline att-del\" data-att=\"borrarlista\">Eliminar</button>" : '', "<button class=\"button primary\" id=\"att-save\" data-att=\"guardar\">Guardar listado</button></div></div>");
     }
     function atPintar() {
       if (!AT.ed || !$('#att-hd')) return;
@@ -2886,6 +2893,82 @@ function normalizePersonNames(key, value) {
       };
     }
     /* guardar */
+    function ssInstructor(list){return instructors.find(item=>item.id&&(item.id===list.sirceInstructorId||item.id===list.sirceDatos?.instructorId))||instructors.find(item=>norm(fullInstructorName(item))===norm(list.encabezado?.instructor||list.enc?.instructor));}
+    function ssDefaults(list){
+      const course=courses.find(item=>item.code===list.cursoCodigo),h=list.encabezado||list.enc||{},instructor=ssInstructor(list);
+      const objective={1:'1',2:'4',3:'5',5:'3'}[String(course?.objectiveCode||'')]||'';
+      const result={claveCurso:'',inicio:list.fecha||'',fin:list.fecha||'',estado:'2',municipio:'2',area:SirceListados.areaCode(h.area||course?.theme),modalidad:SirceListados.code('modalities',h.modalidad||course?.modality),objetivo:objective,agente:(instructor?.type||h.clasificacion||course?.instructorClass)==='Externo'?'2':'1',rfc:instructor?.rfc||'',...list.sirceDatos,establecimiento:'862341'};
+      if(instructor){result.agente=instructor.type==='Interno'?'1':'2';result.rfc=instructor.type==='Interno'?'':result.rfc||instructor.rfc||'';}
+      return result;
+    }
+    function ssSelect(field,label,kind,value,rows=null){return '<label>'+label+'<select data-sirce-field="'+field+'"><option value="">Selecciona del catálogo</option>'+(rows||SirceListados.catalogs[kind]).map(item=>'<option value="'+atE(item.code)+'" '+(String(value)===item.code?'selected':'')+'>'+atE(item.code+' · '+item.name)+'</option>').join('')+'</select></label>';}
+    function ssFields(list){
+      const m=ssDefaults(list),internal=(ssInstructor(list)?.type||list.encabezado?.clasificacion||list.enc?.clasificacion)==='Interno'||m.agente==='1',state=SirceListados.catalogs.states.find(row=>row.code===m.estado);
+      return '<div class="sirce-fields"><label>CLAVE CURSO SIRCE · opcional al capturar<input data-sirce-field="claveCurso" value="'+atE(m.claveCurso)+'" placeholder="Completar después del alta en SIRCE" autocomplete="off"></label><label>Establecimiento<input readonly value="862341"></label><label>Fecha de inicio<input type="date" data-sirce-field="inicio" value="'+atE(m.inicio)+'"></label><label>Fecha de término<input type="date" data-sirce-field="fin" value="'+atE(m.fin)+'"></label>'+ssSelect('estado','Estado','states',m.estado)+ssSelect('municipio','Municipio','municipalities',m.municipio,SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)))+ssSelect('area','Área temática','areas',m.area)+ssSelect('modalidad','Modalidad','modalities',m.modalidad)+ssSelect('objetivo','Objetivo de capacitación','objectives',m.objetivo)+ssSelect('agente','Tipo de agente','agents',m.agente).replace('<select ',ssInstructor(list)?'<select disabled ':'<select ')+'<label data-sirce-rfc '+(internal?'hidden':'')+'>RFC AGENTE STPS<input data-sirce-field="rfc" value="'+atE(internal?'':m.rfc)+'"></label></div><p class="form-hint">La clave corresponde a este listado, no al código del curso en el glosario. Interno: RFC AGENTE STPS vacío. Los catálogos son los archivos que proporcionaste.</p>';
+    }
+    function ssRead(root){const data={establecimiento:'862341'};root.querySelectorAll('[data-sirce-field]').forEach(input=>data[input.dataset.sirceField]=input.value.trim());if(data.agente==='1')data.rfc='';return data;}
+    function ssKeyAvailable(id,key){if(key&&attendance.some(list=>list.id!==id&&String(list.sirceDatos?.claveCurso||'').trim()===key))throw Error('Esta CLAVE CURSO ya está asignada a otro listado.');}
+    function ssRefreshFields(root,target){
+      if(target.dataset.sirceField==='estado'){
+        const state=SirceListados.catalogs.states.find(row=>row.code===target.value),select=root.querySelector('[data-sirce-field="municipio"]');select.innerHTML='<option value="">Selecciona municipio</option>'+SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)).map(row=>'<option value="'+atE(row.code)+'">'+atE(row.code+' · '+row.name)+'</option>').join('');
+      }
+      if(target.dataset.sirceField==='agente'){const internal=target.value==='1';root.querySelector('[data-sirce-rfc]').hidden=internal;if(internal)root.querySelector('[data-sirce-field="rfc"]').value='';}
+    }
+    function ssOpen(id){
+      const list=attendance.find(row=>row.id===id);if(!list)return;
+      atDialog('<div class="att-dlg sirce-dialog" data-sirce-list-id="'+atE(id)+'"><div class="dialog-head"><div><div class="eyebrow">SIRCE · LISTADO DE ASISTENCIA</div><h2>'+atE(list.cursoNombre||list.cursoCodigo)+'</h2></div><button type="button" class="close-dialog" data-att="cerrar" aria-label="Cerrar">×</button></div><p>Listado '+atE(list.id)+' · '+atE(atFmt(list.fecha))+'</p>'+ssFields(list)+'<p id="sirce-result" role="status"></p><div class="dialog-actions"><button class="button outline" data-sirce-action="save">Guardar datos SIRCE</button><button class="button outline" data-sirce-action="csv">Descargar CSV</button><button class="button outline" data-sirce-action="print">Imprimir</button><button class="button primary" data-sirce-action="xlsx">Descargar Excel SIRCE</button></div></div>');
+    }
+    async function ssSave(list,root){
+      const data=ssRead(root);ssKeyAvailable(list.id,data.claveCurso);
+      const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,actualizado:new Date().toISOString()}:row);
+      await persistCollection('samara.attendance.v1',next);attendance=next;return next.find(row=>row.id===list.id);
+    }
+    function ssResult(list){const course=courses.find(row=>row.code===list.cursoCodigo);return SirceListados.rows(list,employees,positions,course,ssInstructor(list));}
+    function ssBulkDialog(){
+      atDialog('<div class="att-dlg"><div class="dialog-head"><div><div class="eyebrow">ACTUALIZAR LISTADOS EXISTENTES</div><h2>Carga masiva de claves SIRCE</h2></div><button type="button" class="close-dialog" data-att="cerrar" aria-label="Cerrar">×</button></div><p>Descarga la plantilla, completa CLAVE CURSO y vuelve a subirla. Conserva ID LISTADO. No se crean cursos ni listados nuevos.</p><button class="button outline" data-sirce-action="template">Descargar plantilla de claves</button><label>Archivo CSV o Excel<input type="file" id="sirce-bulk-file" accept=".csv,.xlsx"></label><div id="sirce-bulk-preview" role="status"></div><div class="dialog-actions"><button class="button primary" id="sirce-bulk-apply" data-sirce-action="apply" disabled>Guardar claves revisadas</button></div></div>');
+    }
+    let ssBulkPlan=null;
+    document.addEventListener('change',async event=>{
+      const input=event.target;
+      if(input.matches('[data-sirce-field]')){const root=input.closest('.sirce-dialog')||$('#att-root');ssRefreshFields(root,input);if(AT.ed&&!input.closest('.sirce-dialog'))AT.ed.sirceDatos=ssRead(root);}
+      if(input.id!=='sirce-bulk-file'||!input.files?.[0])return;
+      ssBulkPlan=null;$('#sirce-bulk-apply').disabled=true;
+      try{
+        const file=input.files[0],table=file.name.toLowerCase().endsWith('.xlsx')?await readXlsx(file):parseCsv((await file.text()).replace(/^\uFEFF/,''));
+        const plan=SirceListados.bulkPlan(table,attendance);ssBulkPlan=plan;
+        $('#sirce-bulk-preview').textContent=plan.errors.length?'No se guardará nada. Corrige:\n'+plan.errors.join('\n'):plan.changes.length+' listado(s) por actualizar · '+plan.unchanged+' sin cambios.\n'+plan.changes.map(row=>row.id+' · '+row.date+' · '+row.course+' → '+row.key+(row.previous?' (sustituye '+row.previous+')':'')).join('\n');
+        $('#sirce-bulk-apply').disabled=!!plan.errors.length||!plan.changes.length;
+      }catch(error){$('#sirce-bulk-preview').textContent=error.message;}
+    });
+    document.addEventListener('input',event=>{if(AT.ed&&event.target.matches('#att-root [data-sirce-field]'))AT.ed.sirceDatos=ssRead($('#att-root'));});
+    document.addEventListener('click',async event=>{
+      const open=event.target.closest('[data-sirce-open]');if(open){ssOpen(open.dataset.sirceOpen);return;}
+      if(event.target.closest('[data-sirce-bulk]')){ssBulkDialog();return;}
+      const button=event.target.closest('[data-sirce-action]');if(!button||button.disabled)return;
+      const action=button.dataset.sirceAction;
+      if(action==='template'){exportCsv('Plantilla-claves-SIRCE.csv',[['ID LISTADO','NOMENCLATURA','FECHA','INSTRUCTOR','CLAVE CURSO'],...attendance.map(list=>[list.id,list.cursoCodigo,list.fecha,list.encabezado?.instructor||'',list.sirceDatos?.claveCurso||''])]);return;}
+      button.disabled=true;
+      try{
+        if(action==='apply'){
+          if(!ssBulkPlan||ssBulkPlan.errors.length)return;
+          const table=[['ID LISTADO','CLAVE CURSO'],...ssBulkPlan.changes.map(row=>[row.id,row.key])],fresh=SirceListados.bulkPlan(table,attendance);
+          if(fresh.errors.length)throw Error(fresh.errors.join('\n'));
+          if(!await appConfirm('¿Guardar '+fresh.changes.length+' claves en los listados existentes?'+(fresh.changes.some(row=>row.previous)?' Se sustituirán claves que ya estaban capturadas.':'')))return;
+          const changes=new Map(fresh.changes.map(row=>[row.id,row.key])),next=attendance.map(list=>changes.has(list.id)?{...list,sirceDatos:{...ssDefaults(list),claveCurso:changes.get(list.id)},actualizado:new Date().toISOString()}:list);
+          await persistCollection('samara.attendance.v1',next);attendance=next;ssBulkPlan=null;$('#sirce-bulk-preview').textContent='Claves guardadas. No se crearon cursos ni listados.';renderAttendance();return;
+        }
+        const root=button.closest('.sirce-dialog');if(!root)return;let list=attendance.find(row=>row.id===root.dataset.sirceListId);if(!list)return;
+        list=await ssSave(list,root);renderAttendance();
+        if(action==='save'){$('#sirce-result').textContent='Datos SIRCE guardados. Puedes completar la clave posteriormente.';return;}
+        const result=ssResult(list);if(result.issues.length)throw Error(result.issues.join('\n'));
+        const note=result.rows.length+' asistentes exportados'+(result.excluded?' · '+result.excluded+' sin firma excluidos':'')+'.';
+        if(action==='xlsx'){const blob=await SirceListados.workbook(result);await window.descargarArchivo(blob,'SIRCE-'+list.sirceDatos.claveCurso+'.xlsx');}
+        if(action==='csv')exportCsv('SIRCE-'+list.sirceDatos.claveCurso+'.csv',[result.headers,...result.rows]);
+        if(action==='print'){
+          $('#att-dialog').close();$('#print-stage').innerHTML='<article class="sirce-print"><h1>Listado de asistencia SIRCE</h1><p>'+atE(list.cursoNombre)+' · Establecimiento 862341</p><table><thead><tr>'+result.headers.map(header=>'<th>'+atE(header)+'</th>').join('')+'</tr></thead><tbody>'+result.rows.map(row=>'<tr>'+row.map(value=>'<td>'+atE(value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></article>';printPreparedDocument(true);
+        }else $('#sirce-result').textContent=note;
+      }catch(error){const target=$('#sirce-result')||$('#sirce-bulk-preview');if(target)target.textContent='No se completó: '+error.message;else toast(error.message);}finally{button.disabled=false;}
+    });
     async function atGuardar() {
       const e = AT.ed;
       if (atBloqueos().length) {
@@ -2895,6 +2978,9 @@ function normalizePersonNames(key, value) {
       const c = atC(e.cursoCodigo),
         w = atAvisos();
       const doc = {
+        ...(attendance.find(list=>list.id===e.id)||{}),
+        sirceDatos: e.sirceDatos || ssDefaults(e),
+        sirceInstructorId: atEstadoIns().i?.id || e.sirceInstructorId || '',
         id: e.id || "lst-".concat(Date.now()),
         origen: e.origen || '',
         cursoCodigo: e.cursoCodigo,
@@ -2927,6 +3013,7 @@ function normalizePersonNames(key, value) {
         estado: w ? 'Por validar' : 'Validada',
         actualizado: new Date().toISOString()
       };
+      try{ssKeyAvailable(doc.id,doc.sirceDatos.claveCurso);}catch(error){$('#att-msg').textContent=error.message;return;}
       const button = $('#att-save');
       if (button.disabled) return;
       button.disabled = true;
@@ -3425,8 +3512,13 @@ function normalizePersonNames(key, value) {
       } else if (t.id === 'att-curso') {
         AT.ed.cursoCodigo = t.value;
         AT.ed.encOk = {};
+        AT.ed.sirceDatos=ssDefaults({...AT.ed,sirceDatos:null});
         atPintar();
-      } else if (t.id === 'att-fecha') AT.ed.fecha = t.value;else if (t.dataset.h) {
+        $('#att-sirce-fields').innerHTML=ssFields(AT.ed);
+      } else if (t.id === 'att-fecha') {
+        const previous=AT.ed.fecha;AT.ed.fecha=t.value;
+        const root=$('#att-root');root.querySelectorAll('[data-sirce-field="inicio"],[data-sirce-field="fin"]').forEach(input=>{if(!input.value||input.value===previous)input.value=t.value;});AT.ed.sirceDatos=ssRead(root);
+      }else if (t.dataset.h) {
         AT.ed.enc[t.dataset.h] = t.value;
         delete AT.ed.encOk[t.dataset.h];
         atPintar();
