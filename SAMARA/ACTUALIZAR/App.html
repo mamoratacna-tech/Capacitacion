@@ -13,7 +13,7 @@
       blocked: false,
       timer: null
     };
-    const cloudKeys = ['samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    const cloudKeys = ['samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
     function appConfirm(message) {
       return new Promise(resolve => {
         const dialog = document.createElement('dialog');
@@ -359,6 +359,10 @@
       department: course.department || course.code?.split('-')[0] || '',
       entity: course.entity || course.code?.match(/-(SAMARA|TACNA)\d+$/i)?.[1] || ''
     }));
+    const defaultCourseDepartments = new Map([['RH','Recursos Humanos'],['EHS','Seguridad e higiene'],['QC','Calidad']]);
+    courses.forEach(course=>{ const code = course.department || course.code?.split('-')[0]; if(code && !defaultCourseDepartments.has(code)) defaultCourseDepartments.set(code,code); });
+    let courseDepartments = loadStore('samara.courseDepartments.v1',[...defaultCourseDepartments].map(([abbreviation,name])=>({id:abbreviation,abbreviation,name,aliases:[]})));
+    let editingDepartmentId = null;
     let editingCourseCode = null,
       editingEmployeeCurp = null,
       editingPositionJob = null,
@@ -584,6 +588,7 @@
       }
       const matching = instructors.filter(item => item.type === type);
       $('#course-instructor-options').innerHTML = matching.map(item => "<label class=\"instructor-option\"><input type=\"checkbox\" name=\"instructorIds\" value=\"".concat(escapeHtml(item.id), "\" ").concat(selected.has(item.id) ? 'checked' : '', "><span>").concat(escapeHtml(fullInstructorName(item)), "</span></label>")).join('') || '<p class="form-hint">Da de alta instructores certificados para seleccionarlos aquí.</p>';
+      filterCourseInstructors();
       updateInstructorSelectionLabel();
     }
     function updateInstructorSelectionLabel() {
@@ -728,6 +733,11 @@
         renderSessions();
       }
       saveStore('samara.instructors.v1', instructors);
+      if(courseDialog.open){
+        const selected=$$('#course-instructor-options input:checked').map(input=>input.value);
+        if(item.type===$('#course-instructor-class').value) selected.push(item.id);
+        fillCourseInstructorOptions({instructorIds:[...new Set(selected)]});
+      }
       instructorDialog.close();
       renderInstructors();
       toast('Instructor actualizado.');
@@ -780,7 +790,7 @@
     }
     function renderCmcap() {
       const legalName = String(legalRepresentative[0]?.name || '').trim().toLocaleUpperCase('es-MX');
-      $('#legal-card').innerHTML = legalName ? '<strong class="legal-full-name">'+escapeHtml(legalName)+'</strong><div class="legal-actions"><button type="button" class="button outline" data-legal-edit>✎ Editar</button><button type="button" class="button outline" data-legal-delete>Eliminar</button></div>' : '<p>Sin representante legal registrado. Agrega uno para emitir las DC-3.</p><button type="button" class="button primary" data-legal-edit>＋ Agregar representante legal</button>';
+      $('#legal-card').innerHTML = legalName ? '<div class="legal-row"><strong class="legal-full-name">'+escapeHtml(legalName)+'</strong><div class="legal-actions"><button type="button" class="button outline" data-legal-edit aria-label="Editar representante legal">✎</button><button type="button" class="button outline" data-legal-delete>Eliminar</button></div></div>' : '<p>Sin representante legal registrado. Agrega uno para emitir las DC-3.</p><button type="button" class="button primary" data-legal-edit>＋ Agregar representante legal</button>';
       $('#cmcap-grid').innerHTML = '<div class="table-scroll"><table class="cmcap-table"><thead><tr><th>Integrante</th><th>Puesto</th><th>Desde</th><th>Hasta (inclusive)</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' + cmcapMembers.map((member,index) => {
         const status = Cmcap.status(member);
         return '<tr><td><b>'+escapeHtml(member.name||'Sin asignar')+'</b></td><td>'+escapeHtml(Cmcap.role(member.role))+'</td><td>'+escapeHtml(member.startDate||'—')+'</td><td>'+escapeHtml(member.endDate||'—')+'</td><td><span class="cmcap-status cmcap-'+status.kind+'">'+status.text+'</span></td><td><button class="button outline" data-cmcap-edit="'+index+'" aria-label="Editar integrante">✎</button> <button class="button outline" data-cmcap-delete="'+index+'" aria-label="Eliminar integrante">Eliminar</button></td></tr>';
@@ -962,24 +972,87 @@
       $(id)?.addEventListener('click', () => exportCsv(filename, [headers, ...getRows()]));
     }
 
-    // Course editor and position-by-course assignment
-    function renderCoursePositionChecklist(selected = [], query = '') {
-      const q = query.toLowerCase(),
-        selectedSet = new Set(selected);
-      const groups = new Map();
-      matrixPositions.forEach(item => {
-        const dept = item.department || 'Sin departamento';
-        if (!groups.has(dept)) groups.set(dept, []);
-        groups.get(dept).push(item);
-      });
-      $('#course-job-checklist').innerHTML = [...groups.entries()].map(([department, items]) => {
-        const matches = items.filter(item => (item.job + ' ' + item.department).toLowerCase().includes(q));
-        if (!matches.length) return '';
-        const marked = matches.filter(item => selectedSet.has(item.id)).length;
-        return "<details class=\"position-group\" ".concat(q ? 'open' : '', "><summary>").concat(escapeHtml(department), " <small>").concat(marked, "/").concat(matches.length, " seleccionados</small></summary><div class=\"position-group-list\">").concat(matches.map(item => "<label class=\"position-check\"><input type=\"checkbox\" name=\"applicablePositions\" value=\"".concat(escapeHtml(item.id), "\" ").concat(selectedSet.has(item.id) ? 'checked' : '', "><span>").concat(escapeHtml(item.job), "</span></label>")).join(''), "</div></details>");
-      }).join('') || '<div class="empty-state">No hay puestos para esta búsqueda.</div>';
-      $('#selected-position-count').textContent = "".concat(selectedSet.size, " seleccionados");
+    function departmentCourses(department) {
+      const codes = [department.abbreviation,...(department.aliases || [])];
+      return courses.filter(course=>codes.includes(course.department || course.code?.split('-')[0]) || codes.some(code=>String(course.code||'').startsWith(code+'-')));
     }
+    function renderCourseDepartments() {
+      $('#course-departments-table').innerHTML = courseDepartments.map(department=>'<tr><td><b>'+escapeHtml(department.abbreviation)+'</b></td><td>'+escapeHtml(department.name)+'</td><td>'+departmentCourses(department).length+'</td><td><button type="button" class="button outline" data-department-edit="'+escapeHtml(department.id)+'" aria-label="Editar departamento">✎</button> <button type="button" class="button outline" data-department-delete="'+escapeHtml(department.id)+'">Eliminar</button></td></tr>').join('') || '<tr><td colspan="4">No hay departamentos. Agrega uno para crear cursos.</td></tr>';
+    }
+    function fillCourseDepartmentOptions(selected = '') {
+      const options = courseDepartments.map(department=>({value:department.abbreviation,label:department.abbreviation+' · '+department.name}));
+      if(selected && !options.some(option=>option.value===selected)) options.push({value:selected,label:selected+' · Código conservado'});
+      courseForm.elements.department.innerHTML = '<option value="">Selecciona departamento</option>'+options.map(option=>'<option value="'+escapeHtml(option.value)+'">'+escapeHtml(option.label)+'</option>').join('');
+      courseForm.elements.department.value = selected;
+    }
+    $$('[data-course-tab]').forEach(button=>button.addEventListener('click',()=>{
+      const settings = button.dataset.courseTab === 'settings';
+      $('#course-catalog-pane').hidden = settings; $('#course-settings-pane').hidden = !settings;
+      $$('[data-course-tab]').forEach(tab=>{const selected = tab===button;tab.classList.toggle('selected',selected);tab.setAttribute('aria-selected',String(selected));});
+      if(settings) renderCourseDepartments();
+    }));
+    function openDepartmentEditor(id = null) {
+      editingDepartmentId = id;
+      const item = courseDepartments.find(department=>department.id===id), form = $('#department-form');
+      form.reset(); form.elements.abbreviation.value = item?.abbreviation || ''; form.elements.departmentName.value = item?.name || '';
+      $('#department-form-title').textContent = item ? 'Editar departamento' : 'Agregar departamento';
+      $('#department-form-error').textContent = ''; $('#department-dialog').showModal();
+    }
+    $('#add-course-department').addEventListener('click',()=>openDepartmentEditor());
+    $('#department-form').addEventListener('submit',async event=>{
+      event.preventDefault();const form=event.target,button=form.querySelector('[type="submit"]');button.disabled=true;
+      try {
+        const abbreviation=form.elements.abbreviation.value.trim().toUpperCase(),name=form.elements.departmentName.value.trim();
+        if(!/^[A-Z][A-Z0-9]{0,11}$/.test(abbreviation)||!name) throw new Error('Completa el departamento y una abreviación de hasta 12 letras o números, comenzando por una letra.');
+        if(courseDepartments.some(item=>item.id!==editingDepartmentId && [item.abbreviation,...(item.aliases||[])].includes(abbreviation))) throw new Error('Esta abreviación ya está registrada.');
+        const previous=courseDepartments.find(item=>item.id===editingDepartmentId);
+        // Retain former abbreviations to identify courses without changing their codes.
+        const aliases=[...new Set([...(previous?.aliases||[]),...(previous && previous.abbreviation!==abbreviation?[previous.abbreviation]:[])])].filter(code=>code!==abbreviation);
+        const item={id:previous?.id || 'dept-'+crypto.randomUUID(),abbreviation,name,aliases};
+        const draft=previous?courseDepartments.map(department=>department.id===previous.id?item:department):[...courseDepartments,item];
+        await persistCollection('samara.courseDepartments.v1',draft);courseDepartments=draft;renderCourseDepartments();$('#department-dialog').close();
+        $('#course-departments-message').textContent='Departamento guardado.';
+      }catch(error){$('#department-form-error').textContent=error.message;}finally{button.disabled=false;}
+    });
+    $('#course-departments-table').addEventListener('click',async event=>{
+      const edit=event.target.closest('[data-department-edit]');if(edit){openDepartmentEditor(edit.dataset.departmentEdit);return;}
+      const button=event.target.closest('[data-department-delete]');if(!button||button.disabled)return;
+      const item=courseDepartments.find(department=>department.id===button.dataset.departmentDelete);if(!item)return;
+      button.disabled=true;
+      try{
+        const count=departmentCourses(item).length;
+        if(!await appConfirm('¿Eliminar '+item.name+' ('+item.abbreviation+')?'+(count?' Hay '+count+' curso(s) cargados con esta nomenclatura. Se conservarán sus cursos y códigos.':'')+' Ya no estará disponible para cursos nuevos.'))return;
+        const draft=courseDepartments.filter(department=>department.id!==item.id);
+        await persistCollection('samara.courseDepartments.v1',draft);courseDepartments=draft;renderCourseDepartments();$('#course-departments-message').textContent='Departamento eliminado.';
+      }catch(error){$('#course-departments-message').textContent=error.message;}finally{button.disabled=false;}
+    });
+    // Course editor and position-by-course assignment
+    function updatePositionGroupCounts() {
+      $$('#course-job-checklist .position-group').forEach(group=>{
+        const items=matrixPositions.filter(item=>(item.department||'Sin departamento')===group.dataset.department);
+        const marked=items.filter(item=>selectedCoursePositions.has(item.id)).length;
+        group.querySelector('small').textContent=marked+'/'+items.length+' seleccionados';
+        const check=group.querySelector('[data-select-department]');check.checked=marked===items.length;check.indeterminate=marked>0&&marked<items.length;
+      });
+      $('#selected-position-count').textContent=selectedCoursePositions.size+' seleccionados';
+    }
+    function renderCoursePositionChecklist(selected = [], query = '') {
+      const q=query.toLowerCase(),selectedSet=new Set(selected),groups=new Map();
+      matrixPositions.forEach(item=>{const department=item.department||'Sin departamento';if(!groups.has(department))groups.set(department,[]);groups.get(department).push(item);});
+      $('#course-job-checklist').innerHTML=[...groups].map(([department,items])=>{
+        const matches=items.filter(item=>(item.job+' '+item.department).toLowerCase().includes(q));if(!matches.length)return '';
+        return '<details class="position-group" data-department="'+escapeHtml(department)+'" '+(q?'open':'')+'><summary><input type="checkbox" data-select-department="'+escapeHtml(department)+'" aria-label="Seleccionar todos los puestos de '+escapeHtml(department)+'"><span class="position-group-name">'+escapeHtml(department)+'</span><small></small></summary><div class="position-group-list">'+matches.map(item=>'<label class="position-check"><input type="checkbox" name="applicablePositions" value="'+escapeHtml(item.id)+'" '+(selectedSet.has(item.id)?'checked':'')+'><span>'+escapeHtml(item.job)+'</span></label>').join('')+'</div></details>';
+      }).join('') || '<div class="empty-state">No hay puestos para esta búsqueda.</div>';
+      updatePositionGroupCounts();
+    }
+    $('#course-job-checklist').addEventListener('click',event=>{if(event.target.matches('[data-select-department]'))event.stopPropagation();});
+    $('#course-job-checklist').addEventListener('change',event=>{
+      if(!event.target.matches('[data-select-department]'))return;
+      const department=event.target.dataset.selectDepartment;
+      matrixPositions.filter(item=>(item.department||'Sin departamento')===department).forEach(item=>{if(event.target.checked)selectedCoursePositions.add(item.id);else selectedCoursePositions.delete(item.id);});
+      $$('#course-job-checklist [name="applicablePositions"]').forEach(input=>input.checked=selectedCoursePositions.has(input.value));
+      updatePositionGroupCounts();
+    });
     function nextCourseCode(department, entity) {
       const prefix = "".concat(department, "-").concat(entity),
         existing = courses.find(course => course.code === editingCourseCode);
@@ -998,6 +1071,8 @@
       const c = courses.find(item => item.code === code);
       selectedCoursePositions = new Set(c?.applicablePositions || []);
       courseForm.reset();
+      fillCourseDepartmentOptions(c?.department || c?.code?.split('-')[0] || '');
+      $('#course-instructor-search').value = '';
       $('#course-form-title').textContent = c ? 'Editar curso' : 'Agregar curso';
       for (const key of ['name', 'duration', 'modality', 'official', 'category', 'frequency', 'ec', 'revision', 'theme', 'sirce']) courseForm.elements[key].value = c?.[key] ?? '';
       courseForm.elements.activeStatus.value = c?.activeStatus || 'Activo';
@@ -1017,12 +1092,18 @@
       updateCourseCodePreview();
       courseDialog.showModal();
     }
+    $('#course-add-instructor').addEventListener('click',()=>openInstructorEditor('', $('#course-instructor-class').value));
+    $('#course-instructor-search').addEventListener('input',filterCourseInstructors);
+    function filterCourseInstructors(){
+      const query=norm($('#course-instructor-search').value);
+      $$('#course-instructor-options .instructor-option').forEach(option=>option.hidden=!norm(option.textContent).includes(query));
+    }
     $('#course-instructor-class').addEventListener('change', () => fillCourseInstructorOptions());
     $('#course-instructor').addEventListener('change', updateInstructorSelectionLabel);
     courseForm.addEventListener('change', event => {
       if (event.target.matches('[name="applicablePositions"]')) {
         if (event.target.checked) selectedCoursePositions.add(event.target.value);else selectedCoursePositions.delete(event.target.value);
-        $('#selected-position-count').textContent = "".concat(selectedCoursePositions.size, " seleccionados");
+        updatePositionGroupCounts();
       }
       if (['department', 'entity'].includes(event.target.name)) updateCourseCodePreview();
     });

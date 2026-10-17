@@ -32,7 +32,7 @@ function api_delete(entity,id){if(!SHEETS[entity])throw Error('Sección desconoc
 function api_importEmployees(rows){if(!Array.isArray(rows)||!rows.length)return 0;const ss=database_(),sh=ss.getSheetByName('empleados'),headers=SHEETS.empleados;let count=0;rows.slice(1).forEach(r=>{if(!r||!r.some(x=>String(x||'').trim()))return;const o={id:Utilities.getUuid(),no:String(sh.getLastRow()),curp:r[1]||'',nombres:r[2]||'',apellidoPaterno:r[3]||'',apellidoMaterno:r[4]||'',estudios:r[5]||'',docProbatorio:r[6]||'',tipoInstitucion:r[7]||'',puestoId:'',estado:'Activo'};sh.appendRow(headers.map(h=>o[h]||''));count++;});return count;}
 
 // Store the advanced Site's collections in the existing DB. Legacy tabs remain intact.
-const APP_KEYS_ = ['samara.legalRepresentative.v1','samara.attendanceMigration.v1','samara.attendance.v1','samara.matrixPositions.v2','samara.positions.v2','samara.occupationCatalog.v1','samara.employees.v2','samara.demoEmployees.v1','samara.instructors.v1','samara.cmcap.v2','samara.courses.v2'];
+const APP_KEYS_ = ['samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendanceMigration.v1','samara.attendance.v1','samara.matrixPositions.v2','samara.positions.v2','samara.occupationCatalog.v1','samara.employees.v2','samara.demoEmployees.v1','samara.instructors.v1','samara.cmcap.v2','samara.courses.v2'];
 function appSheet_(ss){
   let sheet=ss.getSheetByName('SAMARA_AppState');
   if(!sheet){sheet=ss.insertSheet('SAMARA_AppState');sheet.appendRow(['Colección','Parte','JSON']);sheet.setFrozenRows(1);sheet.getRange(1,1,1,3).setFontWeight('bold').setBackground('#eaf2f2');}
