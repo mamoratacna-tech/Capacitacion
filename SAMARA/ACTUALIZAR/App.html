@@ -14,6 +14,23 @@
       timer: null
     };
     const cloudKeys = ['samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    function appConfirm(message) {
+      return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'app-confirm';
+        dialog.setAttribute('aria-labelledby','app-confirm-title');
+        dialog.innerHTML = '<div class="record-editor"><div class="dialog-head"><div><div class="eyebrow">SAMARA</div><h2 id="app-confirm-title">Confirmar acción</h2></div><button type="button" class="close-dialog" aria-label="Cerrar">×</button></div><p class="confirm-message"></p><div class="dialog-actions"><button type="button" class="button outline" data-answer="cancel">Cancelar</button><button type="button" class="button primary" data-answer="accept">Aceptar</button></div></div>';
+        dialog.querySelector('.confirm-message').textContent = message;
+        dialog.addEventListener('click',event => {
+          const button = event.target.closest('button');
+          if (button) dialog.close(button.dataset.answer || 'cancel');
+        });
+        dialog.addEventListener('close',()=>{ const accepted = dialog.returnValue === 'accept'; dialog.remove(); resolve(accepted); },{once:true});
+        document.body.append(dialog);
+        dialog.showModal();
+        dialog.querySelector('[data-answer="cancel"]').focus();
+      });
+    }
     function googleCall(method, ...args) {
       return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args));
     }
@@ -315,7 +332,7 @@
     let legalRepresentative = loadStore('samara.legalRepresentative.v1', [{name: 'Mirna Ulbrich Labastida'}]);
     let cmcapEditing = null;
     function legalSigner() {
-      const name = String(legalRepresentative[0]?.name || '').trim();
+      const name = String(legalRepresentative[0]?.name || '').trim().toLocaleUpperCase('es-MX');
       if (!name) throw new Error('Completa el representante legal en CMCAP.');
       return name;
     }
@@ -421,10 +438,10 @@
         status = $('#course-status')?.value || 'Todos';
       return courses.filter(course => [course.code, course.name, course.instructor, course.owner, course.area, course.theme].join(' ').toLowerCase().includes(query) && (sirce === 'Todos' || norm(course.sirce) === norm(sirce)) && (status === 'Todos' || (course.activeStatus || 'Activo') === status)).sort(compareCourseCodes);
     }
-    function deleteCourse(code) {
+    async function deleteCourse(code) {
       const course = courses.find(item => item.code === code);
       if (!course) return;
-      if (!window.confirm("¿Eliminar ".concat(code, " · ").concat(course.name, "? Se quitará del glosario y de la matriz."))) return;
+      if (!await appConfirm("¿Eliminar ".concat(code, " · ").concat(course.name, "? Se quitará del glosario y de la matriz."))) return;
       courses = courses.filter(item => item.code !== code);
       matrixPositions = matrixPositions.map(position => {
         const applies = {
@@ -476,10 +493,10 @@
       renderCourses();
       renderSessions();
     });
-    function deleteMatrixPosition(id) {
+    async function deleteMatrixPosition(id) {
       const position = matrixPositions.find(item => item.id === id);
       if (!position) return;
-      if (!window.confirm("¿Eliminar ".concat(position.job, " de ").concat(position.department, " en la matriz? Se quitarán sus asignaciones de cursos en este departamento."))) return;
+      if (!await appConfirm("¿Eliminar ".concat(position.job, " de ").concat(position.department, " en la matriz? Se quitarán sus asignaciones de cursos en este departamento."))) return;
       matrixPositions = matrixPositions.filter(item => item.id !== id);
       courses = courses.map(course => ({
         ...course,
@@ -762,7 +779,8 @@
       return Cmcap.member(cmcapMembers, role, date).name;
     }
     function renderCmcap() {
-      $('#legal-name').value = legalRepresentative[0]?.name || '';
+      const legalName = String(legalRepresentative[0]?.name || '').trim().toLocaleUpperCase('es-MX');
+      $('#legal-card').innerHTML = legalName ? '<strong class="legal-full-name">'+escapeHtml(legalName)+'</strong><div class="legal-actions"><button type="button" class="button outline" data-legal-edit>✎ Editar</button><button type="button" class="button outline" data-legal-delete>Eliminar</button></div>' : '<p>Sin representante legal registrado. Agrega uno para emitir las DC-3.</p><button type="button" class="button primary" data-legal-edit>＋ Agregar representante legal</button>';
       $('#cmcap-grid').innerHTML = '<div class="table-scroll"><table class="cmcap-table"><thead><tr><th>Integrante</th><th>Puesto</th><th>Desde</th><th>Hasta (inclusive)</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' + cmcapMembers.map((member,index) => {
         const status = Cmcap.status(member);
         return '<tr><td><b>'+escapeHtml(member.name||'Sin asignar')+'</b></td><td>'+escapeHtml(Cmcap.role(member.role))+'</td><td>'+escapeHtml(member.startDate||'—')+'</td><td>'+escapeHtml(member.endDate||'—')+'</td><td><span class="cmcap-status cmcap-'+status.kind+'">'+status.text+'</span></td><td><button class="button outline" data-cmcap-edit="'+index+'" aria-label="Editar integrante">✎</button> <button class="button outline" data-cmcap-delete="'+index+'" aria-label="Eliminar integrante">Eliminar</button></td></tr>';
@@ -793,24 +811,48 @@
       const button = event.target.closest('[data-cmcap-delete]');
       if (!button || button.disabled) return;
       const index = Number(button.dataset.cmcapDelete);
-      if (!confirm('¿Eliminar a '+cmcapMembers[index].name+' de la CMCAP? También dejará de aparecer como firmante en documentos de su vigencia.')) return;
+      if (!await appConfirm('¿Eliminar a '+cmcapMembers[index].name+' de la CMCAP? También dejará de aparecer como firmante en documentos de su vigencia.')) return;
       button.disabled = true;
       try {
         const draft = cmcapMembers.filter((_,i)=>i !== index);
         await persistCmcap(draft); cmcapMembers = draft; renderCmcap(); toast('Integrante eliminado.');
       } catch(error) { toast(error.message); button.disabled = false; }
     });
+    $('#legal-card').addEventListener('click', async event => {
+      if (event.target.closest('[data-legal-edit]')) {
+        $('#legal-form-title').textContent = legalRepresentative[0]?.name ? 'Editar representante legal' : 'Agregar representante legal';
+        $('#legal-name').value = String(legalRepresentative[0]?.name || '').toLocaleUpperCase('es-MX');
+        $('#legal-form-error').textContent = '';
+        $('#legal-dialog').showModal();
+        return;
+      }
+      const button = event.target.closest('[data-legal-delete]');
+      if (!button || button.disabled) return;
+      button.disabled = true;
+      try {
+        if (!await appConfirm('¿Eliminar al representante legal? Será necesario agregar uno para emitir las DC-3.')) return;
+        await persistCollection('samara.legalRepresentative.v1',[]);
+        legalRepresentative = []; renderCmcap();
+        $('#legal-message').textContent = 'Representante legal eliminado.';
+      } catch(error) { $('#legal-message').textContent = error.message; }
+      finally { button.disabled = false; }
+    });
+    $('#legal-name').addEventListener('input',event => {
+      const input = event.target, start = input.selectionStart, end = input.selectionEnd;
+      input.value = input.value.toLocaleUpperCase('es-MX');
+      input.setSelectionRange(start,end);
+    });
     $('#legal-form').addEventListener('submit', async event => {
       event.preventDefault();
-      const button = event.target.querySelector('button'); button.disabled = true;
+      const button = event.target.querySelector('[type="submit"]'); button.disabled = true;
       try {
-        const name = $('#legal-name').value.trim();
+        const name = $('#legal-name').value.trim().toLocaleUpperCase('es-MX');
         if (!name) throw new Error('Escribe el nombre completo del representante legal.');
         const draft = [{name}];
         await persistCollection('samara.legalRepresentative.v1',draft);
-        legalRepresentative = draft;
+        legalRepresentative = draft; renderCmcap(); $('#legal-dialog').close();
         $('#legal-message').textContent = 'Representante legal guardado. Se usará para firmar las DC-3.';
-      } catch(error) { $('#legal-message').textContent = error.message; }
+      } catch(error) { $('#legal-form-error').textContent = error.message; }
       finally { button.disabled = false; }
     });
     $('#cmcap-add-form').elements.startDate.addEventListener('change', event => {
@@ -855,7 +897,7 @@
         };
         const others = cmcapMembers.filter((_,index) => index !== cmcapEditing);
         Cmcap.validateAddition(others, member);
-        if (Cmcap.needsConfirmation(others,member) && !confirm('Habrá más de dos '+(member.role.startsWith('Vocal')?'vocales':'secretarios')+' vigentes al mismo tiempo. ¿Estás de acuerdo?')) return;
+        if (Cmcap.needsConfirmation(others,member) && !await appConfirm('Habrá más de dos '+(member.role.startsWith('Vocal')?'vocales':'secretarios')+' vigentes al mismo tiempo. ¿Estás de acuerdo?')) return;
         const draft = cmcapEditing === null ? [...cmcapMembers,member] : cmcapMembers.map((item,index)=>index === cmcapEditing ? member : item);
         await persistCmcap(draft);
         cmcapMembers = draft;
@@ -1856,11 +1898,11 @@
     renderPositions();
     renderInstructors();
     renderCmcap();
-    function deleteInstructor(id) {
+    async function deleteInstructor(id) {
       const item = instructors.find(row => row.id === id);
       if (!item) return;
       const linked = courses.filter(course => (course.instructorIds || [course.instructorId].filter(Boolean)).includes(id));
-      if (!confirm("¿Eliminar a ".concat(fullInstructorName(item), "?").concat(linked.length ? ' Se quitará de ' + linked.length + ' curso(s) asignado(s). Los cursos se conservarán.' : ''))) return;
+      if (!await appConfirm("¿Eliminar a ".concat(fullInstructorName(item), "?").concat(linked.length ? ' Se quitará de ' + linked.length + ' curso(s) asignado(s). Los cursos se conservarán.' : ''))) return;
       instructors = instructors.filter(row => row.id !== id);
       courses = courses.map(course => {
         const ids = course.instructorIds || [course.instructorId].filter(Boolean);

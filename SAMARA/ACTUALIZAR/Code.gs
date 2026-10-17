@@ -199,7 +199,7 @@ function api_cmcapFirmantes(fecha){
       if(matches.length!==1)throw Error(matches.length?'Hay vigencias superpuestas para '+puesto+'.':'No hay integrante vigente como '+puesto+' el '+fecha+'. Revisa la CMCAP.');
       return matches[0].name;
     };
-    return {legal:legal,trab:find('Representante de los trabajadores')};
+    return {legal:legal.toLocaleUpperCase('es-MX'),trab:find('Representante de los trabajadores')};
   }finally{lock.releaseLock();}
 }
 

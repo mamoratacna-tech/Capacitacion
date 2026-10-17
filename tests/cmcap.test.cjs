@@ -36,8 +36,8 @@ test('DC3 usa representante legal independiente del coordinador en backend',()=>
  const state={'samara.cmcap.v2':[{role:'Representante de los trabajadores',name:'Firma trabajadores',startDate:'2026-01-01',endDate:'2027-12-31'}]};
  const context={LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},appRead_:()=>({state}),appSheet_:()=>null,database_:()=>null};
  vm.createContext(context);vm.runInContext(fn,context);
- assert.equal(context.api_cmcapFirmantes('2026-10-16').legal,'Mirna Ulbrich Labastida');
+ assert.equal(context.api_cmcapFirmantes('2026-10-16').legal,'MIRNA ULBRICH LABASTIDA');
  state['samara.legalRepresentative.v1']=[{name:'Otra representante'}];
- assert.equal(context.api_cmcapFirmantes('2026-10-16').legal,'Otra representante');
+ assert.equal(context.api_cmcapFirmantes('2026-10-16').legal,'OTRA REPRESENTANTE');
  assert.equal(context.api_cmcapFirmantes('2026-10-16').trab,'Firma trabajadores');
 });
