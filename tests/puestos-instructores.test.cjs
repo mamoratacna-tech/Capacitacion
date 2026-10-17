@@ -10,8 +10,13 @@ test('instructor autorizado se agrega sin duplicarse ni quitar otros instructore
  const repeated=context.syncInstructorCourseAssignments(updated,instructor,[other,instructor]);assert.equal(repeated[0].instructorIds.join(','),'old,new');
 });
 test('puestos inactivos se excluyen por nombre de todos sus departamentos, activos anteriores se conservan',()=>{
- const context=vm.createContext({norm:value=>String(value||'').toLowerCase(),positions:[{job:'Operador',activeStatus:'Inactivo'},{job:'Técnico'},{job:'Supervisor',_legacy:{estado:'Inactivo'}}],matrixPositions:[{job:'OPERADOR',department:'A'},{job:'OPERADOR',department:'B'},{job:'Técnico',department:'A'},{job:'Supervisor',department:'A'}]});
+ const context=vm.createContext({matrixDepartments:[],norm:value=>String(value||'').toLowerCase(),positions:[{job:'Operador',activeStatus:'Inactivo'},{job:'Técnico'},{job:'Supervisor',_legacy:{estado:'Inactivo'}}],matrixPositions:[{job:'OPERADOR',department:'A'},{job:'OPERADOR',department:'B'},{job:'Técnico',department:'A'},{job:'Supervisor',department:'A'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
  assert.equal(context.activeMatrixPositions().length,1);assert.equal(context.activeMatrixPositions()[0].job,'Técnico');
  context.positions[0].activeStatus='Activo';assert.equal(context.activeMatrixPositions().length,3);
+});
+test('departamentos inactivos o eliminados excluyen sus puestos, incluidos nombres anteriores',()=>{
+ const context=vm.createContext({norm:value=>String(value||'').toLowerCase(),positions:[],matrixDepartments:[{name:'Producción general',aliases:['Producción'],activeStatus:'Inactivo'},{name:'Calidad',activeStatus:'Activo',deleted:true}],matrixPositions:[{job:'Uno',department:'Producción'},{job:'Dos',department:'Calidad'},{job:'Tres',department:'RH'}]});
+ vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
+ assert.equal(context.activeMatrixPositions().length,1);assert.equal(context.activeMatrixPositions()[0].department,'RH');context.matrixDepartments[0].activeStatus='Activo';assert.equal(context.activeMatrixPositions().length,2);
 });

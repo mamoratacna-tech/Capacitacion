@@ -13,7 +13,7 @@
       blocked: false,
       timer: null
     };
-    const cloudKeys = ['samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    const cloudKeys = ['samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
     function appConfirm(message) {
       return new Promise(resolve => {
         const dialog = document.createElement('dialog');
@@ -343,6 +343,9 @@ function normalizePersonNames(key, value) {
     }
     let instructors = loadStore('samara.instructors.v1', []);
     let activeInstructorModule = 'Interno';
+    function currentDepartmentNames() {return [...new Map([...matrixPositions.map(item=>item.department),...employees.map(item=>item.department),...instructors.map(item=>item.employeeDepartment)].filter(Boolean).map(name=>[norm(name),name])).values()];}
+    let matrixDepartments=loadStore('samara.matrixDepartments.v1',currentDepartmentNames().map(name=>({id:'md-'+crypto.randomUUID(),name,activeStatus:'Activo',aliases:[]})));
+    let editingMatrixDepartmentId=null;
     const cmcapRoles = Cmcap.roles;
     let cmcapMembers = loadStore('samara.cmcap.v2', []);
     let legalRepresentative = loadStore('samara.legalRepresentative.v1', [{name: 'Mirna Ulbrich Labastida'}]);
@@ -529,9 +532,13 @@ function normalizePersonNames(key, value) {
       toast('Puesto eliminado de la matriz.');
     }
     function positionIsActive(position) {return norm(position.activeStatus || position.status || position._legacy?.estado || 'Activo') !== 'inactivo';}
+    function matrixDepartmentIsActive(name) {
+      const department=matrixDepartments.find(item=>[item.name,...(item.aliases||[])].some(value=>norm(value)===norm(name)));
+      return !department || (!department.deleted && department.activeStatus!=='Inactivo');
+    }
     function activeMatrixPositions() {
       const inactive=new Set(positions.filter(position=>!positionIsActive(position)).map(position=>norm(position.job)));
-      return matrixPositions.filter(position=>!inactive.has(norm(position.job)));
+      return matrixPositions.filter(position=>!inactive.has(norm(position.job))&&matrixDepartmentIsActive(position.department));
     }
     function filteredMatrixRows() {
       const query = ($('#matrix-search').value || '').toLowerCase(),
@@ -998,7 +1005,8 @@ function normalizePersonNames(key, value) {
         renderCourses();
       }
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
-      $$('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === (name === 'positions' ? 'matrix' : name)));
+      $$('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === (['positions','departments'].includes(name) ? 'matrix' : name)));
+      if (name === 'departments') renderMatrixDepartments();
       if (name === 'cmcap') renderCmcap();
       if (name === 'attendance') renderAttendance();
       const labels = {
@@ -1008,6 +1016,7 @@ function normalizePersonNames(key, value) {
         matrix: 'Matriz',
         people: 'Empleados',
         positions: 'Puestos en SIRCE',
+        departments: 'Departamentos',
         instructors: 'Instructores certificados',
         cmcap: 'CMCAP',
         reports: 'Reportes'
@@ -1036,6 +1045,59 @@ function normalizePersonNames(key, value) {
       $(id)?.addEventListener('click', () => exportCsv(filename, [headers, ...getRows()]));
     }
 
+    function syncMatrixDepartments() {
+      const known=new Set(matrixDepartments.flatMap(item=>[item.name,...(item.aliases||[])]).map(norm));
+      const missing=currentDepartmentNames().filter(name=>!known.has(norm(name)));
+      if(missing.length){matrixDepartments=[...matrixDepartments,...missing.map(name=>({id:'md-'+crypto.randomUUID(),name,activeStatus:'Activo',aliases:[]}))];saveStore('samara.matrixDepartments.v1',matrixDepartments);}
+    }
+    function renderMatrixDepartments() {
+      syncMatrixDepartments();
+      const query=norm($('#matrix-department-search').value),status=$('#matrix-department-status').value;
+      const rows=matrixDepartments.filter(item=>!item.deleted&&norm(item.name).includes(query)&&(status==='Todos'||(item.activeStatus||'Activo')===status)).sort((a,b)=>a.name.localeCompare(b.name,'es',{numeric:true}));
+      $('#matrix-departments-table').innerHTML=rows.map(item=>{
+        const count=matrixPositions.filter(position=>norm(position.department)===norm(item.name)).length;
+        return '<tr><td><b>'+escapeHtml(item.name)+'</b></td><td>'+count+'</td><td><span class="tag '+(item.activeStatus==='Inactivo'?'soft':'green')+'">'+(item.activeStatus||'Activo')+'</span></td><td><button type="button" class="button outline" data-matrix-department-edit="'+escapeHtml(item.id)+'" aria-label="Editar departamento">✎</button> <button type="button" class="button outline" data-matrix-department-delete="'+escapeHtml(item.id)+'">Eliminar</button></td></tr>';
+      }).join('')||'<tr><td colspan="4">No hay departamentos para esta búsqueda.</td></tr>';
+    }
+    function openMatrixDepartmentEditor(id=null) {
+      editingMatrixDepartmentId=id;const form=$('#matrix-department-form'),item=matrixDepartments.find(department=>department.id===id);
+      form.reset();form.elements.name.value=item?.name||'';form.elements.activeStatus.value=item?.activeStatus||'Activo';
+      $('#matrix-department-title').textContent=item?'Editar departamento':'Agregar departamento';$('#matrix-department-error').textContent='';$('#matrix-department-dialog').showModal();
+    }
+    $('#add-matrix-department').addEventListener('click',()=>openMatrixDepartmentEditor());
+    $('#matrix-department-search').addEventListener('input',renderMatrixDepartments);
+    $('#matrix-department-status').addEventListener('change',renderMatrixDepartments);
+    $('#matrix-department-form').addEventListener('submit',async event=>{
+      event.preventDefault();const form=event.target,button=form.querySelector('[type="submit"]');button.disabled=true;
+      try{
+        const name=form.elements.name.value.trim(),activeStatus=form.elements.activeStatus.value;
+        if(!name)throw new Error('Escribe el nombre del departamento.');
+        if(matrixDepartments.some(item=>!item.deleted&&item.id!==editingMatrixDepartmentId&&[item.name,...(item.aliases||[])].some(value=>norm(value)===norm(name))))throw new Error('Ya existe ese departamento.');
+        const previous=matrixDepartments.find(item=>item.id===editingMatrixDepartmentId)||matrixDepartments.find(item=>item.deleted&&[item.name,...(item.aliases||[])].some(value=>norm(value)===norm(name)));
+        const aliases=[...new Set([...(previous?.aliases||[]),...(previous&&norm(previous.name)!==norm(name)?[previous.name]:[])])].filter(alias=>norm(alias)!==norm(name));
+        const item={...(previous||{}),id:previous?.id||'md-'+crypto.randomUUID(),name,activeStatus,aliases,deleted:false};
+        const draft=previous?matrixDepartments.map(department=>department.id===previous.id?item:department):[...matrixDepartments,item];
+        const renamed=previous&&previous.name!==name;
+        const nextMatrix=renamed?matrixPositions.map(position=>norm(position.department)===norm(previous.name)?{...position,department:name}:position):matrixPositions;
+        const nextEmployees=renamed?employees.map(employee=>norm(employee.department)===norm(previous.name)?{...employee,department:name}:employee):employees;
+        const nextInstructors=renamed?instructors.map(instructor=>norm(instructor.employeeDepartment)===norm(previous.name)?{...instructor,employeeDepartment:name}:instructor):instructors;
+        const updates={'samara.matrixDepartments.v1':draft};
+        if(renamed){updates['samara.matrixPositions.v2']=nextMatrix;updates['samara.employees.v2']=nextEmployees;updates['samara.instructors.v1']=nextInstructors;}
+        await persistCollections(updates);matrixDepartments=draft;matrixPositions=nextMatrix;employees=nextEmployees;instructors=nextInstructors;
+        renderMatrixDepartments();renderMatrix();$('#matrix-department-dialog').close();$('#matrix-departments-message').textContent='Departamento guardado.';
+      }catch(error){$('#matrix-department-error').textContent=error.message;}finally{button.disabled=false;}
+    });
+    $('#matrix-departments-table').addEventListener('click',async event=>{
+      const edit=event.target.closest('[data-matrix-department-edit]');if(edit){openMatrixDepartmentEditor(edit.dataset.matrixDepartmentEdit);return;}
+      const button=event.target.closest('[data-matrix-department-delete]');if(!button||button.disabled)return;
+      const item=matrixDepartments.find(department=>department.id===button.dataset.matrixDepartmentDelete);if(!item)return;button.disabled=true;
+      try{
+        const count=matrixPositions.filter(position=>norm(position.department)===norm(item.name)).length;
+        if(!await appConfirm('¿Eliminar el departamento '+item.name+'?'+(count?' Tiene '+count+' puesto(s).':'')+' Sus puestos y asignaciones se conservarán, pero quedarán fuera de la matriz hasta que vuelvas a agregar el departamento.'))return;
+        const draft=matrixDepartments.map(department=>department.id===item.id?{...department,deleted:true,activeStatus:'Inactivo'}:department);
+        await persistCollection('samara.matrixDepartments.v1',draft);matrixDepartments=draft;renderMatrixDepartments();renderMatrix();$('#matrix-departments-message').textContent='Departamento eliminado.';
+      }catch(error){$('#matrix-departments-message').textContent=error.message;}finally{button.disabled=false;}
+    });
     function departmentCourses(department) {
       const codes = [department.abbreviation,...(department.aliases || [])];
       return courses.filter(course=>codes.includes(course.department || course.code?.split('-')[0]) || codes.some(code=>String(course.code||'').startsWith(code+'-')));
