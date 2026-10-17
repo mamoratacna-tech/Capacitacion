@@ -34,21 +34,42 @@ function rows(list,people,positions,course,instructor){
  });
  return {headers:D.headers,rows:output,issues:[...new Set(issues)],excluded:(list.asistentes||[]).length-signed.length};
 }
+const courseHeaders=['Nombre del curso','Duración (hrs)','Area tematica del curso','Tipo de agente Capacitador','Objetivo de la capacitación','Modalidad de la capacitación','Fecha de inicio(DD-MM-AA)','Fecha de termino(DD-MM-AA)','Nombre del instructor / RFC','Clave del curso'];
+function importDate(value){
+ if(typeof value==='number'&&Number.isFinite(value)){const d=new Date(Date.UTC(1899,11,30)+Math.round(value)*86400000);return d.toISOString().slice(0,10);}
+ const text=String(value??'').trim();if(date(text))return text;
+ if(/^\d{5}(?:\.0+)?$/.test(text)&&Number(text)>=20000&&Number(text)<=80000)return importDate(Number(text));
+ const match=text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/);if(!match)return '';
+ let year=Number(match[3]);if(match[3].length===2)year+=year<70?2000:1900;
+ const iso=year+'-'+match[2].padStart(2,'0')+'-'+match[1].padStart(2,'0');return date(iso)?iso:'';
+}
 function bulkPlan(table,lists){
- const head=table[0]||[],columns={};head.forEach((value,index)=>columns[norm(value)]=index);
- const idColumn=columns.IDLISTADO,keyColumn=columns.CLAVECURSO,dateColumn=columns.FECHA,courseColumn=columns.NOMENCLATURA??columns.CODIGOCURSO,instructorColumn=columns.INSTRUCTOR;
- if(keyColumn===undefined)throw Error('El archivo debe incluir CLAVE CURSO. Descarga la plantilla de claves.');
+ const headerIndex=table.findIndex(row=>row.some(cell=>['CLAVECURSO','CLAVEDELCURSO'].includes(norm(cell))));
+ if(headerIndex<0)throw Error('El archivo debe incluir Clave del curso. Usa el archivo de Exportar listados.');
+ const columns={};table[headerIndex].forEach((value,index)=>columns[norm(value)]=index);
+ const idColumn=columns.IDLISTADO,keyColumn=columns.CLAVECURSO??columns.CLAVEDELCURSO,dateColumn=columns.FECHA,courseColumn=columns.NOMENCLATURA??columns.CODIGOCURSO;
+ const nameColumn=columns.NOMBREDELCURSO??columns.NOMBRECURSO,startColumn=columns.FECHADEINICIODDMMAA??columns.FECHADEINICIO??columns.FECINICIO,endColumn=columns.FECHADETERMINODDMMAA??columns.FECHADETERMINO??columns.FECTERMINO;
+ const instructorColumn=columns.NOMBREDELINSTRUCTORRFC??columns.INSTRUCTOR,typeColumn=columns.TIPODEAGENTECAPACITADOR;
  const updates=new Map(),errors=[];
- table.slice(1).forEach((row,index)=>{
-  const key=String(row[keyColumn]??'').trim();if(!key)return;
+ table.slice(headerIndex+1).forEach((row,index)=>{
+  const line=headerIndex+index+2,key=String(row[keyColumn]??'').trim();if(!key)return;
   const id=idColumn===undefined?'':String(row[idColumn]??'').trim();let matches;
-  if(id)matches=lists.filter(list=>list.id===id);else{
-   const course=String(row[courseColumn]??'').trim(),day=String(row[dateColumn]??'').trim();
-   if(!course||!date(day)){errors.push('Fila '+(index+2)+': requiere ID LISTADO o NOMENCLATURA y FECHA AAAA-MM-DD.');return;}
+  if(id)matches=lists.filter(list=>String(list.id)===id);else if(nameColumn!==undefined){
+   const name=norm(row[nameColumn]),start=importDate(row[startColumn]),end=importDate(row[endColumn]),instructor=norm(row[instructorColumn]);
+   if(!name||!start||!end||!instructor){errors.push('Fila '+line+': completa curso, fechas de inicio/término e instructor o RFC.');return;}
+   matches=lists.filter(list=>{
+    const exported=list.sirceExport;if(!exported)return false;
+    return norm(exported[0])===name&&importDate(exported[6])===start&&importDate(exported[7])===end&&norm(exported[8])===instructor&&(typeColumn===undefined||!row[typeColumn]||norm(exported[3])===norm(row[typeColumn]));
+   });
+   // Other exported attributes may distinguish two sessions on the same day.
+   if(matches.length>1){const fields=[[columns.DURACIONHRS,1],[columns.AREATEMATICADELCURSO,2],[columns.OBJETIVODELACAPACITACION,4],[columns.MODALIDADDELACAPACITACION,5]];matches=matches.filter(list=>fields.every(([column,field])=>column===undefined||!row[column]||(field===1?Number(row[column])===Number(list.sirceExport[field]):norm(row[column])===norm(list.sirceExport[field]))));}
+  }else{
+   const course=String(row[courseColumn]??'').trim(),day=importDate(row[dateColumn]);
+   if(!course||!day){errors.push('Fila '+line+': utiliza el formato de Exportar listados.');return;}
    matches=lists.filter(list=>list.cursoCodigo===course&&list.fecha===day&&(instructorColumn===undefined||!row[instructorColumn]||norm(list.encabezado?.instructor)===norm(row[instructorColumn])));
   }
-  if(matches.length!==1){errors.push('Fila '+(index+2)+': '+(matches.length?'coincide con varios listados; utiliza ID LISTADO.':'no se encontró el listado.'));return;}
-  const list=matches[0];if(updates.has(list.id)&&updates.get(list.id).key!==key){errors.push('Fila '+(index+2)+': dos claves distintas para el mismo listado.');return;}
+  if(matches.length!==1){errors.push('Fila '+line+': '+(matches.length?'coincide con varios listados; completa la clave manualmente desde SIRCE.':'no se encontró un listado con esos datos.'));return;}
+  const list=matches[0];if(updates.has(list.id)&&updates.get(list.id).key!==key){errors.push('Fila '+line+': dos claves distintas para el mismo listado.');return;}
   updates.set(list.id,{id:list.id,key,previous:String(list.sirceDatos?.claveCurso||''),course:list.cursoNombre,date:list.fecha});
  });
  const finalKeys=new Map();lists.forEach(list=>{const key=updates.get(list.id)?.key||String(list.sirceDatos?.claveCurso||'');if(!key)return;if(finalKeys.has(key)&&finalKeys.get(key)!==list.id)errors.push('La clave '+key+' se repite en distintos listados.');finalKeys.set(key,list.id);});
@@ -64,7 +85,7 @@ async function workbook(result){
  let book=await zip.file('xl/workbook.xml').async('string');book=book.replace(/(<definedName[^>]*name="_xlnm.Print_Area"[^>]*>)[\s\S]*?(<\/definedName>)/,(_,start,end)=>start+"'Sheet1'!$A$1:$U$"+(result.rows.length+1)+end);zip.file('xl/workbook.xml',book);
  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
-window.SirceListados={catalogs:C,headers:D.headers,code,areaCode,date,rows,bulkPlan,workbook};
+window.SirceListados={catalogs:C,headers:D.headers,code,areaCode,date,importDate,courseHeaders,rows,bulkPlan,workbook};
 })();
 
 </script>

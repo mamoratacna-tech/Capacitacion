@@ -1,34 +1,34 @@
-SAMARA — SIRCE POR LISTADO Y CARGA MASIVA DE CLAVES
+SAMARA — EXPORTAR LISTADOS Y DEVOLVER CLAVES EN EL MISMO CSV
 
-INSTALAR EN TU PROYECTO EXISTENTE
-1. Reemplaza completos App.html, Code.gs, Cmcap.html, Index.html y Estilos.html.
-2. CREA un archivo HTML nuevo: + > HTML > escribe SirceListados (sin .html).
-   Pega TODO el contenido de SirceListados.html del ZIP. Si ya existe, reemplázalo.
-   Incluye los catálogos oficiales que adjuntaste y una plantilla sin asistentes del ejemplo.
-3. Guarda todos los archivos y publica:
-   Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar.
-Conserva tus otros archivos, DatosIniciales, CatalogoSIRCE, DB_ID y las hojas.
+INSTALAR
+Reemplaza completos App.html, Estilos.html y SirceListados.html en tu proyecto existente de Apps Script.
+Guarda y publica: Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar.
+Conserva los demás archivos, DB_ID y tus hojas.
 
-USAR
-Listados de asistencia > nueva lista o Editar: aparece Datos SIRCE.
-La CLAVE CURSO se guarda POR LISTADO. Puedes dejarla pendiente hasta obtenerla en SIRCE.
-También puedes completarla con el botón SIRCE de cada fila sin rehacer la asistencia.
-El establecimiento es fijo: 862341. RFC AGENTE STPS queda vacío para internos.
-Revisa estado, municipio, fechas, área, modalidad y objetivo; las opciones son los catálogos adjuntos.
-Se sugiere BAJA CALIFORNIA/MEXICALI como el ejemplo; se puede corregir al lugar correspondiente.
+CAMBIOS
+El identificador interno ya no se muestra en la ventana SIRCE. No es la clave del curso.
+La ventana SIRCE conserva Guardar datos SIRCE y Descargar Excel SIRCE.
+Se quitaron Descargar CSV e Imprimir de esa ventana y el botón Importar padrón SIRCE del módulo.
+Se conserva la impresión de Lista y DC-3.
 
-En el botón SIRCE puedes guardar datos, descargar Excel, descargar CSV o imprimir.
-Excel/CSV tienen las 21 columnas del ejemplo, sin agregar número de empleado ni ID LISTADO.
-Se incluyen los asistentes validados con firma. Se informa cuántos sin firma se excluyen.
-No se exporta si faltan clave, fechas o datos personales/catalogados válidos.
-Los valores 0 de documento e institución que aparecen en algunos renglones del ejemplo no están en los catálogos adjuntos: corrígelos en Personal, no se copian automáticamente.
+EXPORTAR LISTADOS
+El botón está en la barra de búsqueda y filtros, junto a Ver todos.
+Genera CSV con el título, fila vacía y diez columnas del archivo de ejemplo:
+Nombre del curso, Duración (hrs), Area tematica del curso, Tipo de agente Capacitador,
+Objetivo de la capacitación, Modalidad de la capacitación, Fecha de inicio(DD-MM-AA),
+Fecha de termino(DD-MM-AA), Nombre del instructor / RFC, Clave del curso.
+Para internos se escribe el nombre; para externos, el RFC del instructor.
+Exporta los listados visibles según los filtros. Usa Ver todos para incluir todos.
 
-CARGA MASIVA
-1. Pulsa Cargar claves SIRCE > Descargar plantilla de claves.
-2. Completa CLAVE CURSO, conservando ID LISTADO.
-3. Sube el CSV o guárdalo como .xlsx y súbelo. Trata las claves como texto si contienen ceros iniciales.
-4. Revisa las coincidencias y pulsa Guardar claves revisadas; se solicita confirmación.
-Solo se actualizan listados existentes. No se crean ni se duplican cursos o asistencias.
-Los errores o coincidencias ambiguas impiden guardar el lote. Una clave no se puede repetir entre distintos listados.
-Si no hay ID LISTADO, se exige NOMENCLATURA + FECHA AAAA-MM-DD que identifiquen un listado único (INSTRUCTOR puede ayudar a distinguir).
-Volver a cargar las mismas claves queda sin cambios.
+CARGAR CLAVES
+Completa Clave del curso en ese mismo CSV y súbelo en Cargar claves SIRCE.
+Conserva los datos de curso, fechas e instructor/RFC: identifican el listado sin números internos visibles.
+Las claves con ceros iniciales deben manejarse como texto en Excel.
+Se admite CSV UTF-8 o Windows-1252 (acentos de Excel) y también XLSX.
+Se muestra la revisión antes de guardar y se pide confirmación.
+No se crean cursos ni listados; volver a cargar las mismas claves no cambia nada.
+Una clave no se repite entre listados. Las filas ambiguas o sin coincidencia bloquean el lote.
+Si dos listados son indistinguibles, completa la clave manualmente desde el botón SIRCE.
+La clave también puede editarse manualmente en los datos SIRCE del listado.
+
+El Excel individual de asistentes conserva las 21 columnas oficiales, el establecimiento 862341 y el RFC vacío para internos.
