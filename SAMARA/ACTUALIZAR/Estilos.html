@@ -508,3 +508,17 @@
 <style>
 #course-dialog{width:min(960px,96vw);max-width:960px;max-height:92vh;overflow-y:auto}#course-form .course-core{grid-template-columns:repeat(3,minmax(0,1fr))}#course-form>.course-fold>.form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}#course-form .course-instructor-wide{grid-column:1/-1}#course-instructor-options{max-height:none;overflow:visible}.course-instructor-row{display:flex;align-items:center;gap:10px;margin:8px 0}#course-form .course-instructor-row .course-instructor-lookup{flex:1;min-width:0;height:44px}.course-instructor-row button{flex:0 0 36px}.course-instructor-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}#course-form .course-instructor-actions .button{margin-top:0}#employee-form input[name="names"],#employee-form input[name="paternal"],#employee-form input[name="maternal"],#instructor-form input[name="externalName"]{text-transform:uppercase}@media(max-width:700px){#course-form .course-core,#course-form>.course-fold>.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){#course-form .course-core,#course-form>.course-fold>.form-grid{grid-template-columns:1fr}}
 </style>
+
+<style>
+.matrix-print-course-name{display:none!important}#position-sirce-code{background:#f1f5f7;color:#344657}#position-dialog input{width:100%;min-height:42px;border:1px solid #d8e2ed;border-radius:7px;padding:10px;font:inherit}.matrix-module-tabs:has([data-course-tab]){display:flex!important}
+@media print{
+.matrix-cross-sheet{width:100%;max-width:100%;overflow:visible;break-inside:auto!important;page-break-inside:auto!important}
+.matrix-cross-sheet .cross-matrix{width:100%!important;min-width:0!important;table-layout:fixed}
+.matrix-cross-sheet .cross-matrix th,.matrix-cross-sheet .cross-matrix td{white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere;word-break:normal}
+.matrix-cross-sheet .matrix-code-head{height:auto!important;vertical-align:top;padding:2mm!important}
+.matrix-cross-sheet .matrix-code-head span{writing-mode:horizontal-tb!important;transform:none!important;display:block!important;white-space:normal!important;font-size:7pt;line-height:1.4}
+.matrix-cross-sheet .matrix-print-course-name{display:block!important;margin-top:2mm;font-weight:400}
+.matrix-cross-sheet .cross-matrix thead{display:table-header-group}
+.matrix-cross-sheet .cross-matrix tr{break-inside:avoid;page-break-inside:avoid}
+}
+</style>

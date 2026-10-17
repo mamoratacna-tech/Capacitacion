@@ -126,7 +126,7 @@ function normalizePersonNames(key, value) {
         const defaults = key === 'samara.positions.v2' ? window.seedData.positions : key === 'samara.matrixPositions.v2' ? window.seedData.matrixPositions : key === 'samara.courses.v2' ? window.seedData.courses.map(course => ({
           ...course,
           department: course.department || course.code?.split('-')[0] || '',
-          entity: course.entity || course.code?.match(/-(SAMARA|TACNA)\d+$/i)?.[1] || '',
+          entity: course.entity || course.code?.match(/-(SAMARA|TACNA|EXTERNO)\d+$/i)?.[1] || '',
           duration: String(course.duration || ''),
           owner: course.instructor || 'Por asignar',
           agent: course.instructorClass || 'Interno',
@@ -356,7 +356,7 @@ function normalizePersonNames(key, value) {
     let courses = loadStore('samara.courses.v2', seed.courses.map((course, index) => ({
       ...course,
       department: course.department || course.code?.split('-')[0] || '',
-      entity: course.entity || course.code?.match(/-(SAMARA|TACNA)\d+$/i)?.[1] || '',
+      entity: course.entity || course.code?.match(/-(SAMARA|TACNA|EXTERNO)\d+$/i)?.[1] || '',
       type: course.category || 'Anual',
       area: course.theme || '',
       duration: String(course.duration || ''),
@@ -373,7 +373,7 @@ function normalizePersonNames(key, value) {
     courses = courses.map(course => ({
       ...course,
       department: course.department || course.code?.split('-')[0] || '',
-      entity: course.entity || course.code?.match(/-(SAMARA|TACNA)\d+$/i)?.[1] || ''
+      entity: course.entity || course.code?.match(/-(SAMARA|TACNA|EXTERNO)\d+$/i)?.[1] || ''
     }));
     const defaultCourseDepartments = new Map([['RH','Recursos Humanos'],['EHS','Seguridad e higiene'],['QC','Calidad']]);
     courses.forEach(course=>{ const code = course.department || course.code?.split('-')[0]; if(code && !defaultCourseDepartments.has(code)) defaultCourseDepartments.set(code,code); });
@@ -447,7 +447,7 @@ function normalizePersonNames(key, value) {
       $('#sessions-table').innerHTML = courses.slice(0, 4).map(c => "<tr><td><div class=\"course-cell\"><span class=\"course-symbol\">".concat(c.symbol || '▤', "</span><div><div class=\"course-title\">").concat(escapeHtml(c.name), "</div><div class=\"course-sub\">").concat(escapeHtml(c.code), " · ").concat(escapeHtml(c.duration), " h</div></div></div></td><td><div class=\"date-main\">").concat(escapeHtml(c.date), "</div><div class=\"date-sub\">").concat(escapeHtml(c.time), "</div></td><td>").concat(escapeHtml(c.plant), "</td><td><span class=\"person-count\">Según matriz</span></td><td><div class=\"owner-cell\"><span class=\"mini-avatar\">").concat(initials(c.owner), "</span>").concat(escapeHtml(c.owner || 'Por asignar'), "</div></td><td><span class=\"status-pill ").concat(pillClass(c.status), "\">").concat(escapeHtml(c.status), "</span></td><td><button class=\"row-more\" data-edit-course=\"").concat(escapeHtml(c.code), "\" aria-label=\"Editar curso\">✎</button></td></tr>")).join('');
     }
     function compareCourseCodes(a, b) {
-      return String(a.code || '').localeCompare(String(b.code || ''), 'es', {
+      return String(a.code || '').trim().toUpperCase().localeCompare(String(b.code || '').trim().toUpperCase(), 'es', {
         numeric: true,
         sensitivity: 'base'
       });
@@ -551,7 +551,7 @@ function normalizePersonNames(key, value) {
       return (course.applicablePositions || []).includes(position.id) ? 'Aplica' : 'No aplica';
     }
     function crossMatrixTable(rows, columns, editable = false) {
-      return "<table class=\"cross-matrix\"><colgroup><col class=\"matrix-class-col\"><col class=\"matrix-job-col\"><col class=\"matrix-dept-col\">".concat(columns.map(() => '<col class="matrix-course-col">').join('')).concat(editable ? '<col style="width:110px">' : '', "</colgroup><thead><tr><th rowspan=\"2\">Clas.</th><th rowspan=\"2\">Puesto</th><th rowspan=\"2\">Departamento</th>").concat(columns.map(course => "<th class=\"matrix-area-head\">".concat(escapeHtml(course.department || course.code.split('-')[0]), "</th>")).join('')).concat(editable ? '<th rowspan="2">Acciones</th>' : '', "</tr><tr>").concat(columns.map(course => "<th class=\"matrix-code-head\" title=\"".concat(escapeHtml(course.name), "\"><span>").concat(escapeHtml(course.code), "</span></th>")).join(''), "</tr></thead><tbody>").concat(rows.map(({
+      return "<table class=\"cross-matrix\"><colgroup><col class=\"matrix-class-col\"><col class=\"matrix-job-col\"><col class=\"matrix-dept-col\">".concat(columns.map(() => '<col class="matrix-course-col">').join('')).concat(editable ? '<col style="width:110px">' : '', "</colgroup><thead><tr><th rowspan=\"2\">Clas.</th><th rowspan=\"2\">Puesto</th><th rowspan=\"2\">Departamento</th>").concat(columns.map(course => "<th class=\"matrix-area-head\">".concat(escapeHtml(course.department || course.code.split('-')[0]), "</th>")).join('')).concat(editable ? '<th rowspan="2">Acciones</th>' : '', "</tr><tr>").concat(columns.map(course => "<th class=\"matrix-code-head\" title=\"".concat(escapeHtml(course.name), "\"><span>").concat(escapeHtml(course.code), "</span><span class=\"matrix-print-course-name\">").concat(escapeHtml(course.name), "</span></th>")).join(''), "</tr></thead><tbody>").concat(rows.map(({
         position
       }, index) => "<tr class=\"".concat(index === 0 || rows[index - 1].position.department !== position.department ? 'matrix-department-start' : '', "\"><td>").concat(escapeHtml(position.classification || '—'), "</td><td>").concat(escapeHtml(position.job), "</td><td>").concat(escapeHtml(position.department), "</td>").concat(columns.map(course => {
         const label = matrixCellLabel(position, course);
@@ -1101,7 +1101,7 @@ function normalizePersonNames(key, value) {
       fillCourseInstructorOptions(c);
       courseForm.elements.objectiveCode.value = c ? objectiveCode(c) : '';
       courseForm.elements.department.value = c?.department || c?.code?.split('-')[0] || '';
-      courseForm.elements.entity.value = c?.entity || c?.code?.match(/-(SAMARA|TACNA)\d+$/i)?.[1] || '';
+      courseForm.elements.entity.value = c?.entity || c?.code?.match(/-(SAMARA|TACNA|EXTERNO)\d+$/i)?.[1] || '';
       courseForm.elements.cmcapOnly.checked = Boolean(c?.cmcapOnly);
       courseForm.elements.safetyCommissionOnly.checked = Boolean(c?.safetyCommissionOnly);
       courseForm.elements.emergencyBrigadesOnly.checked = Boolean(c?.emergencyBrigadesOnly);
@@ -1227,7 +1227,7 @@ function normalizePersonNames(key, value) {
       const matrixPosition = matrixPositions.find(item => item.id === id);
       if (!matrixPosition) return;
       $('#matrix-form-title').textContent = "".concat(matrixPosition.job, " · ").concat(matrixPosition.department);
-      $('#matrix-course-checklist').innerHTML = courses.map(c => "<label class=\"position-check\"><input type=\"checkbox\" name=\"matrixCourses\" value=\"".concat(escapeHtml(c.code), "\" ").concat((c.applicablePositions || []).includes(id) ? 'checked' : '', "><span><b>").concat(escapeHtml(c.code), " · ").concat(escapeHtml(c.name), "</b><small>").concat(escapeHtml(c.category || ''), "</small></span></label>")).join('');
+      $('#matrix-course-checklist').innerHTML = [...courses].sort(compareCourseCodes).map(c => "<label class=\"position-check\"><input type=\"checkbox\" name=\"matrixCourses\" value=\"".concat(escapeHtml(c.code), "\" ").concat((c.applicablePositions || []).includes(id) ? 'checked' : '', "><span><b>").concat(escapeHtml(c.code), " · ").concat(escapeHtml(c.name), "</b><small>").concat(escapeHtml(c.category || ''), "</small></span></label>")).join('');
       matrixDialog.showModal();
     }
     $('#matrix-form').addEventListener('submit', event => {
@@ -1303,35 +1303,44 @@ function normalizePersonNames(key, value) {
       renderMatrix();
       toast('Empleado actualizado.');
     });
+    let positionOccupationRecords = [];
+    function occupationLookupLabel(item) {
+      const duplicates=positionOccupationRecords.filter(other=>norm(other.occupation)===norm(item.occupation)).length;
+      return duplicates>1 ? item.occupation+' · '+item.code : item.occupation;
+    }
     function fillOccupationSelectors(position = null) {
-      const records = [...occupationCatalog];
-      if (position?.sirceCode && !records.some(item => item.code === position.sirceCode)) records.push({
-        code: position.sirceCode,
-        occupation: position.sirceOccupation
-      });
-      records.sort((a, b) => a.occupation.localeCompare(b.occupation, 'es', {
-        numeric: true
-      }));
-      positionForm.elements.sirceCode.innerHTML = '<option value="">Selecciona código SIRCE</option>' + records.map(item => "<option value=\"".concat(escapeHtml(item.code), "\">").concat(escapeHtml(item.code), " · ").concat(escapeHtml(item.occupation), "</option>")).join('');
-      positionForm.elements.sirceOccupation.innerHTML = '<option value="">Selecciona ocupación</option>' + records.map(item => "<option value=\"".concat(escapeHtml(item.occupation), "\" data-code=\"").concat(escapeHtml(item.code), "\">").concat(escapeHtml(item.occupation), "</option>")).join('');
-      positionForm.elements.sirceCode.value = position?.sirceCode || '';
-      positionForm.elements.sirceOccupation.value = position?.sirceOccupation || '';
+      const records=[...occupationCatalog];
+      if(position?.sirceCode && !records.some(item=>item.code===position.sirceCode))records.push({code:position.sirceCode,occupation:position.sirceOccupation});
+      positionOccupationRecords=records.filter(item=>item.code&&item.occupation).sort((a,b)=>a.occupation.localeCompare(b.occupation,'es',{numeric:true}));
+      $('#position-occupation-suggestions').innerHTML=positionOccupationRecords.map(item=>'<option value="'+escapeHtml(occupationLookupLabel(item))+'"></option>').join('');
+      const jobs=[...new Set([...positions.map(item=>item.job),...matrixPositions.map(item=>item.job),...records.map(item=>item.occupation)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+      $('#position-job-suggestions').innerHTML=jobs.map(job=>'<option value="'+escapeHtml(job)+'"></option>').join('');
+      const selected=positionOccupationRecords.find(item=>item.code===position?.sirceCode);
+      positionForm.elements.sirceCode.value=selected?.code || '';
+      positionForm.elements.sirceOccupation.value=selected?occupationLookupLabel(selected):'';
+      positionForm.elements.sirceOccupation.setCustomValidity('');
     }
     function openPositionEditor(job = '') {
-      editingPositionJob = job;
-      const position = positions.find(item => norm(item.job) === norm(job));
-      positionForm.reset();
-      $('#position-form-title').textContent = position ? 'Editar puesto' : 'Agregar puesto';
-      positionForm.elements.job.value = position?.job || '';
-      fillOccupationSelectors(position);
-      positionDialog.showModal();
+      editingPositionJob=job;
+      const position=positions.find(item=>norm(item.job)===norm(job));
+      positionForm.reset();$('#position-form-title').textContent=position?'Editar puesto':'Agregar puesto';
+      positionForm.elements.job.value=position?.job || job;
+      fillOccupationSelectors(position);positionDialog.showModal();
     }
-    $('#position-sirce-code').addEventListener('change', event => {
-      const record = occupationCatalog.find(item => item.code === event.target.value) || positions.find(item => item.sirceCode === event.target.value);
-      positionForm.elements.sirceOccupation.value = record?.occupation || record?.sirceOccupation || '';
-    });
-    $('#position-sirce-occupation').addEventListener('change', event => {
-      positionForm.elements.sirceCode.value = event.target.selectedOptions[0]?.dataset.code || '';
+    function selectSirceOccupation() {
+      const input=positionForm.elements.sirceOccupation;
+      const record=positionOccupationRecords.find(item=>norm(occupationLookupLabel(item))===norm(input.value));
+      positionForm.elements.sirceCode.value=record?.code || '';
+      input.setCustomValidity(record?'':'Selecciona una ocupación del catálogo SIRCE para asignar su código.');
+      return record;
+    }
+    $('#position-sirce-occupation').addEventListener('input',selectSirceOccupation);
+    $('#position-sirce-occupation').addEventListener('change',selectSirceOccupation);
+    $('#position-job').addEventListener('input',event=>{
+      const existing=positions.find(item=>norm(item.job)===norm(event.target.value));
+      if(existing){fillOccupationSelectors(existing);return;}
+      const occupation=positionOccupationRecords.find(item=>norm(item.occupation)===norm(event.target.value));
+      if(occupation){positionForm.elements.sirceOccupation.value=occupationLookupLabel(occupation);selectSirceOccupation();}
     });
     $('#import-occupation-catalog').addEventListener('click', () => $('#occupation-catalog-file').click());
     $('#occupation-catalog-file').addEventListener('change', async event => {
@@ -1370,10 +1379,12 @@ function normalizePersonNames(key, value) {
     });
     positionForm.addEventListener('submit', event => {
       event.preventDefault();
+      const occupation=selectSirceOccupation();
+      if(!occupation){positionForm.reportValidity();return;}
       const form = new FormData(positionForm),
         job = String(form.get('job') || '').trim().toUpperCase(),
-        sirceCode = String(form.get('sirceCode') || '').trim(),
-        sirceOccupation = String(form.get('sirceOccupation') || '').trim(),
+        sirceCode = String(occupation.code),
+        sirceOccupation = String(occupation.occupation),
         previous = positions.find(item => norm(item.job) === norm(editingPositionJob));
       if (positions.some(item => norm(item.job) === norm(job) && norm(item.job) !== norm(editingPositionJob))) {
         toast('Ya existe ese puesto.');
@@ -1973,7 +1984,7 @@ function normalizePersonNames(key, value) {
     });
     function matrixCrossCsvRows() {
       const columns = filteredMatrixCourses();
-      return [['Clas.', 'Puesto', 'Departamento', ...columns.map(course => course.code)], ...filteredMatrixRows().map(({
+      return [['Clas.', 'Puesto', 'Departamento', ...columns.map(course => course.code+' · '+course.name)], ...filteredMatrixRows().map(({
         position
       }) => [position.classification || '', position.job, position.department, ...columns.map(course => matrixCellLabel(position, course))])];
     }
@@ -1989,9 +2000,9 @@ function normalizePersonNames(key, value) {
       const rows = filteredMatrixRows(),
         columns = filteredMatrixCourses(),
         pages = [];
-      for (let row = 0; row < rows.length; row += 8) for (let column = 0; column < columns.length; column += 12) pages.push({
-        rows: rows.slice(row, row + 8),
-        columns: columns.slice(column, column + 12)
+      for (let row = 0; row < rows.length; row += 6) for (let column = 0; column < columns.length; column += 4) pages.push({
+        rows: rows.slice(row, row + 6),
+        columns: columns.slice(column, column + 4)
       });
       const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value].filter(Boolean).join(' · ');
       return pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Verde: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
