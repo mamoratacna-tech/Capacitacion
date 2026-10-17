@@ -85,12 +85,13 @@
     }
 function normalizePersonNames(key, value) {
   if (!Array.isArray(value)) return value;
-  const fields = {'samara.employees.v2':['names','paternal','maternal'],'samara.instructors.v1':['employeeName','externalName'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner']};
+  const fields = {'samara.employees.v2':['names','paternal','maternal','position','department'],'samara.instructors.v1':['employeeName','externalName','employeePosition','employeeDepartment'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner','department'],'samara.positions.v2':['job','department'],'samara.matrixPositions.v2':['job','department'],'samara.matrixDepartments.v1':['name'],'samara.courseDepartments.v1':['name','abbreviation'],'samara.occupationCatalog.v1':['occupation']};
   if (!fields[key] && key !== 'samara.attendance.v1') return value;
   const upper = text => typeof text === 'string' ? text.toLocaleUpperCase('es-MX') : text;
   return value.map(record => {
     const item = {...record};
     (fields[key] || []).forEach(field => {if(typeof item[field] === 'string') item[field] = upper(item[field]);});
+    if(['samara.matrixDepartments.v1','samara.courseDepartments.v1'].includes(key)&&Array.isArray(item.aliases))item.aliases=item.aliases.map(upper);
     if(key === 'samara.attendance.v1') {
       if(item.encabezado) item.encabezado = {...item.encabezado,instructor:upper(item.encabezado.instructor)};
       if(Array.isArray(item.asistentes)) item.asistentes = item.asistentes.map(person=>({...person,nombre:upper(person.nombre),name:upper(person.name)}));
@@ -343,9 +344,10 @@ function normalizePersonNames(key, value) {
     }
     let instructors = loadStore('samara.instructors.v1', []);
     let activeInstructorModule = 'Interno';
-    function currentDepartmentNames() {return [...new Map([...matrixPositions.map(item=>item.department),...employees.map(item=>item.department),...instructors.map(item=>item.employeeDepartment)].filter(Boolean).map(name=>[norm(name),name])).values()];}
+    function currentDepartmentNames() {return [...new Map([...matrixPositions.map(item=>item.department),...employees.map(item=>item.department),...instructors.map(item=>item.employeeDepartment)].filter(Boolean).map(name=>[norm(name),String(name).toLocaleUpperCase('es-MX')])).values()];}
     let matrixDepartments=loadStore('samara.matrixDepartments.v1',currentDepartmentNames().map(name=>({id:'md-'+crypto.randomUUID(),name,activeStatus:'Activo',aliases:[]})));
     let editingMatrixDepartmentId=null;
+    let activeEmployeeCompany='SAMARA';
     const cmcapRoles = Cmcap.roles;
     let cmcapMembers = loadStore('samara.cmcap.v2', []);
     let legalRepresentative = loadStore('samara.legalRepresentative.v1', [{name: 'Mirna Ulbrich Labastida'}]);
@@ -538,7 +540,15 @@ function normalizePersonNames(key, value) {
     }
     function activeMatrixPositions() {
       const inactive=new Set(positions.filter(position=>!positionIsActive(position)).map(position=>norm(position.job)));
-      return matrixPositions.filter(position=>!inactive.has(norm(position.job))&&matrixDepartmentIsActive(position.department));
+      const workers=new Map();
+      employees.forEach(employee=>{const key=norm(employee.position);if(!workers.has(key))workers.set(key,[]);workers.get(key).push(employee);});
+      return matrixPositions.filter(position=>{
+        if(inactive.has(norm(position.job))||!matrixDepartmentIsActive(position.department))return false;
+        const workforce=workers.get(norm(position.job))||[];
+        if(workforce.length&&workforce.every(employee=>employeeCompany(employee)==='TACNA'))return false;
+        const relevant=workforce.filter(employee=>!employee.department||norm(employee.department)===norm(position.department));
+        return !relevant.length || relevant.some(employee=>employeeCompany(employee)==='SAMARA');
+      });
     }
     function filteredMatrixRows() {
       const query = ($('#matrix-search').value || '').toLowerCase(),
@@ -585,6 +595,8 @@ function normalizePersonNames(key, value) {
       return rows.map(e=>'<tr><td>'+escapeHtml(e.no)+'</td><td>'+escapeHtml(e.curp)+'</td><td>'+escapeHtml(String(e.names||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.paternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.maternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(employeeCatalogLabel('studies',e.studies))+'</td><td>'+escapeHtml(employeeCatalogLabel('proofDocType',e.proofDocType))+'</td><td>'+escapeHtml(employeeCatalogLabel('institutionType',e.institutionType))+'</td><td>'+escapeHtml(e.position)+'</td><td><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="10" class="empty-state">No hay empleados para esta búsqueda.</td></tr>';
     }
     function renderPeople() {
+      $('#employee-samara-pane').hidden=activeEmployeeCompany!=='SAMARA';$('#employee-tacna-pane').hidden=activeEmployeeCompany!=='TACNA';
+      $$('[data-employee-company]').forEach(button=>{const active=button.dataset.employeeCompany===activeEmployeeCompany;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
       const query=norm($('#people-search')?.value);
       const filtered=employees.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,employeeCompany(e)].join(' ')).includes(query));
       $('#people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='SAMARA'));
@@ -623,7 +635,7 @@ function normalizePersonNames(key, value) {
     function renderPositions() {
       const query=norm($('#position-search')?.value);
       const filtered=positions.filter(position=>norm(position.job+' '+position.sirceCode+' '+position.sirceOccupation).includes(query));
-      $('#positions-table').innerHTML=filtered.map(position=>'<tr><td><b>'+escapeHtml(position.job)+'</b></td><td>'+escapeHtml(position.sirceCode)+'</td><td>'+escapeHtml(position.sirceOccupation)+'</td><td>'+employees.filter(employee=>norm(employee.position)===norm(position.job)).length+'</td><td><span class="tag '+(positionIsActive(position)?'green':'soft')+'">'+(positionIsActive(position)?'Activo':'Inactivo')+'</span></td><td><button type="button" class="button outline" data-edit-position="'+escapeHtml(position.job)+'" aria-label="Editar puesto">✎</button> <button type="button" class="button outline" data-delete-sirce-position="'+escapeHtml(position.job)+'">Eliminar</button></td></tr>').join('') || '<tr><td colspan="6" class="empty-state">No hay puestos que coincidan.</td></tr>';
+      $('#positions-table').innerHTML=filtered.map(position=>'<tr><td><b>'+escapeHtml(position.job)+'</b></td><td>'+escapeHtml(position.department||[...new Set(matrixPositions.filter(row=>norm(row.job)===norm(position.job)).map(row=>row.department))].join(' / '))+'</td><td>'+escapeHtml(position.sirceCode)+'</td><td>'+escapeHtml(position.sirceOccupation)+'</td><td>'+employees.filter(employee=>norm(employee.position)===norm(position.job)).length+'</td><td><span class="tag '+(positionIsActive(position)?'green':'soft')+'">'+(positionIsActive(position)?'Activo':'Inactivo')+'</span></td><td><button type="button" class="button outline" data-edit-position="'+escapeHtml(position.job)+'" aria-label="Editar puesto">✎</button> <button type="button" class="button outline" data-delete-sirce-position="'+escapeHtml(position.job)+'">Eliminar</button></td></tr>').join('') || '<tr><td colspan="7" class="empty-state">No hay puestos que coincidan.</td></tr>';
     }
     function renderInstructors() {
       $('#view-instructors').classList.toggle('external-instructor-view', activeInstructorModule === 'Externo');
@@ -1070,7 +1082,7 @@ function normalizePersonNames(key, value) {
     $('#matrix-department-form').addEventListener('submit',async event=>{
       event.preventDefault();const form=event.target,button=form.querySelector('[type="submit"]');button.disabled=true;
       try{
-        const name=form.elements.name.value.trim(),activeStatus=form.elements.activeStatus.value;
+        const name=form.elements.name.value.trim().toLocaleUpperCase('es-MX'),activeStatus=form.elements.activeStatus.value;
         if(!name)throw new Error('Escribe el nombre del departamento.');
         if(matrixDepartments.some(item=>!item.deleted&&item.id!==editingMatrixDepartmentId&&[item.name,...(item.aliases||[])].some(value=>norm(value)===norm(name))))throw new Error('Ya existe ese departamento.');
         const previous=matrixDepartments.find(item=>item.id===editingMatrixDepartmentId)||matrixDepartments.find(item=>item.deleted&&[item.name,...(item.aliases||[])].some(value=>norm(value)===norm(name)));
@@ -1128,7 +1140,7 @@ function normalizePersonNames(key, value) {
     $('#department-form').addEventListener('submit',async event=>{
       event.preventDefault();const form=event.target,button=form.querySelector('[type="submit"]');button.disabled=true;
       try {
-        const abbreviation=form.elements.abbreviation.value.trim().toUpperCase(),name=form.elements.departmentName.value.trim();
+        const abbreviation=form.elements.abbreviation.value.trim().toUpperCase(),name=form.elements.departmentName.value.trim().toLocaleUpperCase('es-MX');
         if(!/^[A-Z][A-Z0-9]{0,11}$/.test(abbreviation)||!name) throw new Error('Completa el departamento y una abreviación de hasta 12 letras o números, comenzando por una letra.');
         if(courseDepartments.some(item=>item.id!==editingDepartmentId && [item.abbreviation,...(item.aliases||[])].includes(abbreviation))) throw new Error('Esta abreviación ya está registrada.');
         const previous=courseDepartments.find(item=>item.id===editingDepartmentId);
@@ -1371,7 +1383,7 @@ function normalizePersonNames(key, value) {
       employeeDialog.showModal();
     }
     document.addEventListener('input',event=>{
-      if(!event.target.matches('#employee-form [name="names"],#employee-form [name="paternal"],#employee-form [name="maternal"],#instructor-form [name="externalName"]'))return;
+      if(!event.target.matches('#employee-form [name="names"],#employee-form [name="paternal"],#employee-form [name="maternal"],#instructor-form [name="externalName"],#position-job,#matrix-department-form [name="name"],#department-form [name="departmentName"]'))return;
       const input=event.target,start=input.selectionStart,end=input.selectionEnd;
       input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
     });
@@ -1391,6 +1403,7 @@ function normalizePersonNames(key, value) {
           institutionType: String(form.get('institutionType') || '').trim(),
           position: String(form.get('position') || '').trim()
         };
+      item.department=positions.find(position=>norm(position.job)===norm(item.position))?.department || item.department || '';
       if (item.curp.length !== 18) {
         toast('La CURP debe tener 18 caracteres.');
         return;
@@ -1405,6 +1418,7 @@ function normalizePersonNames(key, value) {
       }));
       saveStore('samara.employees.v2', employees);
       employeeDialog.close();
+      activeEmployeeCompany=employeeCompany(item);
       renderPeople();
       renderPositions();
       renderMatrix();
@@ -1440,12 +1454,20 @@ function normalizePersonNames(key, value) {
       indexPositionOccupations(position);renderOccupationSuggestions();
       setPositionOccupation(positionByCode.get(String(position?.sirceCode||'')));
     }
+    function fillPositionDepartmentOptions(position) {
+      syncMatrixDepartments();
+      const current=position?.department || matrixPositions.find(row=>norm(row.job)===norm(position?.job))?.department || '';
+      const names=matrixDepartments.filter(item=>!item.deleted&&item.activeStatus!=='Inactivo').map(item=>item.name);
+      if(current&&!names.some(name=>norm(name)===norm(current)))names.push(current);
+      $('#position-department').innerHTML='<option value="">Selecciona departamento</option>'+names.sort((a,b)=>a.localeCompare(b,'es')).map(name=>'<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join('');
+      $('#position-department').value=current;
+    }
     function openPositionEditor(job = '') {
       editingPositionJob=job;const position=positions.find(item=>norm(item.job)===norm(job));
       positionForm.reset();$('#position-form-title').textContent=position?'Editar puesto':'Agregar puesto';
       positionForm.elements.job.value=position?.job||job;
       positionForm.elements.activeStatus.value=position && !positionIsActive(position)?'Inactivo':'Activo';
-      fillOccupationSelectors(position);positionDialog.showModal();
+      fillPositionDepartmentOptions(position);fillOccupationSelectors(position);positionDialog.showModal();
     }
     function selectSirceOccupation() {
       const input=positionForm.elements.sirceOccupation,record=positionLookup.get(norm(input.value));
@@ -1498,6 +1520,7 @@ function normalizePersonNames(key, value) {
         sirceCode = String(occupation.code),
         sirceOccupation = String(occupation.occupation),
         activeStatus = String(form.get('activeStatus') || 'Activo'),
+        department = String(form.get('department') || '').trim().toLocaleUpperCase('es-MX'),
         previous = positions.find(item => norm(item.job) === norm(editingPositionJob));
       if (positions.some(item => norm(item.job) === norm(job) && norm(item.job) !== norm(editingPositionJob))) {
         toast('Ya existe ese puesto.');
@@ -1525,16 +1548,21 @@ function normalizePersonNames(key, value) {
           position: job
         } : employee);
       }
+      const oldDepartment=previous?.department || matrixPositions.find(row=>norm(row.job)===norm(previous?.job)||norm(row.job)===norm(job))?.department;
+      if(previous){
+        matrixPositions=matrixPositions.map(row=>norm(row.job)===norm(job)&&(!oldDepartment||norm(row.department)===norm(oldDepartment))?{...row,department}:row);
+        employees=employees.map(employee=>norm(employee.position)===norm(job)&&(!employee.department||norm(employee.department)===norm(oldDepartment))?{...employee,department}:employee);
+      }
       positions = previous ? positions.map(item => norm(item.job) === norm(editingPositionJob) ? {
-        ...item, job, sirceCode, sirceOccupation, activeStatus
+        ...item, job, sirceCode, sirceOccupation, activeStatus, department
       } : item) : [...positions, {
-        job, sirceCode, sirceOccupation, activeStatus
+        job, sirceCode, sirceOccupation, activeStatus, department
       }].sort((a, b) => a.job.localeCompare(b.job));
-      if (!previous) matrixPositions = [...matrixPositions, {
-        id: "".concat(job, "|Por asignar"),
+      if (!previous && !matrixPositions.some(row=>norm(row.job)===norm(job)&&norm(row.department)===norm(department))) matrixPositions = [...matrixPositions, {
+        id: "".concat(job, "|").concat(department),
         classification: '',
         job,
-        department: 'Por asignar',
+        department,
         applies: {}
       }];
       saveStore('samara.matrixPositions.v2', matrixPositions);
@@ -1961,6 +1989,7 @@ function normalizePersonNames(key, value) {
       if (edit) openPositionEditor(edit.dataset.editPosition);
       if (remove) deleteMatrixPosition(remove.dataset.deleteMatrixPosition);
     });
+    $$('[data-employee-company]').forEach(button=>button.addEventListener('click',()=>{activeEmployeeCompany=button.dataset.employeeCompany;renderPeople();}));
     $('#add-employee').addEventListener('click', () => openEmployeeEditor());
     $('#view-people').addEventListener('click', event => {
       const button = event.target.closest('[data-edit-employee]');
@@ -2120,12 +2149,12 @@ function normalizePersonNames(key, value) {
         columns = filteredMatrixCourses(),
         pages = [];
       if(!rows.length || !columns.length)return '';
-      for (let row = 0; row < rows.length; row += 7) for (let column = 0; column < columns.length; column += 18) pages.push({
-        rows: rows.slice(row, row + 7),
-        columns: columns.slice(column, column + 18)
+      for (let row = 0; row < rows.length; row += 10) for (let column = 0; column < columns.length; column += 24) pages.push({
+        rows: rows.slice(row, row + 10),
+        columns: columns.slice(column, column + 24)
       });
       const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value].filter(Boolean).join(' · ');
-      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Verde: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
+      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Gris: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
       return matrixPages + matrixCourseAppendix(columns);
     }
     $('#matrix-print').addEventListener('click', () => {

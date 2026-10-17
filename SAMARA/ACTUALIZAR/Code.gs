@@ -40,12 +40,13 @@ function appSheet_(ss){
 }
 function normalizePersonNames(key, value) {
   if (!Array.isArray(value)) return value;
-  const fields = {'samara.employees.v2':['names','paternal','maternal'],'samara.instructors.v1':['employeeName','externalName'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner']};
+  const fields = {'samara.employees.v2':['names','paternal','maternal','position','department'],'samara.instructors.v1':['employeeName','externalName','employeePosition','employeeDepartment'],'samara.cmcap.v2':['name'],'samara.legalRepresentative.v1':['name'],'samara.courses.v2':['instructor','owner','department'],'samara.positions.v2':['job','department'],'samara.matrixPositions.v2':['job','department'],'samara.matrixDepartments.v1':['name'],'samara.courseDepartments.v1':['name','abbreviation'],'samara.occupationCatalog.v1':['occupation']};
   if (!fields[key] && key !== 'samara.attendance.v1') return value;
   const upper = text => typeof text === 'string' ? text.toLocaleUpperCase('es-MX') : text;
   return value.map(record => {
     const item = {...record};
     (fields[key] || []).forEach(field => {if(typeof item[field] === 'string') item[field] = upper(item[field]);});
+    if(['samara.matrixDepartments.v1','samara.courseDepartments.v1'].includes(key)&&Array.isArray(item.aliases))item.aliases=item.aliases.map(upper);
     if(key === 'samara.attendance.v1') {
       if(item.encabezado) item.encabezado = {...item.encabezado,instructor:upper(item.encabezado.instructor)};
       if(Array.isArray(item.asistentes)) item.asistentes = item.asistentes.map(person=>({...person,nombre:upper(person.nombre),name:upper(person.name)}));
