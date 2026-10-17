@@ -555,12 +555,16 @@ function normalizePersonNames(key, value) {
       if (groups.length) return "Integrantes ".concat(groups.join(' / '), " · Todos los puestos");
       return (course.applicablePositions || []).includes(position.id) ? 'Aplica' : 'No aplica';
     }
+    function matrixPrintCellLabel(course,label) {
+      const texts=[];if(course.cmcapOnly)texts.push('Integrante CMCAP');if(course.safetyCommissionOnly)texts.push('Integrante CSH');if(course.emergencyBrigadesOnly)texts.push('Integrante Brigada');
+      return (texts.length?texts:[label]).map(text=>'<span class="matrix-vertical-text">'+escapeHtml(text)+'</span>').join('');
+    }
     function crossMatrixTable(rows, columns, editable = false) {
       return "<table class=\"cross-matrix\"><colgroup><col class=\"matrix-class-col\"><col class=\"matrix-job-col\"><col class=\"matrix-dept-col\">".concat(columns.map(() => '<col class="matrix-course-col">').join('')).concat(editable ? '<col style="width:110px">' : '', "</colgroup><thead><tr><th rowspan=\"2\">Clas.</th><th rowspan=\"2\">Puesto</th><th rowspan=\"2\">Departamento</th>").concat(columns.map(course => "<th class=\"matrix-area-head\">".concat(escapeHtml(course.department || course.code.split('-')[0]), "</th>")).join('')).concat(editable ? '<th rowspan="2">Acciones</th>' : '', "</tr><tr>").concat(columns.map(course => "<th class=\"matrix-code-head\" title=\"".concat(escapeHtml(course.name), "\"><span>").concat(escapeHtml(course.code), "</span><span class=\"matrix-print-course-name\">").concat(escapeHtml(course.name), "</span></th>")).join(''), "</tr></thead><tbody>").concat(rows.map(({
         position
       }, index) => "<tr class=\"".concat(index === 0 || rows[index - 1].position.department !== position.department ? 'matrix-department-start' : '', "\"><td>").concat(escapeHtml(position.classification || '—'), "</td><td>").concat(escapeHtml(position.job), "</td><td>").concat(escapeHtml(position.department), "</td>").concat(columns.map(course => {
         const label = matrixCellLabel(position, course);
-        return "<td class=\"matrix-intersection ".concat(label === 'No aplica' ? 'not-applicable' : label === 'Aplica' ? 'applicable' : 'group-applicable', "\" title=\"").concat(escapeHtml(course.name), " · ").concat(escapeHtml(label), "\"><span class=\"matrix-screen-label\">").concat(label === 'No aplica' ? '—' : label === 'Aplica' ? '✓' : '◆', "</span><span class=\"matrix-print-label\">").concat(escapeHtml(label), "</span></td>");
+        return "<td class=\"matrix-intersection ".concat(label === 'No aplica' ? 'not-applicable' : label === 'Aplica' ? 'applicable' : 'group-applicable', "\" title=\"").concat(escapeHtml(course.name), " · ").concat(escapeHtml(label), "\"><span class=\"matrix-screen-label\">").concat(label === 'No aplica' ? '—' : label === 'Aplica' ? '✓' : '◆', "</span><span class=\"matrix-print-label\">").concat(matrixPrintCellLabel(course,label), "</span></td>");
       }).join('')).concat(editable ? "<td><div class=\"course-list-actions\"><button type=\"button\" class=\"course-action edit\" data-edit-position=\"".concat(escapeHtml(position.job), "\" aria-label=\"Editar puesto ").concat(escapeHtml(position.job), "\" title=\"Editar puesto\">✎</button><button type=\"button\" class=\"course-action edit\" data-edit-matrix=\"").concat(escapeHtml(position.id), "\" aria-label=\"Editar cursos aplicables\" title=\"Editar cursos aplicables\">▦</button><button type=\"button\" class=\"course-action delete\" data-delete-matrix-position=\"").concat(escapeHtml(position.id), "\" aria-label=\"Eliminar puesto de la matriz\" title=\"Eliminar puesto de la matriz\">×</button></div></td>") : '', "</tr>")).join(''), "</tbody></table>");
     }
     function renderMatrix() {
@@ -569,16 +573,50 @@ function normalizePersonNames(key, value) {
       $('#matrix-summary').textContent = "".concat(rows.length, " puestos · ").concat(columns.length, " de ").concat(courses.length, " cursos visibles · ✓ Aplica · ◆ Integrantes de comisión o brigada (todos los puestos) · — No aplica");
       $('#matrix-table').innerHTML = rows.length && columns.length ? "<div class=\"matrix-cross-scroll\">".concat(crossMatrixTable(rows, columns, true), "</div>") : '<div class="panel empty-state">No hay registros con estos filtros.</div>';
     }
+    function employeeCompany(employee) {return norm(employee.company || employee.empresa || employee.entity || 'SAMARA')==='tacna'?'TACNA':'SAMARA';}
+    function employeeRows(rows) {
+      return rows.map(e=>'<tr><td>'+escapeHtml(e.no)+'</td><td>'+escapeHtml(e.curp)+'</td><td>'+escapeHtml(String(e.names||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.paternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.maternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(employeeCatalogLabel('studies',e.studies))+'</td><td>'+escapeHtml(employeeCatalogLabel('proofDocType',e.proofDocType))+'</td><td>'+escapeHtml(employeeCatalogLabel('institutionType',e.institutionType))+'</td><td>'+escapeHtml(e.position)+'</td><td><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="10" class="empty-state">No hay empleados para esta búsqueda.</td></tr>';
+    }
     function renderPeople() {
-      const query = ($('#people-search')?.value || '').toLowerCase();
-      const filtered = employees.filter(e => [e.no, e.curp, fullEmployeeName(e), e.studies, e.proofDocType, e.institutionType, e.position].join(' ').toLowerCase().includes(query));
-      $('#people-table').innerHTML = filtered.length ? filtered.map(e => "<tr><td>".concat(escapeHtml(e.no), "</td><td>").concat(escapeHtml(e.curp), "</td><td>").concat(escapeHtml(String(e.names || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(String(e.paternal || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(String(e.maternal || '').toLocaleUpperCase('es-MX')), "</td><td>").concat(escapeHtml(employeeCatalogLabel('studies', e.studies)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('proofDocType', e.proofDocType)), "</td><td>").concat(escapeHtml(employeeCatalogLabel('institutionType', e.institutionType)), "</td><td>").concat(escapeHtml(e.position), "</td><td><button class=\"row-more\" data-edit-employee=\"").concat(escapeHtml(e.curp), "\" aria-label=\"Editar empleado\">✎</button></td></tr>")).join('') : '<tr><td colspan="10" class="empty-state">Aún no hay empleados. Agrega uno o importa un archivo Excel.</td></tr>';
-      $('#employee-count').textContent = "".concat(employees.length, " empleados");
+      const query=norm($('#people-search')?.value);
+      const filtered=employees.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,employeeCompany(e)].join(' ')).includes(query));
+      $('#people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='SAMARA'));
+      $('#tacna-people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='TACNA'));
+      $('#employee-count').textContent=employees.filter(e=>employeeCompany(e)==='SAMARA').length+' empleados SAMARA';
+      $('#tacna-employee-count').textContent=employees.filter(e=>employeeCompany(e)==='TACNA').length+' empleados TACNA';
+    }
+    async function persistCollections(updates) {
+      if(cloud.blocked)throw cloud.lastError || new Error('Reintenta el guardado pendiente antes de continuar.');
+      Object.entries(updates).forEach(([key,value])=>saveStore(key,value));await flushCloud();
+      if(cloud.blocked)throw cloud.lastError || new Error('No se pudieron guardar los cambios.');
+    }
+    async function deleteEmployee(curp,button) {
+      const employee=employees.find(item=>norm(item.curp)===norm(curp));if(!employee||button.disabled)return;
+      button.disabled=true;
+      try {
+        if(!await appConfirm('¿Eliminar a '+fullEmployeeName(employee)+' del padrón de '+employeeCompany(employee)+'? Se conservarán sus registros históricos de asistencia y nombramientos.'))return;
+        const draft=employees.filter(item=>norm(item.curp)!==norm(curp));
+        await persistCollection('samara.employees.v2',draft);employees=draft;renderPeople();renderPositions();toast('Empleado eliminado.');
+      }catch(error){toast(error.message);}finally{button.disabled=false;}
+    }
+    async function deleteSircePosition(job,button) {
+      const position=positions.find(item=>norm(item.job)===norm(job));if(!position||button.disabled)return;
+      button.disabled=true;
+      try {
+        const count=employees.filter(employee=>norm(employee.position)===norm(job)).length;
+        if(!await appConfirm('¿Eliminar el puesto '+job+'? Se quitará de SIRCE y de la matriz con sus asignaciones de cursos.'+(count?' Hay '+count+' empleado(s) con este puesto; se conservará el nombre en sus registros.':'')))return;
+        const ids=new Set(matrixPositions.filter(item=>norm(item.job)===norm(job)).map(item=>item.id));
+        const nextPositions=positions.filter(item=>norm(item.job)!==norm(job)),nextMatrix=matrixPositions.filter(item=>!ids.has(item.id));
+        const nextCourses=courses.map(course=>({...course,applicablePositions:(course.applicablePositions||[]).filter(id=>!ids.has(id))}));
+        await persistCollections({'samara.positions.v2':nextPositions,'samara.matrixPositions.v2':nextMatrix,'samara.courses.v2':nextCourses});
+        positions=nextPositions;matrixPositions=nextMatrix;courses=nextCourses;
+        renderPositions();renderMatrix();renderCourses();fillEmployeePositionOptions();toast('Puesto eliminado.');
+      }catch(error){toast(error.message);}finally{button.disabled=false;}
     }
     function renderPositions() {
-      const query = ($('#position-search')?.value || '').toLowerCase();
-      const filtered = positions.filter(p => (p.job + ' ' + p.sirceCode + ' ' + p.sirceOccupation).toLowerCase().includes(query));
-      $('#positions-table').innerHTML = filtered.map(p => "<tr><td><b>".concat(escapeHtml(p.job), "</b></td><td>").concat(escapeHtml(p.sirceCode), "</td><td>").concat(escapeHtml(p.sirceOccupation), "</td><td>").concat(employees.filter(e => norm(e.position) === norm(p.job)).length, "</td><td><span class=\"tag "+(positionIsActive(p)?"green":"soft")+"\">"+(positionIsActive(p)?"Activo":"Inactivo")+"</span></td><td><button class=\"row-more\" data-edit-position=\"").concat(escapeHtml(p.job), "\" aria-label=\"Editar puesto\">✎</button></td></tr>")).join('') || '<tr><td colspan="6" class="empty-state">No hay puestos que coincidan.</td></tr>';
+      const query=norm($('#position-search')?.value);
+      const filtered=positions.filter(position=>norm(position.job+' '+position.sirceCode+' '+position.sirceOccupation).includes(query));
+      $('#positions-table').innerHTML=filtered.map(position=>'<tr><td><b>'+escapeHtml(position.job)+'</b></td><td>'+escapeHtml(position.sirceCode)+'</td><td>'+escapeHtml(position.sirceOccupation)+'</td><td>'+employees.filter(employee=>norm(employee.position)===norm(position.job)).length+'</td><td><span class="tag '+(positionIsActive(position)?'green':'soft')+'">'+(positionIsActive(position)?'Activo':'Inactivo')+'</span></td><td><button type="button" class="button outline" data-edit-position="'+escapeHtml(position.job)+'" aria-label="Editar puesto">✎</button> <button type="button" class="button outline" data-delete-sirce-position="'+escapeHtml(position.job)+'">Eliminar</button></td></tr>').join('') || '<tr><td colspan="6" class="empty-state">No hay puestos que coincidan.</td></tr>';
     }
     function renderInstructors() {
       $('#view-instructors').classList.toggle('external-instructor-view', activeInstructorModule === 'Externo');
@@ -1265,6 +1303,7 @@ function normalizePersonNames(key, value) {
       employeeForm.reset();
       $('#employee-form-title').textContent = employee ? 'Editar empleado' : 'Agregar empleado';
       for (const key of ['no', 'curp', 'names', 'paternal', 'maternal']) employeeForm.elements[key].value = employee?.[key] || '';
+      employeeForm.elements.company.value=employee?employeeCompany(employee):'SAMARA';
       fillEmployeeCatalogs(employee);
       fillEmployeePositionOptions(employee?.position || '');
       employeeDialog.showModal();
@@ -1278,6 +1317,8 @@ function normalizePersonNames(key, value) {
       event.preventDefault();
       const form = new FormData(employeeForm),
         item = {
+          ...(employees.find(employee=>norm(employee.curp)===norm(editingEmployeeCurp))||{}),
+          company: String(form.get('company')||'SAMARA'),
           no: String(form.get('no') || '').trim(),
           curp: String(form.get('curp') || '').trim().toUpperCase(),
           names: String(form.get('names') || '').trim().toLocaleUpperCase('es-MX'),
@@ -1328,19 +1369,13 @@ function normalizePersonNames(key, value) {
       for(const item of positionOccupationRecords){if(!search||item.search.includes(search)||item.code.includes(query)){matches.push(item);if(matches.length===50)break;}}
       $('#position-occupation-suggestions').innerHTML=matches.map(item=>'<option value="'+escapeHtml(occupationLookupLabel(item))+'"></option>').join('');
     }
-    function renderJobSuggestions(query='') {
-      const search=norm(query),jobs=new Set();
-      for(const item of [...positions,...matrixPositions]){if(item.job&&(!search||norm(item.job).includes(search)))jobs.add(item.job);if(jobs.size>=50)break;}
-      if(jobs.size<50)for(const item of positionOccupationRecords){if(!search||item.search.includes(search))jobs.add(item.occupation);if(jobs.size>=50)break;}
-      $('#position-job-suggestions').innerHTML=[...jobs].map(job=>'<option value="'+escapeHtml(job)+'"></option>').join('');
-    }
     function setPositionOccupation(record) {
       positionForm.elements.sirceCode.value=record?.code||'';
       positionForm.elements.sirceOccupation.value=record?occupationLookupLabel(record):'';
       positionForm.elements.sirceOccupation.setCustomValidity('');
     }
     function fillOccupationSelectors(position = null) {
-      indexPositionOccupations(position);renderOccupationSuggestions();renderJobSuggestions();
+      indexPositionOccupations(position);renderOccupationSuggestions();
       setPositionOccupation(positionByCode.get(String(position?.sirceCode||'')));
     }
     function openPositionEditor(job = '') {
@@ -1357,12 +1392,6 @@ function normalizePersonNames(key, value) {
     }
     $('#position-sirce-occupation').addEventListener('input',event=>{renderOccupationSuggestions(event.target.value);selectSirceOccupation();});
     $('#position-sirce-occupation').addEventListener('change',selectSirceOccupation);
-    $('#position-job').addEventListener('input',event=>{
-      renderJobSuggestions(event.target.value);
-      const existing=positions.find(item=>norm(item.job)===norm(event.target.value));
-      if(existing){indexPositionOccupations(existing);setPositionOccupation(positionByCode.get(String(existing.sirceCode)));return;}
-      const occupation=occupationByName.get(norm(event.target.value));if(occupation)setPositionOccupation(occupation);
-    });
     $('#import-occupation-catalog').addEventListener('click', () => $('#occupation-catalog-file').click());
     $('#occupation-catalog-file').addEventListener('change', async event => {
       const file = event.target.files?.[0];
@@ -1534,6 +1563,7 @@ function normalizePersonNames(key, value) {
           studies: ['estudios'],
           proofDocType: ['tipodocprobatorio', 'tipodocumentoprobatorio'],
           institutionType: ['tipodeinstitucion', 'tipoinstitucion'],
+          company: ['empresa','company'],
           position: ['puesto', 'ocupacion']
         };
       for (const [field, names] of Object.entries(aliases)) if (names.includes(value)) return field;
@@ -1870,9 +1900,10 @@ function normalizePersonNames(key, value) {
       if (remove) deleteMatrixPosition(remove.dataset.deleteMatrixPosition);
     });
     $('#add-employee').addEventListener('click', () => openEmployeeEditor());
-    $('#people-table').addEventListener('click', event => {
+    $('#view-people').addEventListener('click', event => {
       const button = event.target.closest('[data-edit-employee]');
       if (button) openEmployeeEditor(button.dataset.editEmployee);
+      const remove=event.target.closest('[data-delete-employee]');if(remove)deleteEmployee(remove.dataset.deleteEmployee,remove);
     });
     $('#import-employees').addEventListener('click', () => $('#employee-file').click());
     $('#employee-file').addEventListener('change', async event => {
@@ -1889,7 +1920,7 @@ function normalizePersonNames(key, value) {
         event.target.value = '';
       }
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position])]));
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, employeeCompany(e)])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
@@ -1929,6 +1960,7 @@ function normalizePersonNames(key, value) {
     }));
     $('#add-position').addEventListener('click', () => openPositionEditor());
     $('#positions-table').addEventListener('click', event => {
+      const remove=event.target.closest('[data-delete-sirce-position]');if(remove){deleteSircePosition(remove.dataset.deleteSircePosition,remove);return;}
       const button = event.target.closest('[data-edit-position]');
       if (button) openPositionEditor(button.dataset.editPosition);
     });
@@ -2014,16 +2046,25 @@ function normalizePersonNames(key, value) {
       }
       exportCsv('Matriz-de-Cursos.csv', rows);
     });
+    function matrixCourseAppendix(columns) {
+      const pages=[];
+      for(let start=0;start<columns.length;start+=18){
+        pages.push('<article class="matrix-course-appendix"><header><h1>Catálogo de cursos de la matriz</h1><p>Nombres completos para consulta por nomenclatura · Anexo '+(pages.length+1)+'</p></header><table><thead><tr><th>Nomenclatura</th><th>Nombre completo del curso</th></tr></thead><tbody>'+columns.slice(start,start+18).map(course=>'<tr><td>'+escapeHtml(course.code)+'</td><td>'+escapeHtml(course.name)+'</td></tr>').join('')+'</tbody></table></article>');
+      }
+      return pages.join('');
+    }
     function matrixPrintHtml() {
       const rows = filteredMatrixRows(),
         columns = filteredMatrixCourses(),
         pages = [];
-      for (let row = 0; row < rows.length; row += 6) for (let column = 0; column < columns.length; column += 4) pages.push({
-        rows: rows.slice(row, row + 6),
-        columns: columns.slice(column, column + 4)
+      if(!rows.length || !columns.length)return '';
+      for (let row = 0; row < rows.length; row += 7) for (let column = 0; column < columns.length; column += 18) pages.push({
+        rows: rows.slice(row, row + 7),
+        columns: columns.slice(column, column + 18)
       });
       const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value].filter(Boolean).join(' · ');
-      return pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Verde: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
+      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Verde: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
+      return matrixPages + matrixCourseAppendix(columns);
     }
     $('#matrix-print').addEventListener('click', () => {
       const html = matrixPrintHtml();
