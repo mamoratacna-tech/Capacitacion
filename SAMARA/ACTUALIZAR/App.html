@@ -595,15 +595,71 @@ function normalizePersonNames(key, value) {
       $('#matrix-summary').textContent = "".concat(rows.length, " puestos · ").concat(columns.length, " de ").concat(courses.length, " cursos visibles · ✓ Aplica · ◆ Integrantes de comisión o brigada (todos los puestos) · — No aplica");
       $('#matrix-table').innerHTML = rows.length && columns.length ? "<div class=\"matrix-cross-scroll\">".concat(crossMatrixTable(rows, columns, true), "</div>") : '<div class="panel empty-state">No hay registros con estos filtros.</div>';
     }
+    function employeeStatus(value,fallback='Activo') {
+      const key=norm(value);if(!key)return fallback;
+      if(['activo','activa','alta','a','si','1','true','vigente'].includes(key))return 'Activo';
+      if(['inactivo','inactiva','baja','bajas','i','no','0','false'].includes(key))return 'Inactivo';
+      throw new Error('Estado de empleado no reconocido: '+value+'. Usa Activo o Inactivo/Baja.');
+    }
+    function employeeIsActive(employee) {try{return employeeStatus(employee.activeStatus||employee.status||employee._legacy?.estado)==='Activo';}catch{return true;}}
+    function employeeDepartmentOptions(job,selected='') {
+      const names=[...new Set([positions.find(item=>norm(item.job)===norm(job))?.department,...matrixPositions.filter(item=>norm(item.job)===norm(job)).map(item=>item.department)].filter(Boolean))];
+      if(!names.length)names.push(...matrixDepartments.filter(item=>!item.deleted&&item.activeStatus!=='Inactivo').map(item=>item.name));
+      if(selected&&!names.some(name=>norm(name)===norm(selected)))names.push(selected);
+      return [...new Map(names.map(name=>[norm(name),String(name).toUpperCase()])).values()];
+    }
+    function planEmployeeImport(existing,incoming,options,jobCatalog,jobMatrix) {
+      const next=existing.map(employee=>({...employee})),errors=[],seen=new Set();let added=0,updated=0,activated=0,deactivated=0;
+      const scope=options.company||'SAMARA';
+      for(const [index,row] of incoming.entries()){
+        const tag='Fila '+(row._row||index+2)+': ',curp=String(row.curp||'').trim().toUpperCase(),number=String(row.no||'').trim();
+        if(!curp&&!number){errors.push(tag+'falta CURP o número de empleado.');continue;}
+        if(curp&&curp.length!==18){errors.push(tag+'la CURP debe tener 18 caracteres.');continue;}
+        const matches=next.filter(employee=>curp?norm(employee.curp)===norm(curp):String(employee.no)===number&&employeeCompany(employee)===scope);
+        if(matches.length>1){errors.push(tag+'el número identifica a varias personas; utiliza CURP.');continue;}
+        const previous=matches[0];
+        if(row.company&&!['samara','tacna'].includes(norm(row.company))){errors.push(tag+'empresa no reconocida; usa SAMARA o TACNA.');continue;}
+        const company=row.company?employeeCompany({company:row.company}):previous?employeeCompany(previous):scope;
+        if(options.mode==='active'&&company!==scope){errors.push(tag+'pertenece a '+company+'; la carga de activos está limitada a '+scope+'.');continue;}
+        if(!previous&&(!number||!curp||!row.names||!row.paternal||!row.position)){errors.push(tag+'empleado no encontrado; para crearlo se requieren número, CURP, nombre, apellido paterno y puesto.');continue;}
+        const identity=norm(curp||previous?.curp);if(seen.has(identity)){errors.push(tag+'empleado duplicado dentro del archivo.');continue;}seen.add(identity);
+        const patch=Object.fromEntries(Object.entries(row).filter(([key,value])=>key!=='_row'&&value!==''&&value!==undefined));
+        const item={...(previous||{}),...patch,curp:curp||previous.curp,no:number||previous?.no||'',company};
+        for(const field of ['names','paternal','maternal','position','department'])if(typeof item[field]==='string')item[field]=item[field].trim().toUpperCase();
+        const job=jobCatalog.find(record=>norm(record.job)===norm(item.position));
+        const departments=[...new Set([job?.department,...jobMatrix.filter(record=>norm(record.job)===norm(item.position)).map(record=>record.department)].filter(Boolean))];
+        if(previous&&norm(previous.position)!==norm(item.position)&&!row.department)item.department='';
+        if(!item.department&&departments.length===1)item.department=departments[0];
+        if(!item.department){errors.push(tag+'falta Departamento; no se puede resolver de forma única para el puesto.');continue;}
+        if(row.department&&departments.length&&!departments.some(department=>norm(department)===norm(item.department))){errors.push(tag+'el departamento no corresponde al puesto '+item.position+'. Revisa Puestos en SIRCE.');continue;}
+        try{item.activeStatus=options.mode==='active'?'Activo':employeeStatus(row.activeStatus,previous?employeeIsActive(previous)?'Activo':'Inactivo':'Activo');}catch(error){errors.push(tag+error.message);continue;}
+        if(previous){if(!employeeIsActive(previous)&&item.activeStatus==='Activo')activated++;if(employeeIsActive(previous)&&item.activeStatus==='Inactivo')deactivated++;next[next.indexOf(previous)]=item;updated++;}else{next.push(item);added++;if(item.activeStatus==='Activo')activated++;}
+      }
+      if(!incoming.length)errors.push('El archivo no contiene empleados.');
+      if(options.mode==='active'&&options.complete){for(let index=0;index<next.length;index++){const employee=next[index];if(employeeCompany(employee)===scope&&!seen.has(norm(employee.curp))&&employeeIsActive(employee)){next[index]={...employee,activeStatus:'Inactivo'};deactivated++;}}}
+      return {next,errors,added,updated,activated,deactivated};
+    }
+    function instructorCertificationDate(row,item) {return row.certificationDate||item.authorizationDate||'';}
+    function instructorPrintGroups(item,selected,from='',to='') {
+      const groups=new Map();
+      for(const index of selected){const row=(item.authorizedCourses||[])[index];if(!row)throw new Error('El curso seleccionado ya no existe.');const date=instructorCertificationDate(row,item);
+        if(!Cmcap.valid(date))throw new Error('Completa la fecha de certificación de '+row.name+'.');
+        if(from&&date<from||to&&date>to)continue;
+        if(!groups.has(date))groups.set(date,[]);groups.get(date).push({...row,certificationDate:date});
+      }
+      if(!groups.size)throw new Error('Selecciona al menos un curso dentro del rango de fechas.');
+      return [...groups].sort(([a],[b])=>a.localeCompare(b)).map(([date,courses])=>({...item,authorizationDate:date,authorizedCourses:courses}));
+    }
     function employeeCompany(employee) {return norm(employee.company || employee.empresa || employee.entity || 'SAMARA')==='tacna'?'TACNA':'SAMARA';}
     function employeeRows(rows) {
-      return rows.map(e=>'<tr><td>'+escapeHtml(e.no)+'</td><td>'+escapeHtml(e.curp)+'</td><td>'+escapeHtml(String(e.names||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.paternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.maternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(employeeCatalogLabel('studies',e.studies))+'</td><td>'+escapeHtml(employeeCatalogLabel('proofDocType',e.proofDocType))+'</td><td>'+escapeHtml(employeeCatalogLabel('institutionType',e.institutionType))+'</td><td>'+escapeHtml(e.position)+'</td><td><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="10" class="empty-state">No hay empleados para esta búsqueda.</td></tr>';
+      return rows.map(e=>'<tr><td>'+escapeHtml(e.no)+'</td><td>'+escapeHtml(e.curp)+'</td><td>'+escapeHtml(String(e.names||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.paternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.maternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(employeeCatalogLabel('studies',e.studies))+'</td><td>'+escapeHtml(employeeCatalogLabel('proofDocType',e.proofDocType))+'</td><td>'+escapeHtml(employeeCatalogLabel('institutionType',e.institutionType))+'</td><td>'+escapeHtml(e.position)+'</td><td>'+escapeHtml(e.department||'')+'</td><td>'+(employeeIsActive(e)?'Activo':'Inactivo')+'</td><td><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="12" class="empty-state">No hay empleados para esta búsqueda.</td></tr>';
     }
     function renderPeople() {
+      $('#import-active-employees').hidden=activeEmployeeCompany!=='SAMARA';
       $('#employee-samara-pane').hidden=activeEmployeeCompany!=='SAMARA';$('#employee-tacna-pane').hidden=activeEmployeeCompany!=='TACNA';
       $$('[data-employee-company]').forEach(button=>{const active=button.dataset.employeeCompany===activeEmployeeCompany;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
-      const query=norm($('#people-search')?.value);
-      const filtered=employees.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,employeeCompany(e)].join(' ')).includes(query));
+      const query=norm($('#people-search')?.value),status=$('#employee-status-filter').value;
+      const filtered=employees.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,e.department,employeeCompany(e)].join(' ')).includes(query)&&(status==='Todos'||(employeeIsActive(e)?'Activo':'Inactivo')===status));
       $('#people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='SAMARA'));
       $('#tacna-people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='TACNA'));
       $('#employee-count').textContent=employees.filter(e=>employeeCompany(e)==='SAMARA').length+' empleados SAMARA';
@@ -648,7 +704,7 @@ function normalizePersonNames(key, value) {
         moduleSingular = activeInstructorModule.toLowerCase();
       const query = ($('#instructor-search')?.value || '').toLowerCase();
       const filtered = instructors.filter(item => item.type === activeInstructorModule && [fullInstructorName(item), item.employeeNo, item.rfc, item.employeeDepartment, item.employeePosition, ...(item.authorizedCourses || []).map(course => course.name)].join(' ').toLowerCase().includes(query));
-      $('#instructors-table').innerHTML = filtered.length ? filtered.map(item => "<tr><td><span class=\"tag ".concat(item.type === 'Externo' ? 'soft' : 'green', "\">").concat(escapeHtml(item.type), "</span></td><td><b>").concat(escapeHtml(fullInstructorName(item)), "</b><small class=\"table-subline\">").concat(escapeHtml(item.division), " · ").concat(escapeHtml(item.establishment), "</small></td><td>").concat(escapeHtml(item.type === 'Interno' ? item.employeeNo : item.rfc), "</td><td>").concat(escapeHtml(item.type === 'Interno' ? item.employeeDepartment : 'Proveedor externo'), "</td><td>").concat((item.authorizedCourses || []).map(course => escapeHtml(course.name)).join('<br>'), "</td><td class=\"instructor-letter-cell\"><button type=\"button\" class=\"row-more approval-row-print\" data-print-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Imprimir carta aprobatoria\" title=\"Imprimir carta aprobatoria\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6z\"/><path d=\"M17 11h1\"/></svg></button></td><td class=\"instructor-row-actions\"><button class=\"row-more\" data-edit-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Editar instructor\">✎</button> <button type=\"button\" class=\"row-more instructor-delete\" data-delete-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Eliminar instructor\" title=\"Eliminar instructor\">×</button></td></tr>")).join('') : "<tr><td colspan=\"7\" class=\"empty-state\">No hay instructores ".concat(modulePlural, " todavía. Usa “Agregar instructor ").concat(moduleSingular, "”.</td></tr>");
+      $('#instructors-table').innerHTML = filtered.length ? filtered.map(item => "<tr><td><span class=\"tag ".concat(item.type === 'Externo' ? 'soft' : 'green', "\">").concat(escapeHtml(item.type), "</span></td><td><b>").concat(escapeHtml(fullInstructorName(item)), "</b><small class=\"table-subline\">").concat(escapeHtml(item.division), " · ").concat(escapeHtml(item.establishment), "</small></td><td>").concat(escapeHtml(item.type === 'Interno' ? item.employeeNo : item.rfc), "</td><td>").concat(escapeHtml(item.type === 'Interno' ? item.employeeDepartment : 'Proveedor externo'), "</td><td>").concat((item.authorizedCourses || []).map(course => escapeHtml(course.name)+'<small class="table-subline">Certificación: '+escapeHtml(instructorCertificationDate(course,item)||'Fecha pendiente')+'</small>').join('<br>'), "</td><td class=\"instructor-letter-cell\"><button type=\"button\" class=\"row-more approval-row-print\" data-print-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Imprimir carta aprobatoria\" title=\"Imprimir carta aprobatoria\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" aria-hidden=\"true\"><path d=\"M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6z\"/><path d=\"M17 11h1\"/></svg></button></td><td class=\"instructor-row-actions\"><button class=\"row-more\" data-edit-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Editar instructor\">✎</button> <button type=\"button\" class=\"row-more instructor-delete\" data-delete-instructor=\"").concat(escapeHtml(item.id), "\" aria-label=\"Eliminar instructor\" title=\"Eliminar instructor\">×</button></td></tr>")).join('') : "<tr><td colspan=\"7\" class=\"empty-state\">No hay instructores ".concat(modulePlural, " todavía. Usa “Agregar instructor ").concat(moduleSingular, "”.</td></tr>");
       $('#instructor-count').textContent = "".concat(filtered.length, " instructores ").concat(modulePlural);
       $('#add-instructor').innerHTML = "<span>＋</span> Agregar instructor ".concat(activeInstructorModule.toLowerCase());
       $$('[data-instructor-module]').forEach(button => {
@@ -690,7 +746,7 @@ function normalizePersonNames(key, value) {
       wrap.innerHTML = rows.map((row, index) => {
         const courseCode = row.courseCode || '',
           isOther = courseCode === '__other__';
-        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat(rows.length === 1 ? 'disabled' : '', ">×</button></div>");
+        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><label class=\"instructor-certification-date\">Fecha de certificación CMCAP<input type=\"date\" data-certification-date value=\"").concat(escapeHtml(row.certificationDate||''), "\" ").concat(courseCode ? 'required' : '', "></label><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat(rows.length === 1 ? 'disabled' : '', ">×</button></div>");
       }).join('');
     }
     function setInstructorFields(type) {
@@ -739,7 +795,7 @@ function normalizePersonNames(key, value) {
       if ((item?.type || type) === 'Interno') {
         const employee = employees.find(row => norm(row.curp) === norm(item?.employeeCurp) || norm(row.no) === norm(item?.employeeNo) || norm(fullEmployeeName(row)) === norm(item?.employeeName));
         fillInstructorEmployeeOptions(employee?.curp || '', item?.employeeDepartment || '');
-        renderInstructorCourseRows(item?.authorizedCourses || []);
+        renderInstructorCourseRows((item?.authorizedCourses || []).map(row=>({...row,certificationDate:instructorCertificationDate(row,item),legacyDate:!row.certificationDate&&!!item.authorizationDate})));
       } else renderInstructorCourseRows([]);
       instructorDialog.showModal();
     }
@@ -747,7 +803,8 @@ function normalizePersonNames(key, value) {
       return [...$('#instructor-course-rows').querySelectorAll('.authorized-course-row')].map(row => ({
         courseCode: row.querySelector('select').value,
         name: row.querySelector('.authorized-course-other').value.trim(),
-        experience: [...row.querySelectorAll('.experience-options input:checked')].map(input => input.value)
+        experience: [...row.querySelectorAll('.experience-options input:checked')].map(input => input.value),
+        certificationDate: row.querySelector('[data-certification-date]').value
       }));
     }
     function saveInstructorFromForm(event) {
@@ -771,18 +828,20 @@ function normalizePersonNames(key, value) {
           toast("Marca el tipo de experiencia del curso ".concat(index + 1, "."));
           return;
         }
+        if(!Cmcap.valid(row.certificationDate)){toast('Completa la fecha de certificación del curso '+(index+1)+'.');return;}
         authorizedCourses.push({
           courseCode: row.courseCode === '__other__' ? '__other__' : row.courseCode,
           name,
-          experience: row.experience
+          experience: row.experience,
+          certificationDate: row.certificationDate
         });
       }
       if (type === 'Interno' && !authorizedCourses.length) {
         toast('Agrega al menos un curso autorizado.');
         return;
       }
-      if (new Set(authorizedCourses.map(course => course.name.toLowerCase())).size !== authorizedCourses.length) {
-        toast('No repitas un curso en el mismo registro.');
+      if (new Set(authorizedCourses.map(course => norm(course.name)+'|'+course.certificationDate)).size !== authorizedCourses.length) {
+        toast('No repitas el mismo curso con la misma fecha de certificación.');
         return;
       }
       const id = instructorForm.dataset.editId || "ins-".concat(Date.now()),
@@ -855,24 +914,37 @@ function normalizePersonNames(key, value) {
         return "<article class=\"ft007-original-page\"><img class=\"ft007-original-template\" src=\"".concat(window.FT007_IMG, "\" alt=\"Formato FT-RH-007\">").concat(fields, "</article>");
       }).join('');
     }
-    function printInstructor(id) {
-      const item = instructors.find(row => row.id === id);
-      if (!item) return;
-      try {
-        $('#print-stage').innerHTML = instructorApprovalHtml(item);
-      } catch (error) {
-        toast(error.message);
-        return;
-      }
-      const image = $('#print-stage img');
-      const print = () => {
-        printPreparedDocument(false);
-        document.getElementById('print-page-layout').textContent = '@page{size:letter portrait;margin:0}';
-      };
-      if (image.complete) print();else image.addEventListener('load', print, {
-        once: true
-      });
+    let instructorPrintId='',instructorPrintSelected=new Set();
+    function renderInstructorPrintChoices(){
+      const item=instructors.find(record=>record.id===instructorPrintId);if(!item)return;
+      const from=$('#instructor-print-from').value,to=$('#instructor-print-to').value;
+      $('#instructor-print-courses').innerHTML=(item.authorizedCourses||[]).map((row,index)=>{
+        const date=instructorCertificationDate(row,item);if(from&&date<from||to&&date>to)return '';
+        return '<label class="instructor-print-choice"><input type="checkbox" data-print-course="'+index+'" '+(instructorPrintSelected.has(index)?'checked':'')+' '+(!Cmcap.valid(date)?'disabled':'')+'><span><b>'+escapeHtml(row.name)+'</b><small>'+escapeHtml(row.courseCode||'')+' · Certificación: '+escapeHtml(date||'Fecha pendiente')+'</small></span></label>';
+      }).join('')||'<p>No hay cursos en este rango.</p>';
     }
+    function printInstructor(id){
+      const item=instructors.find(record=>record.id===id);if(!item)return;
+      if(item.type==='Externo'){try{executeInstructorPrint([item]);}catch(error){toast(error.message);}return;}
+      instructorPrintId=id;instructorPrintSelected=new Set((item.authorizedCourses||[]).map((row,index)=>Cmcap.valid(instructorCertificationDate(row,item))?index:null).filter(index=>index!==null));
+      $('#instructor-print-form').reset();$('#instructor-print-name').textContent=fullInstructorName(item);$('#instructor-print-error').textContent='';renderInstructorPrintChoices();$('#instructor-print-dialog').showModal();
+    }
+    function executeInstructorPrint(groups){
+      const html=groups.map(instructorApprovalHtml).join('');$('#print-stage').innerHTML=html;
+      const images=[...$('#print-stage').querySelectorAll('img')];
+      const ready=()=>{printPreparedDocument(false);document.getElementById('print-page-layout').textContent='@page{size:letter portrait;margin:0}';};
+      if(images.every(image=>image.complete))ready();else Promise.all(images.map(image=>image.complete?Promise.resolve():new Promise((resolve,reject)=>{image.addEventListener('load',resolve,{once:true});image.addEventListener('error',()=>reject(Error('No se pudo cargar la plantilla FT-RH-007.')),{once:true});}))).then(ready).catch(error=>toast(error.message));
+    }
+    $('#instructor-print-from').addEventListener('change',renderInstructorPrintChoices);$('#instructor-print-to').addEventListener('change',renderInstructorPrintChoices);
+    $('#instructor-print-courses').addEventListener('change',event=>{if(!event.target.matches('[data-print-course]'))return;const index=Number(event.target.dataset.printCourse);if(event.target.checked)instructorPrintSelected.add(index);else instructorPrintSelected.delete(index);});
+    $('#instructor-print-all').addEventListener('click',()=>{$$('#instructor-print-courses [data-print-course]:not(:disabled)').forEach(input=>instructorPrintSelected.add(Number(input.dataset.printCourse)));renderInstructorPrintChoices();});
+    $('#instructor-print-form').addEventListener('submit',event=>{
+      event.preventDefault();try{
+        const from=$('#instructor-print-from').value,to=$('#instructor-print-to').value;if(from&&to&&from>to)throw new Error('La fecha Desde debe ser anterior o igual a Hasta.');
+        const item=instructors.find(record=>record.id===instructorPrintId),groups=instructorPrintGroups(item,instructorPrintSelected,from,to);
+        executeInstructorPrint(groups);$('#instructor-print-dialog').close();
+      }catch(error){$('#instructor-print-error').textContent=error.message;}
+    });
     function cmcapSigner(role, date) {
       return Cmcap.member(cmcapMembers, role, date).name;
     }
@@ -1376,6 +1448,13 @@ function normalizePersonNames(key, value) {
       if (selected && !positions.some(p => norm(p.job) === norm(selected))) select.insertAdjacentHTML('beforeend', "<option value=\"".concat(escapeHtml(selected), "\">").concat(escapeHtml(selected), " (sin catálogo)</option>"));
       select.value = selected || '';
     }
+    function fillEmployeeDepartmentOptions(selected='') {
+      const names=employeeDepartmentOptions(employeeForm.elements.position.value,selected);
+      employeeForm.elements.department.innerHTML='<option value="">Selecciona departamento</option>'+names.map(name=>'<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join('');
+      employeeForm.elements.department.value=names.find(name=>norm(name)===norm(selected))||(names.length===1?names[0]:'');
+    }
+    $('#employee-position').addEventListener('change',()=>fillEmployeeDepartmentOptions());
+    $('#employee-status-filter').addEventListener('change',renderPeople);
     function openEmployeeEditor(curp = '') {
       editingEmployeeCurp = curp;
       const employee = employees.find(item => norm(item.curp) === norm(curp));
@@ -1385,6 +1464,8 @@ function normalizePersonNames(key, value) {
       employeeForm.elements.company.value=employee?employeeCompany(employee):'SAMARA';
       fillEmployeeCatalogs(employee);
       fillEmployeePositionOptions(employee?.position || '');
+      fillEmployeeDepartmentOptions(employee?.department || '');
+      employeeForm.elements.activeStatus.value=employee&&!employeeIsActive(employee)?'Inactivo':'Activo';
       employeeDialog.showModal();
     }
     document.addEventListener('input',event=>{
@@ -1398,6 +1479,8 @@ function normalizePersonNames(key, value) {
         item = {
           ...(employees.find(employee=>norm(employee.curp)===norm(editingEmployeeCurp))||{}),
           company: String(form.get('company')||'SAMARA'),
+          department: String(form.get('department')||'').trim().toUpperCase(),
+          activeStatus: String(form.get('activeStatus')||'Activo'),
           no: String(form.get('no') || '').trim(),
           curp: String(form.get('curp') || '').trim().toUpperCase(),
           names: String(form.get('names') || '').trim().toLocaleUpperCase('es-MX'),
@@ -1408,7 +1491,7 @@ function normalizePersonNames(key, value) {
           institutionType: String(form.get('institutionType') || '').trim(),
           position: String(form.get('position') || '').trim()
         };
-      item.department=positions.find(position=>norm(position.job)===norm(item.position))?.department || item.department || '';
+      if(!item.department){toast('Selecciona el departamento que corresponde al puesto.');return;}
       if (item.curp.length !== 18) {
         toast('La CURP debe tener 18 caracteres.');
         return;
@@ -1650,7 +1733,7 @@ function normalizePersonNames(key, value) {
     function fieldForHeader(header) {
       const value = norm(header),
         aliases = {
-          no: ['no', 'numero', 'numeroempleado'],
+          no: ['no', 'numero', 'numeroempleado','numerodeempleado','nodeempleado','numempleado','nomina','legajo'],
           curp: ['decurp', 'curp', 'numerodecurp'],
           names: ['nombres', 'nombre'],
           paternal: ['apellidopaterno'],
@@ -1659,40 +1742,23 @@ function normalizePersonNames(key, value) {
           proofDocType: ['tipodocprobatorio', 'tipodocumentoprobatorio'],
           institutionType: ['tipodeinstitucion', 'tipoinstitucion'],
           company: ['empresa','company'],
+          department: ['departamento','depto','area'],
+          activeStatus: ['estado','estatus','status','activo','activoinactivo','estadodelempleado','situacion'],
           position: ['puesto', 'ocupacion']
         };
       for (const [field, names] of Object.entries(aliases)) if (names.includes(value)) return field;
       return null;
     }
-    function rowsToEmployees(rows) {
-      let headerAt = -1,
-        mapping = {};
-      for (let rowIndex = 0; rowIndex < Math.min(rows.length, 20); rowIndex++) {
-        const keys = rows[rowIndex].map(fieldForHeader);
-        if (keys.includes('curp') && keys.includes('names') && keys.includes('paternal')) {
-          headerAt = rowIndex;
-          rows[rowIndex].forEach((header, column) => {
-            const field = fieldForHeader(header);
-            if (field && !Object.hasOwn(mapping, field)) mapping[field] = column;
-          });
-          break;
-        }
+    function rowsToEmployees(rows,options={}) {
+      let headerAt=-1,mapping={};
+      for(let index=0;index<Math.min(rows.length,20);index++){
+        const fields=rows[index].map(fieldForHeader);
+        if((options.active&&(fields.includes('curp')||fields.includes('no')))||(!options.active&&fields.includes('curp')&&fields.includes('names'))){headerAt=index;fields.forEach((field,column)=>{if(field&&!Object.hasOwn(mapping,field))mapping[field]=column;});break;}
       }
-      if (headerAt < 0) throw new Error('No localicé encabezados de CURP, Nombre(s) y Apellido Paterno.');
-      const required = ['no', 'curp', 'names', 'paternal', 'studies', 'proofDocType', 'institutionType', 'position'],
-        labels = {
-          no: 'No',
-          curp: '# de CURP',
-          names: 'Nombre(s)',
-          paternal: 'Apellido Paterno',
-          studies: 'Estudios',
-          proofDocType: 'Tipo Doc. Probatorio',
-          institutionType: 'Tipo de Institución',
-          position: 'Puesto'
-        },
-        missing = required.filter(field => mapping[field] === undefined);
-      if (missing.length) throw new Error('Faltan columnas: ' + missing.map(field => labels[field]).join(', '));
-      return rows.slice(headerAt + 1).map(row => Object.fromEntries(Object.entries(mapping).map(([field, column]) => [field, String(row[column] ?? '').trim()]))).filter(employee => employee.no && employee.curp && employee.names);
+      if(headerAt<0)throw new Error(options.active?'El archivo de activos requiere CURP o No de empleado.':'No se localizaron encabezados de CURP y Nombre(s).');
+      const required=options.active?[]:['no','curp','names','paternal','position'],missing=required.filter(field=>mapping[field]===undefined);
+      if(missing.length)throw new Error('Faltan columnas: '+missing.map(field=>({no:'No',curp:'CURP',names:'Nombre(s)',paternal:'Apellido Paterno',position:'Puesto'}[field])).join(', '));
+      return rows.slice(headerAt+1).map((row,index)=>({...Object.fromEntries(Object.entries(mapping).map(([field,column])=>[field,String(row[column]??'').trim()])),_row:headerAt+index+2})).filter(row=>Object.entries(row).some(([key,value])=>key!=='_row'&&value));
     }
     function mergeEmployees(incoming) {
       let added = 0,
@@ -2001,22 +2067,40 @@ function normalizePersonNames(key, value) {
       if (button) openEmployeeEditor(button.dataset.editEmployee);
       const remove=event.target.closest('[data-delete-employee]');if(remove)deleteEmployee(remove.dataset.deleteEmployee,remove);
     });
-    $('#import-employees').addEventListener('click', () => $('#employee-file').click());
-    $('#employee-file').addEventListener('change', async event => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      try {
-        const name = file.name.toLowerCase(),
-          rows = name.endsWith('.csv') ? parseCsv(await file.text()) : name.endsWith('.xlsx') ? await readXlsx(file) : null;
-        if (!rows) throw new Error('Usa un archivo .xlsx o .csv UTF-8.');
-        mergeEmployees(rowsToEmployees(rows));
-      } catch (error) {
-        toast(error.message || 'No pude leer el archivo.');
-      } finally {
-        event.target.value = '';
-      }
+    let employeeImportMode='general',employeeImportRows=null;
+    function previewEmployeeImport(){
+      if(!employeeImportRows)return;
+      const complete=$('#employee-import-complete').checked,plan=planEmployeeImport(employees,employeeImportRows,{mode:employeeImportMode,company:employeeImportMode==='active'?'SAMARA':activeEmployeeCompany,complete},positions,matrixPositions);
+      $('#employee-import-summary').textContent=plan.errors.length?'No se guardará nada. Corrige:\n'+plan.errors.join('\n'):'Empresa: '+(employeeImportMode==='active'?'SAMARA':activeEmployeeCompany)+' · '+plan.added+' nuevos · '+plan.updated+' actualizados · '+plan.activated+' activados · '+plan.deactivated+' marcados como baja/inactivos.'+(employeeImportMode==='active'&&complete?' Los ausentes de esta empresa quedarán inactivos; no se borran registros.':' Los empleados que no aparecen conservan su estado.');
+      $('#employee-import-apply').disabled=!!plan.errors.length;return plan;
+    }
+    function openEmployeeImport(mode){
+      employeeImportMode=mode;$('#employee-file').value='';$('#employee-file').click();
+    }
+    $('#import-employees').addEventListener('click',()=>openEmployeeImport('general'));
+    $('#import-active-employees').addEventListener('click',()=>openEmployeeImport('active'));
+    $('#employee-file').addEventListener('change',async event=>{
+      const file=event.target.files?.[0];if(!file)return;
+      try{
+        const rows=file.name.toLowerCase().endsWith('.xlsx')?await readXlsx(file):parseCsv(await ssCsvText(file));
+        employeeImportRows=rowsToEmployees(rows,{active:employeeImportMode==='active'});
+        $('#employee-import-title').textContent=employeeImportMode==='active'?'Cargar empleados activos':'Cargar empleados';
+        $('#employee-import-scope').textContent='Empresa de esta carga: '+(employeeImportMode==='active'?'SAMARA':activeEmployeeCompany)+'. Revisa las altas, cambios de estado y departamentos antes de aplicar.';
+        $('#employee-import-complete-wrap').hidden=employeeImportMode!=='active';$('#employee-import-complete').checked=true;
+        $('#employee-import-dialog').showModal();previewEmployeeImport();
+      }catch(error){toast(error.message);}finally{event.target.value='';}
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, employeeCompany(e)])]));
+    $('#employee-import-complete').addEventListener('change',previewEmployeeImport);
+    $('#employee-import-apply').addEventListener('click',async event=>{
+      const button=event.target;if(button.disabled)return;button.disabled=true;
+      try{
+        const plan=previewEmployeeImport();button.disabled=true;if(!plan||plan.errors.length)return;
+        const draft=normalizePersonNames('samara.employees.v2',plan.next);
+        await persistCollection('samara.employees.v2',draft);employees=draft;
+        renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
+      }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
+    });
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Departamento', 'Estado', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e)])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
@@ -2033,6 +2117,7 @@ function normalizePersonNames(key, value) {
           show = event.target.value === '__other__';
         input.hidden = !show;
         input.required = show;
+        event.target.closest('.authorized-course-row').querySelector('[data-certification-date]').required=!!event.target.value;
       }
     });
     $('#instructor-course-rows').addEventListener('click', event => {

@@ -1,0 +1,19 @@
+ACTUALIZACIÓN: EMPLEADOS Y CERTIFICACIÓN DE INSTRUCTORES
+
+1. Reemplaza completos App.html, Index.html y Estilos.html en tu proyecto existente de Apps Script. No crees otro proyecto ni cambies la hoja vinculada.
+2. Guarda y ve a Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar. Recarga la aplicación.
+
+CARGAR EMPLEADOS
+Acepta Excel .xlsx o CSV. Encabezados: No, CURP, Nombres, Apellido paterno, Apellido materno, Puesto, Departamento, Estado, Empresa. Estudios, tipo de documento y tipo de institución son opcionales. Estado admite Activo, Inactivo o Baja. Si se omite el estado, conserva el anterior. Para personas nuevas se requieren número, CURP, nombres, apellido paterno, puesto y departamento (este último puede resolverse si el puesto tiene un solo departamento).
+
+CARGAR EMPLEADOS ACTIVOS
+Solo SAMARA; no modifica TACNA. Para personas ya registradas basta CURP o número de empleado. Si la lista es completa, deja marcada la casilla para dar de baja a quienes no aparecen. Si es una actualización parcial, desmárcala. Siempre revisa el resumen antes de aplicar. Los registros se conservan para consultas históricas; no se eliminan.
+
+DEPARTAMENTOS
+La tabla y el formulario del empleado incluyen departamento y estado. El departamento se elige según el puesto. Los nombres se guardan en mayúsculas.
+
+INSTRUCTORES
+Cada curso interno tiene su propia fecha de certificación CMCAP. Revisa las fechas recuperadas de la autorización anterior: se conservan como punto de partida, pero deben corregirse si los cursos se certificaron en días diferentes.
+Al pulsar imprimir puedes seleccionar cursos y limitar el rango de certificación. Se genera un grupo de formatos por cada fecha, con los firmantes de CMCAP vigentes ese día. Si no hay firmantes para esa fecha, la aplicación avisa para que completes sus vigencias.
+
+Validación local: 32 comprobaciones automáticas y pruebas de navegador de carga SAMARA, fechas por curso, selección de impresión y exportaciones de listados. La publicación en tu Apps Script se realiza con el paso 2.
