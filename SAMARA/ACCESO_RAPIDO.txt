@@ -1,0 +1,43 @@
+SAMARA: USUARIO ABAJO Y ENTRADA/SALIDA CON MENOS ESPERA
+
+En tu proyecto EXISTENTE de Apps Script reemplaza completos:
+- Index.html
+- App.html
+- Acceso.html
+- Usuarios.html
+- UsuariosServidor.gs (archivo de secuencia de comandos)
+
+Conserva Code.gs, tus demás archivos, la hoja de datos, el manifiesto y todas
+las propiedades del proyecto. NO vuelvas a configurar usuarios ni contraseñas.
+Guarda todos los cambios y publica:
+Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar.
+Recarga el enlace /exec.
+
+CAMBIOS
+El nombre, rol y botón Cerrar sesión están en el bloque inferior del menú,
+debajo de Google Sheets. El nombre y rol corresponden al usuario conectado.
+Se eliminó el bloque de usuario duplicado de arriba.
+
+Al enviar usuario y contraseña se hacen dos consultas: obtener los datos de
+verificación y validar/recibir la aplicación junto con los datos iniciales.
+Recuperar una sesión vigente usa una consulta. Cerrar sesión vuelve a la
+pantalla de acceso con una consulta sin recargar el iframe completo de Google.
+La salida espera el guardado pendiente y avisa junto al botón si no puede salir.
+Las herramientas de Excel y PDF se cargan en paralelo y se reutilizan cuando
+vuelves a ingresar en la misma pestaña. Sus versiones e integridad se conservan.
+La pantalla indica que está verificando el acceso, guardando o cerrando sesión.
+Se limpian las acciones de la sesión anterior para evitar duplicarlas al
+volver a ingresar sin recargar la página.
+
+Se conservan las cuentas actuales, contraseñas, permisos, protección de datos,
+validación en servidor y PBKDF2 de 600000 iteraciones. No requiere permisos nuevos.
+La respuesta final también depende del arranque de Apps Script y tu conexión;
+no se garantiza un tiempo fijo de entrada o salida.
+
+VERIFICACIÓN LOCAL
+40 pruebas automáticas; pruebas de navegador de entrada, recuperación de sesión,
+salida, cambio de usuario, ubicación del bloque inferior, carga en paralelo,
+reutilización de bibliotecas, gestión de usuarios, personal y exportaciones.
+Se comprobó también el guardado lento (>15 segundos) y la conservación de
+borradores ante errores. Estas pruebas usan un simulador de los servicios de
+Google; la actualización real requiere publicarla con los pasos anteriores.

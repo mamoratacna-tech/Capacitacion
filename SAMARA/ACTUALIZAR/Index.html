@@ -20,7 +20,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand"><div class="brand-mark">S</div><div><strong>SAMARA</strong><span>Centro de entrenamiento</span></div></div>
       <div class="workspace-label">GESTIÓN RH</div>
-      <div id="session-user" style="padding:12px;color:inherit"></div><button id="logout-user" class="button outline" type="button">Cerrar sesión</button><nav class="nav" aria-label="Navegación principal">
+      <nav class="nav" aria-label="Navegación principal">
         <button class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span>Resumen</button>
         <button class="nav-item" data-view="courses"><span class="nav-icon">▤</span>Cursos <span class="nav-count" id="course-count">8</span></button>
         <button class="nav-item" data-view="matrix"><span class="nav-icon">▦</span>Matriz</button>
@@ -30,7 +30,7 @@
         <button class="nav-item" data-view="users" id="users-nav" hidden><span class="nav-icon">♙</span>Usuarios</button><button class="nav-item" data-view="cmcap"><span class="nav-icon">✎</span>CMCAP</button>
         <button class="nav-item" data-view="reports"><span class="nav-icon">▥</span>Reportes</button>
       </nav>
-      <div class="sidebar-bottom"><div class="demo-note"><span class="pulse"></span><div><b>Google Sheets</b><small>Centro de entrenamiento</small></div></div><div class="user-card"><div class="avatar">RH</div><div><b>Recursos Humanos</b><small>Administración</small></div><span class="dots">•••</span></div></div>
+      <div class="sidebar-bottom"><div class="demo-note"><span class="pulse"></span><div><b>Google Sheets</b><small>Centro de entrenamiento</small></div></div><div class="session-footer"><div class="user-card"><div class="avatar" id="session-avatar">RH</div><div id="session-user"><b id="session-name">Usuario</b><small id="session-role"></small></div></div><button id="logout-user" class="button outline" type="button">Cerrar sesión</button><p id="session-message" role="status" aria-live="polite"></p></div></div>
     </aside>
     <main class="main-area">
       <header class="topbar"><span id="cloud-status" role="status">Conectando…</span><button class="mobile-menu" id="menu-toggle" aria-label="Abrir menú">☰</button><div class="breadcrumb">SAMARA <span>/</span> <b id="crumb">Resumen</b></div><div class="top-actions"><span class="plant-label">⌖ <span id="plant-label">Todas las plantas</span></span><button class="icon-button" title="Notificaciones">♧<i></i></button><div class="avatar avatar-small">RH</div></div></header>
