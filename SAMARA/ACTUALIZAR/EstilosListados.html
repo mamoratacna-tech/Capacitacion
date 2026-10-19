@@ -54,20 +54,33 @@
 #employee-form input[name=names],#employee-form input[name=paternal],#employee-form input[name=maternal],#employee-form input[name=curp]{text-transform:uppercase}
 #employee-form .att-leido{margin:0 0 14px}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+<script>
+(function(){
+  const pending=new Map();
+  window.samaraLoadPdfLibrary=async kind=>{
+    const reader=kind==='reader',globalName=reader?'pdfjsLib':'PDFLib';
+    if(window[globalName])return window[globalName];
+    const url=reader?'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js':'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+    if(!pending.has(url))pending.set(url,new Promise((resolve,reject)=>{
+      const script=document.createElement('script');script.src=url;script.async=true;
+      script.onload=()=>{if(!window[globalName]){pending.delete(url);reject(Error('No se pudo iniciar la herramienta de PDF.'));return;}if(reader)window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve(window[globalName]);};
+      script.onerror=()=>{pending.delete(url);script.remove();reject(Error('No se pudo descargar la herramienta de PDF. Revisa tu conexión y vuelve a intentar.'));};document.head.append(script);
+    }));
+    return pending.get(url);
+  };
+})();
 /* Puente de la app en Google: descargas, hoja SIRCE y lectura de fotos con Gemini */
 (function(){
-  const run=(fn,...a)=>new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a));
+  const run=(fn,...a)=>new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a,sessionStorage.getItem('samara.session')||''));
   window.descargarArchivo=async(blob,nombre)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
   window.leerHojaSIRCE=rango=>run('api_leerHojaSIRCE',rango);
   window.leerListaFT=async(file,prompt)=>{const max=3500000;let bmp=null;
-    try{bmp=await createImageBitmap(file)}catch(e){bmp=await new Promise(r=>{const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=URL.createObjectURL(file)})}
+    try{bmp=await createImageBitmap(file)}catch(e){bmp=await new Promise(r=>{const im=new Image();const url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);r(im)};im.onerror=()=>{URL.revokeObjectURL(url);r(null)};im.src=url})}
     let img=file;if(!bmp||!bmp.width){if(!(/^image\/(jpeg|png|webp)$/.test(file.type)&&file.size<=max))throw{code:'formato'}}
     else{const sc=Math.min(1,2200/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
       let q=.85;img=await new Promise(r=>cv.toBlob(r,'image/jpeg',q));while(img&&img.size>max&&q>.4){q-=.15;img=await new Promise(r=>cv.toBlob(r,'image/jpeg',q))}}
+    if(bmp&&bmp.close)bmp.close();
+    if(!img)throw Error('No se pudo preparar la imagen.');
     const b64=await new Promise((ok,ko)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=ko;fr.readAsDataURL(img)});
     return await run('api_leerListaFT',b64,img.type||'image/jpeg',prompt)};
 })();

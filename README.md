@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Sincronización al agregar y quitar asignaciones](descargas/SAMARA_SINCRONIZACION_ELIMINACION.zip).
-Mantiene alineadas las asignaciones al agregarlas o quitarlas desde ambos módulos, con indicador de guardado y menos escrituras en Sheets.
+Última actualización: [Carga, fotos y listados por año](descargas/SAMARA_CARGA_FOTOS_ANIOS.zip).
+Reduce la carga inicial, bloquea cursos duplicados por instructor, corrige el envío de sesión en fotos y PDF y agrupa las listas por años plegables.
 
 ## Ver el código
 

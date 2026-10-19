@@ -1,0 +1,52 @@
+SAMARA — CARGA MÁS LIGERA, CURSOS ÚNICOS, FOTOS Y AÑOS
+
+Sustituye en tu proyecto existente estos cuatro archivos completos:
+App.html, Index.html, Estilos.html y EstilosListados.html.
+EstilosListados también contiene el puente de lectura de fotos; es necesario
+reemplazarlo para corregir el error de sesión de la captura adjunta.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar >
+Nueva versión > Implementar. Recarga la aplicación.
+Conserva tus hojas, usuarios, propiedades, DatosIniciales y CatalogoSIRCE.
+
+1. CARGA
+Las tablas de Matriz, Personal, Puestos SIRCE, Cursos, Instructores y CMCAP
+se dibujan al abrir el módulo; ya no se construyen todas al iniciar sesión.
+La lectura/generación de PDF se descarga al usar esa función por primera vez.
+Se elimina la descarga directa del worker durante el ingreso. Las herramientas
+se reutilizan y las solicitudes simultáneas comparten una sola descarga.
+La pantalla muestra progreso mientras se prepara un PDF para lectura.
+Estas mejoras reducen trabajo inicial y descargas; los tiempos reales dependen
+de Google Apps Script, la conexión y el tamaño del padrón.
+
+2. CURSOS REPETIDOS
+Un instructor no puede tener dos veces el mismo curso, aunque indique otra fecha.
+La ventana muestra: No se puede agregar dos veces el mismo curso a un instructor,
+aunque tenga otra fecha. La validación se aplica al seleccionar y al guardar,
+tanto a internos como externos. Para corregir una fecha, edita la fila existente.
+Otro curso escrito por nombre se compara con el catálogo cuando el nombre es único.
+Los registros anteriores no se borran automáticamente; si contienen duplicados,
+se solicita retirarlos antes de guardar la edición.
+
+3. LECTURA DE FOTOS Y PDF
+El puente ahora envía la sesión al servidor en api_leerListaFT y api_leerHojaSIRCE.
+El servidor conserva las comprobaciones de acceso. Una sesión válida permite
+leer; una sesión ausente o vencida sigue requiriendo iniciar sesión.
+Se conserva Gemini y la configuración GEMINI_API_KEY/GEMINI_MODEL.
+
+4. LISTADOS POR AÑO
+Cada año aparece como un encabezado con su número de listados. Pulsa el año
+para desplegar sus filas y vuelve a pulsar para dejar solo el encabezado.
+El más reciente de los resultados aparece abierto inicialmente; los demás,
+cerrados. Las listas sin fecha se agrupan en Sin fecha. El orden es descendente.
+Los filtros de búsqueda, SIRCE, estado y fechas siguen funcionando. Ver todos
+restablece esos filtros y la apertura inicial. Plegar un año solo afecta su vista;
+las exportaciones siguen incluyendo todos los listados que cumplen los filtros.
+
+VERIFICACIÓN
+62 comprobaciones automáticas y pruebas Chromium: entrada con tablas diferidas,
+PDF bajo demanda y descarga compartida, duplicados con distinta fecha, años
+plegables, foto/PDF enviados con sesión, rechazo sin sesión, exportación CSV/ZIP,
+acceso y usuarios, sincronización de cursos, carga de activos y PDF FT-RH-009.
+Los servicios de Google, Gemini y el lector PDF se simulan donde corresponde;
+se mantienen otras pruebas de generación de archivos. No se ha medido la latencia
+real de tu implementación ni se ha invocado Gemini con tus archivos o credenciales.
