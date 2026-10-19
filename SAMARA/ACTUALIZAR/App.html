@@ -573,7 +573,7 @@ function normalizePersonNames(key, value) {
       const query = ($('#matrix-search').value || '').toLowerCase(),
         status = $('#matrix-status').value,
         sirce = $('#matrix-sirce').value;
-      return activeMatrixPositions().filter(position => (position.job + ' ' + position.department).toLowerCase().includes(query)).map(position => ({
+      return activeMatrixPositions().filter(position => (position.job + ' ' + position.department).toLowerCase().includes(query)&&(!$('#matrix-department-filter').value||position.department===$('#matrix-department-filter').value)).map(position => ({
         position,
         applicable: courses.filter(course => ((course.applicablePositions || []).includes(position.id) || course.cmcapOnly || course.safetyCommissionOnly || course.emergencyBrigadesOnly) && (status === 'Todos' || (course.activeStatus || 'Activo') === status) && (sirce === 'Todos' || norm(course.sirce) === norm(sirce)))
       })).filter(row => row.applicable.length || status === 'Todos' && sirce === 'Todos');
@@ -581,7 +581,8 @@ function normalizePersonNames(key, value) {
     function filteredMatrixCourses() {
       const status = $('#matrix-status').value,
         sirce = $('#matrix-sirce').value;
-      return courses.filter(course => (status === 'Todos' || (course.activeStatus || 'Activo') === status) && (sirce === 'Todos' || norm(course.sirce) === norm(sirce))).sort(compareCourseCodes);
+      const query=norm($('#matrix-course-search').value);
+      return courses.filter(course => norm(course.code+' '+course.name).includes(query)&&(status === 'Todos' || (course.activeStatus || 'Activo') === status) && (sirce === 'Todos' || norm(course.sirce) === norm(sirce))).sort(compareCourseCodes);
     }
     function matrixCellLabel(position, course) {
       const groups = [];
@@ -603,11 +604,24 @@ function normalizePersonNames(key, value) {
         return "<td class=\"matrix-intersection ".concat(label === 'No aplica' ? 'not-applicable' : label === 'Aplica' ? 'applicable' : 'group-applicable', "\" title=\"").concat(escapeHtml(course.name), " · ").concat(escapeHtml(label), "\"><span class=\"matrix-screen-label\">").concat(label === 'No aplica' ? '—' : label === 'Aplica' ? '✓' : '◆', "</span><span class=\"matrix-print-label\">").concat(matrixPrintCellLabel(course,label), "</span></td>");
       }).join('')).concat(editable ? "<td><div class=\"course-list-actions\"><button type=\"button\" class=\"course-action edit\" data-edit-position=\"".concat(escapeHtml(position.job), "\" aria-label=\"Editar puesto ").concat(escapeHtml(position.job), "\" title=\"Editar puesto\">✎</button><button type=\"button\" class=\"course-action edit\" data-edit-matrix=\"").concat(escapeHtml(position.id), "\" aria-label=\"Editar cursos aplicables\" title=\"Editar cursos aplicables\">▦</button><button type=\"button\" class=\"course-action delete\" data-delete-matrix-position=\"").concat(escapeHtml(position.id), "\" aria-label=\"Eliminar puesto de la matriz\" title=\"Eliminar puesto de la matriz\">×</button></div></td>") : '', "</tr>")).join(''), "</tbody></table>");
     }
+    let matrixFocusCode='';
     function renderMatrix() {
-      const rows = filteredMatrixRows(),
-        columns = filteredMatrixCourses();
-      $('#matrix-summary').textContent = "".concat(rows.length, " puestos · ").concat(columns.length, " de ").concat(courses.length, " cursos visibles · ✓ Aplica · ◆ Integrantes de comisión o brigada (todos los puestos) · — No aplica");
-      $('#matrix-table').innerHTML = rows.length && columns.length ? "<div class=\"matrix-cross-scroll\">".concat(crossMatrixTable(rows, columns, true), "</div>") : '<div class="panel empty-state">No hay registros con estos filtros.</div>';
+      const selected=$('#matrix-department-filter').value,names=[...new Set(activeMatrixPositions().map(position=>position.department))].sort((a,b)=>a.localeCompare(b,'es'));
+      $('#matrix-department-filter').innerHTML='<option value="">Todos los departamentos</option>'+names.map(name=>'<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join('');$('#matrix-department-filter').value=names.includes(selected)?selected:'';
+      const rows=filteredMatrixRows(),columns=filteredMatrixCourses();
+      $('#matrix-summary').innerHTML='<div class="matrix-totals"><b>'+rows.length+' puestos</b><span>'+columns.length+' de '+courses.length+' cursos</span></div><div class="matrix-legend"><span class="legend-applies">✓ Aplica</span><span class="legend-group">◆ Comisión o brigada</span><span class="legend-none">— No aplica</span></div>';
+      $('#matrix-table').innerHTML=rows.length&&columns.length?'<div class="matrix-cross-scroll" tabindex="0" aria-label="Matriz de cursos, desplazamiento horizontal y vertical">'+crossMatrixTable(rows,columns,true)+'</div>':'<div class="panel empty-state">No hay registros con estos filtros.</div>';
+      const table=$('#matrix-table .cross-matrix');if(table){table.tHead.rows[0].cells[0].textContent='D/I';table.tHead.rows[0].cells[0].title='Directo (D) / Indirecto (I)';
+        [...table.tHead.rows[1].cells].forEach((cell,index)=>{cell.dataset.matrixCourse=columns[index].code;cell.tabIndex=0;cell.setAttribute('role','button');cell.setAttribute('aria-label',columns[index].code+' · '+columns[index].name);});
+        [...table.tBodies[0].rows].forEach(row=>columns.forEach((course,index)=>row.cells[index+3].dataset.matrixCourse=course.code));
+      }
+      matrixFocusCode='';$('#matrix-course-detail').textContent='Selecciona el encabezado de un curso para ver su nombre completo.';
+    }
+    function focusMatrixCourse(target){
+      const code=target.dataset.matrixCourse;if(!code||code===matrixFocusCode)return;
+      $('#matrix-table').querySelectorAll('.matrix-course-focus').forEach(cell=>cell.classList.remove('matrix-course-focus'));
+      $('#matrix-table').querySelectorAll('[data-matrix-course]').forEach(cell=>{if(cell.dataset.matrixCourse===code)cell.classList.add('matrix-course-focus');});
+      matrixFocusCode=code;const course=courses.find(item=>item.code===code);$('#matrix-course-detail').textContent=course?course.code+' · '+course.name:'';
     }
     function employeeStatus(value,fallback='Activo') {
       const key=norm(value);if(!key)return fallback;
@@ -2105,10 +2119,16 @@ function normalizePersonNames(key, value) {
     $('#course-type').addEventListener('change', renderCourses);
     $('#course-status').addEventListener('change', renderCourses);
     $('#matrix-search').addEventListener('input', renderMatrix);
+    $('#matrix-department-filter').addEventListener('change',renderMatrix);
+    $('#matrix-course-search').addEventListener('input',renderMatrix);
+    $('#matrix-density').addEventListener('click',event=>{const comfortable=$('#matrix-table').classList.toggle('matrix-comfortable');event.target.setAttribute('aria-pressed',String(comfortable));event.target.textContent=comfortable?'Vista compacta':'Vista cómoda';});
+    $('#matrix-table').addEventListener('click',event=>{const cell=event.target.closest('[data-matrix-course]');if(cell)focusMatrixCourse(cell);});
+    $('#matrix-table').addEventListener('focusin',event=>{if(event.target.matches('[data-matrix-course]'))focusMatrixCourse(event.target);});
+    $('#matrix-table').addEventListener('keydown',event=>{if(event.target.matches('th[data-matrix-course]')&&['Enter',' '].includes(event.key)){event.preventDefault();focusMatrixCourse(event.target);}});
     $('#matrix-clear-filters').addEventListener('click', () => {
       $('#matrix-status').value = 'Todos';
       $('#matrix-sirce').value = 'Todos';
-      $('#matrix-search').value = '';
+      $('#matrix-search').value = '';$('#matrix-department-filter').value='';$('#matrix-course-search').value='';
       syncCourseCatalog();
       renderMatrix();
     });
@@ -2330,7 +2350,7 @@ function normalizePersonNames(key, value) {
         rows: rows.slice(row, row + 10),
         columns: columns.slice(column, column + 24)
       });
-      const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value].filter(Boolean).join(' · ');
+      const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value, $('#matrix-department-filter').value, $('#matrix-course-search').value].filter(Boolean).join(' · ');
       const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Gris: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
       return matrixPages + matrixCourseAppendix(columns);
     }

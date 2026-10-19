@@ -1,0 +1,36 @@
+SAMARA: DISEÑO DE MATRIZ MÁS COMPACTO Y FÁCIL DE RECORRER
+
+INSTALAR
+Reemplaza completos App.html, Index.html y Estilos.html en tu proyecto actual.
+Conserva los otros archivos, usuarios, contraseñas, propiedades y hoja vinculada.
+Guarda y publica: Implementar > Administrar implementaciones > lápiz > Nueva
+versión > Implementar. Recarga el enlace /exec.
+
+DISEÑO Y USO
+La matriz abre en vista compacta, con filas y columnas de cursos más estrechas.
+El botón Vista cómoda amplía el espacio; Vista compacta lo reduce de nuevo.
+Los encabezados y las columnas de referencia quedan fijos al desplazarte.
+Las acciones de edición y eliminación permanecen visibles a la derecha.
+En pantallas pequeñas se fijan D/I y puesto, y el resto se recorre horizontalmente.
+D/I significa Directo o Indirecto; el valor almacenado no cambia.
+
+Puedes filtrar por departamento y buscar cursos por nombre o nomenclatura.
+Se conservan los filtros anteriores de puesto, estado y SIRCE.
+Ver todos limpia todos los filtros.
+El resumen separa el número de puestos/cursos de la leyenda de colores.
+Al seleccionar el encabezado de un curso se destaca su columna y aparece su
+nombre completo arriba de la tabla. También puedes usar Tab y Enter o espacio.
+
+IMPRESIÓN Y EXPORTACIÓN
+Los filtros de departamento y curso se aplican también al CSV y al PDF.
+La impresión conserva el acomodo para auditoría, textos verticales y las páginas
+necesarias para incluir todos los cruces filtrados. Los nuevos estilos compactos
+y las columnas fijas se aplican únicamente a pantalla.
+No se modifican puestos, cursos, clasificaciones ni asignaciones.
+
+VERIFICACIÓN LOCAL
+46 pruebas automáticas y prueba de navegador con 113 puestos y 23 cursos:
+vistas compacta/cómoda, desplazamiento con columnas fijas, filtros, detalle del
+curso, CSV y cobertura completa de impresión vertical. También se verificó
+el flujo de puestos e instructores FT-RH-007. Las pruebas usan simulación de
+servicios Google; falta publicar los archivos en tu Apps Script.
