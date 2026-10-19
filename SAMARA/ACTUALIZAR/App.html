@@ -400,6 +400,21 @@ function normalizePersonNames(key, value) {
     const repairedDepartments=syncDepartmentReferences(matrixDepartments,{'samara.positions.v2':positions,'samara.matrixPositions.v2':matrixPositions,'samara.employees.v2':employees,'samara.instructors.v1':instructors,'samara.courses.v2':courses});
     positions=repairedDepartments.next['samara.positions.v2'];matrixPositions=repairedDepartments.next['samara.matrixPositions.v2'];employees=repairedDepartments.next['samara.employees.v2'];instructors=repairedDepartments.next['samara.instructors.v1'];courses=repairedDepartments.next['samara.courses.v2'];
     Object.entries(repairedDepartments.updates).forEach(([key,value])=>saveStore(key,value));
+    function normalizeActionButtons(root){
+      const nodes=root.matches?.('button')?[root]:[...(root.querySelectorAll?.('button')||[])];
+      for(const button of nodes){
+        if(button.matches('.button.primary')&&/agregar/i.test(button.textContent))continue;
+        const attributes=[...button.attributes].map(attribute=>attribute.name),att=button.dataset.att;
+        const remove=attributes.some(name=>/^data-.*(?:delete|remove)(?:-|$)/.test(name))||['borrar','borrarlista','quitar'].includes(att);
+        const edit=attributes.some(name=>/^data-.*edit(?:-|$)/.test(name))||['abrir','editins'].includes(att);
+        if(!remove&&!edit)continue;const kind=remove?'delete':'edit';if(button.dataset.samaraAction===kind)continue;
+        button.dataset.samaraAction=kind;button.classList.add('samara-action','samara-action-'+kind);const label=button.getAttribute('aria-label')||button.title||(remove?'Eliminar registro':'Editar registro');button.setAttribute('aria-label',label);button.title=label;
+        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.innerHTML=remove?'<path d="M6 6l12 12M18 6L6 18"/>':'<path d="M15 5l4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/>';button.replaceChildren(svg);
+      }
+    }
+    const actionObserver=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1)normalizeActionButtons(node);});
+    normalizeActionButtons(document.body);actionObserver.observe(document.body,{childList:true,subtree:true});
+    if(window.SamaraAccess){const previousDispose=window.SamaraAccess.dispose;window.SamaraAccess.dispose=()=>{previousDispose?.();actionObserver.disconnect();};}
     const defaultCourseDepartments = new Map([['RH','Recursos Humanos'],['EHS','Seguridad e higiene'],['QC','Calidad']]);
     courses.forEach(course=>{ const code = course.department || course.code?.split('-')[0]; if(code && !defaultCourseDepartments.has(code)) defaultCourseDepartments.set(code,code); });
     let courseDepartments = loadStore('samara.courseDepartments.v1',[...defaultCourseDepartments].map(([abbreviation,name])=>({id:abbreviation,abbreviation,name,aliases:[]})));
@@ -775,6 +790,10 @@ function normalizePersonNames(key, value) {
         renderPositions();renderMatrix();renderCourses();fillEmployeePositionOptions();toast('Puesto eliminado.');
       }catch(error){toast(error.message);}finally{button.disabled=false;}
     }
+    function sircePositionsCsvRows(records,workforce,matrix){
+      return [['Puesto','Departamento','Clasificación','Código SIRCE','Ocupación SIRCE','Empleados activos','Estado'],...records.map(position=>[position.job,position.department||[...new Set(matrix.filter(row=>norm(row.job)===norm(position.job)).map(row=>row.department))].join(' / '),position.classification||matrix.find(row=>norm(row.job)===norm(position.job)&&norm(row.department)===norm(position.department))?.classification||'',position.sirceCode||'',position.sirceOccupation||'',workforce.filter(employee=>norm(employee.position)===norm(position.job)&&employeeIsActive(employee)).length,positionIsActive(position)?'Activo':'Inactivo'])];
+    }
+
     function renderPositions() {
       const query=norm($('#position-search')?.value);
       const filtered=positions.filter(position=>norm(position.job+' '+position.department+' '+position.sirceCode+' '+position.sirceOccupation).includes(query));
@@ -889,7 +908,7 @@ function normalizePersonNames(key, value) {
         certificationDate: row.querySelector('[data-certification-date]').value
       }));
     }
-    function saveInstructorFromForm(event) {
+    async function saveInstructorFromForm(event) {
       event.preventDefault();
       const form = new FormData(instructorForm),
         type = String(form.get('type'));
@@ -946,11 +965,11 @@ function normalizePersonNames(key, value) {
         authorizedCourses,
         createdAt: previous?.createdAt || new Date().toISOString()
       };
-      instructors = previous ? instructors.map(row => row.id === id ? item : row) : [item, ...instructors];
-      courses = syncInstructorCourseAssignments(courses,item,instructors);
-      saveStore('samara.courses.v2',courses);
-      renderCourses();renderSessions();renderMatrix();
-      saveStore('samara.instructors.v1', instructors);
+      const nextInstructors=previous?instructors.map(row=>row.id===id?item:row):[item,...instructors],nextCourses=syncInstructorCourseAssignments(courses,item,nextInstructors);
+      const button=instructorForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
+      try{await persistCollections({'samara.instructors.v1':nextInstructors,'samara.courses.v2':nextCourses});}
+      catch(error){toast('No se guardó el instructor: '+error.message);return;}finally{button.disabled=false;}
+      instructors=nextInstructors;courses=nextCourses;renderCourses();renderSessions();renderMatrix();
       if(courseDialog.open){
         const selected=courseInstructorIds();
         if(item.type===$('#course-instructor-class').value) selected.push(item.id);
@@ -961,7 +980,8 @@ function normalizePersonNames(key, value) {
       toast('Instructor actualizado.');
     }
     function syncInstructorCourseAssignments(catalog,instructor,records) {
-      const authorized=new Set((instructor.authorizedCourses||[]).map(row=>row.courseCode).filter(code=>code&&code!=='__other__'));
+      const authorized=new Set();
+      (instructor.authorizedCourses||[]).forEach(row=>{if(row.courseCode&&row.courseCode!=='__other__')authorized.add(row.courseCode);else{if(!row.name)return;const matches=catalog.filter(course=>norm(course.name)===norm(row.name));if(matches.length===1)authorized.add(matches[0].code);}});
       return catalog.map(course=>{
         const ids=[...(course.instructorIds||[course.instructorId].filter(Boolean))];
         if(authorized.has(course.code)&&!ids.includes(instructor.id))ids.push(instructor.id);
@@ -1030,10 +1050,14 @@ function normalizePersonNames(key, value) {
     function renderCmcap() {
       const legalName = String(legalRepresentative[0]?.name || '').trim().toLocaleUpperCase('es-MX');
       $('#legal-card').innerHTML = legalName ? '<div class="legal-row"><strong class="legal-full-name">'+escapeHtml(legalName)+'</strong><div class="legal-actions"><button type="button" class="button outline" data-legal-edit aria-label="Editar representante legal">✎</button><button type="button" class="button outline" data-legal-delete>Eliminar</button></div></div>' : '<p>Sin representante legal registrado. Agrega uno para emitir las DC-3.</p><button type="button" class="button primary" data-legal-edit>＋ Agregar representante legal</button>';
-      $('#cmcap-grid').innerHTML = '<div class="table-scroll"><table class="cmcap-table"><thead><tr><th>Integrante</th><th>Puesto</th><th>Desde</th><th>Hasta (inclusive)</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' + cmcapMembers.map((member,index) => {
+      const indexed=cmcapMembers.map((member,index)=>({member,index}));
+      for(const [target,entries] of [['cmcap-grid',indexed.filter(({member})=>Cmcap.status(member).kind!=='expired')],['cmcap-expired-grid',indexed.filter(({member})=>Cmcap.status(member).kind==='expired')]]){
+      $('#'+target).innerHTML = '<div class="table-scroll"><table class="cmcap-table"><thead><tr><th>Integrante</th><th>Puesto</th><th>Desde</th><th>Hasta (inclusive)</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>' + entries.map(({member,index}) => {
         const status = Cmcap.status(member);
         return '<tr><td><b>'+escapeHtml(member.name||'Sin asignar')+'</b></td><td>'+escapeHtml(Cmcap.role(member.role))+'</td><td>'+escapeHtml(member.startDate||'—')+'</td><td>'+escapeHtml(member.endDate||'—')+'</td><td><span class="cmcap-status cmcap-'+status.kind+'">'+status.text+'</span></td><td><button class="button outline" data-cmcap-edit="'+index+'" aria-label="Editar integrante">✎</button> <button class="button outline" data-cmcap-delete="'+index+'" aria-label="Eliminar integrante">Eliminar</button></td></tr>';
-      }).join('') + (cmcapMembers.length?'':'<tr><td colspan="6">Aún no hay integrantes registrados.</td></tr>')+'</tbody></table></div>';
+      }).join('') + (entries.length?'':'<tr><td colspan="6">No hay integrantes en esta sección.</td></tr>')+'</tbody></table></div>';
+      }
+      $('#cmcap-expired-section').hidden=!indexed.some(({member})=>Cmcap.status(member).kind==='expired');
     }
     function cmcapEmployeeLabel(employee) { return fullEmployeeName(employee) + ' · ' + employee.curp; }
     function openCmcapEditor(index = null) {
@@ -1054,7 +1078,7 @@ function normalizePersonNames(key, value) {
       $('#cmcap-add-dialog').showModal();
     }
     $('#add-cmcap').addEventListener('click', () => openCmcapEditor());
-    $('#cmcap-grid').addEventListener('click', async event => {
+    $('#view-cmcap').addEventListener('click', async event => {
       const edit = event.target.closest('[data-cmcap-edit]');
       if (edit) { openCmcapEditor(Number(edit.dataset.cmcapEdit)); return; }
       const button = event.target.closest('[data-cmcap-delete]');
@@ -2246,6 +2270,7 @@ function normalizePersonNames(key, value) {
       if (button.dataset.matrixModule === 'positions') renderPositions();
       showView(button.dataset.matrixModule);
     }));
+    $('#export-sirce-positions').addEventListener('click',()=>{const query=norm($('#position-search').value),records=positions.filter(position=>norm([position.job,position.department,position.sirceCode,position.sirceOccupation].join(' ')).includes(query));exportCsv('Puestos-SIRCE.csv',sircePositionsCsvRows(records,employees,matrixPositions));});
     $('#add-position').addEventListener('click', () => openPositionEditor());
     $('#positions-table').addEventListener('click', event => {
       const remove=event.target.closest('[data-delete-sirce-position]');if(remove){deleteSircePosition(remove.dataset.deleteSircePosition,remove);return;}
@@ -2346,12 +2371,12 @@ function normalizePersonNames(key, value) {
         columns = filteredMatrixCourses(),
         pages = [];
       if(!rows.length || !columns.length)return '';
-      for (let row = 0; row < rows.length; row += 10) for (let column = 0; column < columns.length; column += 24) pages.push({
-        rows: rows.slice(row, row + 10),
+      for (let row = 0; row < rows.length; row += 18) for (let column = 0; column < columns.length; column += 24) pages.push({
+        rows: rows.slice(row, row + 18),
         columns: columns.slice(column, column + 24)
       });
       const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value, $('#matrix-department-filter').value, $('#matrix-course-search').value].filter(Boolean).join(' · ');
-      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · Gris: aplica · CSH: Comisión de Seguridad e Higiene</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
+      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · ✓ Aplica · ◆ Integrantes de comisión o brigada · — No aplica</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
       return matrixPages + matrixCourseAppendix(columns);
     }
     $('#matrix-print').addEventListener('click', () => {

@@ -1,0 +1,55 @@
+SAMARA: PDF, INSTRUCTORES, CSV, ACCIONES Y CMCAP
+
+INSTALAR EN TU PROYECTO ACTUAL
+Reemplaza completos App.html, Index.html y Estilos.html.
+Conserva Code.gs, UsuariosServidor.gs y los demás archivos, las propiedades,
+la hoja vinculada y los usuarios. No vuelvas a configurar contraseñas.
+Guarda y publica en Implementar > Administrar implementaciones > lápiz >
+Nueva versión > Implementar. Recarga el enlace /exec.
+
+1. MATRIZ EN PDF
+Imprimir / PDF utiliza el formato FT-RH-009, encabezado, revisión, numeración,
+objetivo, colores y símbolos de la matriz en pantalla: ✓ Aplica, ◆ Comisión
+ o brigada y — No aplica. Las nomenclaturas siguen verticales para ahorrar espacio.
+Se incluyen todos los puestos y cursos filtrados, en las hojas necesarias,
+con hasta 18 puestos y 24 cursos por hoja, más el catálogo de nombres completos.
+En la vista de impresión elige Guardar como PDF. Activa Gráficos de fondo si
+tu navegador no muestra los colores. El formato es carta horizontal.
+La prueba con 113 puestos y 23 cursos produjo 7 hojas de matriz y 2 de catálogo.
+
+2. INSTRUCTOR Y GLOSARIO
+Al guardar un instructor con un curso seleccionado del glosario, se actualizan
+su ID y nombre en ese curso. Instructor y cursos se guardan juntos antes de
+cerrar el formulario. No se duplican enlaces ni se quitan otros instructores.
+También se reconoce un curso escrito como «Otro curso» si su nombre coincide
+con un único curso del glosario. Si hay varios con el mismo nombre, selecciona
+el curso por su código para evitar una asociación equivocada. Un curso nuevo
+que todavía no existe en el glosario no se crea automáticamente desde «Otro».
+
+3. PUESTOS EN SIRCE
+El botón Exportar CSV descarga los puestos de la búsqueda actual con puesto,
+departamento, clasificación, código y ocupación SIRCE, empleados activos y estado.
+
+4. ICONOS
+Los botones de editar y eliminar utilizan los mismos iconos SVG, tamaño y
+alineación en los módulos. El lápiz es de edición y la × roja de eliminación.
+Se conservan sus etiquetas accesibles, las indicaciones al pasar el cursor
+y las confirmaciones. Los botones de cerrar ventanas siguen siendo de cierre.
+
+5. PERSONAL
+La columna de editar/eliminar queda fija a la derecha al recorrer la tabla,
+tanto en SAMARA como TACNA. Los encabezados se fijan al desplazarse verticalmente.
+
+6. CMCAP
+Los integrantes vigentes y con fechas pendientes permanecen arriba. Los vencidos
+aparecen en una sección debajo del representante legal. Se conserva su historial,
+la edición y la eliminación; las firmas históricas siguen usando la fecha del
+documento. Solo cambia la ubicación visual, no las vigencias guardadas.
+
+VERIFICACIÓN
+48 comprobaciones automáticas y pruebas en navegador de vinculación instructor/
+glosario, CSV SIRCE, iconos uniformes, acciones fijas de personal y edición de
+CMCAP vencidos. Se generó y revisó un PDF FT-RH-009 completo de nueve páginas
+con colores y símbolos. También se verificaron accesos, FT-RH-007 y exportaciones.
+Las pruebas usan simulación de servicios de Google; debes publicar los archivos
+en tu proyecto para aplicar los cambios reales.

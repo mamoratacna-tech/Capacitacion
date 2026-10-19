@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../SAMARA/ACTUALIZAR/App.html'),'utf8');
 test('instructor autorizado se agrega sin duplicarse ni quitar otros instructores',()=>{
- const context=vm.createContext({fullInstructorName:item=>item.employeeName||item.externalName});
+ const context=vm.createContext({norm:value=>String(value||'').trim().toLowerCase(),fullInstructorName:item=>item.employeeName||item.externalName});
  vm.runInContext(source.slice(source.indexOf('    function syncInstructorCourseAssignments('),source.indexOf('    function instructorApprovalHtml(')),context);
  const instructor={id:'new',type:'Interno',employeeName:'ANA',authorizedCourses:[{courseCode:'RH001'},{courseCode:'__other__'}]},other={id:'old',type:'Interno',employeeName:'LUIS'};
  const catalog=[{code:'RH001',instructorIds:['old'],instructorId:'old'},{code:'RH002',instructorIds:['old']}];
@@ -29,3 +29,4 @@ test('vacante se conserva en matriz hasta elegir inactivar esa combinación, sin
  const context=vm.createContext({norm:value=>String(value||'').toLowerCase(),employeeCompany:e=>e.company||'SAMARA',employees:[{position:'OPERADOR',department:'A',company:'SAMARA'},{position:'OPERADOR',department:'B',company:'SAMARA',activeStatus:'Inactivo'}],matrixDepartments:[],positions:[{job:'OPERADOR'}],matrixPositions:[{id:'a',job:'OPERADOR',department:'A'},{id:'b',job:'OPERADOR',department:'B'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);assert.equal(context.activeMatrixPositions().length,2);context.matrixPositions[1].activeStatus='Inactivo';assert.equal(context.activeMatrixPositions().map(x=>x.id).join(','),'a');assert.equal(context.matrixPositions.length,2);
 });
+test('curso capturado por nombre único vincula al instructor, sin elegir arbitrariamente nombres duplicados',()=>{const c=vm.createContext({norm:value=>String(value||'').trim().toLowerCase(),fullInstructorName:x=>x.employeeName});vm.runInContext(source.slice(source.indexOf('    function syncInstructorCourseAssignments('),source.indexOf('    function instructorApprovalHtml(')),c);const instructor={id:'i',employeeName:'NOMBRE',authorizedCourses:[{courseCode:'__other__',name:'Curso único'}]},catalog=[{code:'A',name:'CURSO ÚNICO'},{code:'B',name:'OTRO'}];assert.equal(c.syncInstructorCourseAssignments(catalog,instructor,[instructor])[0].instructorIds[0],'i');const ambiguous=[{code:'A',name:'Curso único'},{code:'B',name:'Curso único'}];assert.equal(c.syncInstructorCourseAssignments(ambiguous,instructor,[instructor])[0].instructorIds,undefined);});
