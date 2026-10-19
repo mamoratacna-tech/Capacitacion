@@ -75,16 +75,27 @@ function api_saveAppState(updates,expectedRevision){authRequire_(arguments[argum
   if(JSON.stringify(updates).length>10000000)throw Error('El lote es demasiado grande');
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
-    const sheet=appSheet_(database_()),current=appRead_(sheet);
-    if(Number(expectedRevision)!==current.revision)return {conflict:true,revision:current.revision};
-    const next=Object.assign({},current.state,updates),revision=current.revision+1;
-    keys.forEach(key=>next[key]=normalizePersonNames(key,next[key]));
-    const rows=[['Colección','Parte','JSON'],['_revision',0,String(revision)]];
-    APP_KEYS_.forEach(key=>{if(!Object.prototype.hasOwnProperty.call(next,key))return;const json=JSON.stringify(next[key]);for(let start=0,part=0;start<json.length;start+=40000,part++)rows.push([key,part,'JSON:'+json.slice(start,start+40000)]);});
+    const sheet=appSheet_(database_()),stored=sheet.getDataRange().getValues();
+    const revisionRow=stored.find(row=>row[0]==='_revision'),currentRevision=Number(revisionRow&&revisionRow[2])||0;
+    if(Number(expectedRevision)!==currentRevision)return {conflict:true,revision:currentRevision};
+    const revision=currentRevision+1,rows=[['Colección','Parte','JSON'],['_revision',0,String(revision)]];
+    APP_KEYS_.forEach(key=>{
+      if(!Object.prototype.hasOwnProperty.call(updates,key)){stored.slice(1).filter(row=>row[0]===key).forEach(row=>rows.push(row.slice(0,3)));return;}
+      const json=JSON.stringify(normalizePersonNames(key,updates[key]));
+      for(let start=0,part=0;start<json.length;start+=40000,part++)rows.push([key,part,'JSON:'+json.slice(start,start+40000)]);
+    });
     const previousRows=sheet.getLastRow();
     if(rows.length>sheet.getMaxRows())sheet.insertRowsAfter(sheet.getMaxRows(),rows.length-sheet.getMaxRows());
-    sheet.getRange(1,1,rows.length,3).setValues(rows);
-    if(previousRows>rows.length)sheet.getRange(rows.length+1,1,previousRows-rows.length,3).clearContent();
+    const stable=stored.length===rows.length&&stored.every((row,index)=>row[0]===rows[index][0]&&String(row[1])===String(rows[index][1]));
+    if(stable){
+      let first=-1,last=-1;
+      for(let index=2;index<rows.length;index++)if(String(stored[index][2])!==String(rows[index][2])){if(first<0)first=index;last=index;}
+      if(first>=0)sheet.getRange(first+1,1,last-first+1,3).setValues(rows.slice(first,last+1));
+      sheet.getRange(2,1,1,3).setValues([rows[1]]);
+    }else{
+      sheet.getRange(1,1,rows.length,3).setValues(rows);
+      if(previousRows>rows.length)sheet.getRange(rows.length+1,1,previousRows-rows.length,3).clearContent();
+    }
     SpreadsheetApp.flush();return {revision:revision,conflict:false};
   }finally{lock.releaseLock();}
 }

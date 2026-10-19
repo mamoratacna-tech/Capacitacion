@@ -763,7 +763,7 @@ function normalizePersonNames(key, value) {
     }
     async function persistCollections(updates) {
       if(cloud.blocked)throw cloud.lastError || new Error('Reintenta el guardado pendiente antes de continuar.');
-      Object.entries(updates).forEach(([key,value])=>saveStore(key,value));await flushCloud();
+      Object.entries(updates).forEach(([key,value])=>{if(JSON.stringify(normalizePersonNames(key,value))!==JSON.stringify(cloud.cache[key]))saveStore(key,value);});await flushCloud();
       if(cloud.blocked)throw cloud.lastError || new Error('No se pudieron guardar los cambios.');
     }
     async function deleteEmployee(curp,button) {
@@ -828,7 +828,7 @@ function normalizePersonNames(key, value) {
     }
     function appendCourseInstructorRow(id = '') {
       const item=instructors.find(record=>record.id===id),row=document.createElement('div');row.className='course-instructor-row';
-      row.innerHTML='<input class="course-instructor-lookup" list="course-instructor-names" placeholder="Buscar instructor por nombre" aria-label="Instructor por nombre" required autocomplete="off"><input type="hidden" name="instructorIds"><button type="button" class="button outline" data-remove-course-instructor aria-label="Quitar instructor">×</button>';
+      row.innerHTML='<input class="course-instructor-lookup" list="course-instructor-names" placeholder="Buscar instructor por nombre" aria-label="Instructor por nombre" autocomplete="off"><input type="hidden" name="instructorIds"><button type="button" class="button outline" data-remove-course-instructor aria-label="Quitar instructor">×</button>';
       row.querySelector('.course-instructor-lookup').value=item?instructorLookupLabel(item):'';
       row.querySelector('[name="instructorIds"]').value=id;
       $('#course-instructor-options').append(row);
@@ -848,7 +848,7 @@ function normalizePersonNames(key, value) {
       wrap.innerHTML = rows.map((row, index) => {
         const courseCode = row.courseCode || '',
           isOther = courseCode === '__other__';
-        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><label class=\"instructor-certification-date\">Fecha de certificación<input type=\"date\" data-certification-date value=\"").concat(escapeHtml(row.certificationDate||''), "\" ").concat(courseCode ? 'required' : '', "></label><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat(rows.length === 1 ? 'disabled' : '', ">×</button></div>");
+        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><label class=\"instructor-certification-date\">Fecha de certificación<input type=\"date\" data-certification-date value=\"").concat(escapeHtml(row.certificationDate||''), "\" ").concat(courseCode ? 'required' : '', "></label><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat('', ">×</button></div>");
       }).join('');
     }
     function setInstructorFields(type) {
@@ -938,10 +938,6 @@ function normalizePersonNames(key, value) {
           certificationDate: row.certificationDate
         });
       }
-      if (type === 'Interno' && !authorizedCourses.length) {
-        toast('Agrega al menos un curso autorizado.');
-        return;
-      }
       if (new Set(authorizedCourses.map(course => norm(course.name)+'|'+course.certificationDate)).size !== authorizedCourses.length) {
         toast('No repitas el mismo curso con la misma fecha de certificación.');
         return;
@@ -967,10 +963,10 @@ function normalizePersonNames(key, value) {
         createdAt: previous?.createdAt || new Date().toISOString()
       };
       const nextInstructors=previous?instructors.map(row=>row.id===id?item:row):[item,...instructors],nextCourses=syncInstructorCourseAssignments(courses,item,nextInstructors);
-      const button=instructorForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
+      const button=instructorForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;const buttonLabel=button.textContent;button.textContent='Guardando…';instructorForm.setAttribute('aria-busy','true');
       try{await persistCollections({'samara.instructors.v1':nextInstructors,'samara.courses.v2':nextCourses});}
-      catch(error){toast('No se guardó el instructor: '+error.message);return;}finally{button.disabled=false;}
-      instructors=nextInstructors;courses=nextCourses;renderCourses();renderSessions();renderMatrix();
+      catch(error){toast('No se guardó el instructor: '+error.message);return;}finally{button.disabled=false;button.textContent=buttonLabel;instructorForm.removeAttribute('aria-busy');}
+      instructors=nextInstructors;courses=nextCourses;instructorDialog.close();renderCourses();renderSessions();renderMatrix();
       if(courseDialog.open){
         const selected=courseInstructorIds();
         if(item.type===$('#course-instructor-class').value) selected.push(item.id);
@@ -980,13 +976,14 @@ function normalizePersonNames(key, value) {
       renderInstructors();
       toast('Instructor actualizado.');
     }
-    function syncInstructorCourseAssignments(catalog,instructor,records) {
+    function syncInstructorCourseAssignments(catalog,instructor,records,keepExisting=false) {
       const authorized=new Set();
       (instructor.authorizedCourses||[]).forEach(row=>{if(row.courseCode&&row.courseCode!=='__other__')authorized.add(row.courseCode);else{if(!row.name)return;const matches=catalog.filter(course=>norm(course.name)===norm(row.name));if(matches.length===1)authorized.add(matches[0].code);}});
       return catalog.map(course=>{
-        const ids=[...(course.instructorIds||[course.instructorId].filter(Boolean))];
+        const original=course.instructorIds||[course.instructorId].filter(Boolean);
+        const ids=original.filter(id=>keepExisting||id!==instructor.id||authorized.has(course.code));
         if(authorized.has(course.code)&&!ids.includes(instructor.id))ids.push(instructor.id);
-        if(!ids.includes(instructor.id))return course;
+        if(!ids.includes(instructor.id)&&!original.includes(instructor.id))return course;
         const linked=ids.map(id=>records.find(record=>record.id===id)).filter(Boolean),names=linked.map(fullInstructorName).join(', ');
         const types=[...new Set(linked.map(record=>record.type))];
         return {...course,instructorIds:ids,instructorId:ids[0]||'',instructor:names,owner:names,...(types.length===1?{instructorClass:types[0],agent:types[0]}:{})};
@@ -994,7 +991,7 @@ function normalizePersonNames(key, value) {
     }
     function reconcileCourseInstructorLinks(catalog,records){
       let nextCourses=catalog;
-      records.forEach(record=>{nextCourses=syncInstructorCourseAssignments(nextCourses,record,records);});
+      records.forEach(record=>{nextCourses=syncInstructorCourseAssignments(nextCourses,record,records,true);});
       const nextRecords=records.map(record=>({...record,authorizedCourses:[...(record.authorizedCourses||[])]}));
       nextCourses=nextCourses.map(course=>{
         const ids=new Set(course.instructorIds||[course.instructorId].filter(Boolean));
@@ -1019,7 +1016,7 @@ function normalizePersonNames(key, value) {
     function syncCourseInstructorAuthorizations(course,records,catalog,dates={},previous=null){
       const selected=new Set(course.instructorIds||[]);
       return records.map(record=>{
-        const rows=(record.authorizedCourses||[]).map(row=>courseAuthorizationMatches(row,course,previous,catalog)?{...row,courseCode:course.code,name:course.name}:row);
+        const rows=(record.authorizedCourses||[]).filter(row=>!previous||selected.has(record.id)||!courseAuthorizationMatches(row,course,previous,catalog)).map(row=>courseAuthorizationMatches(row,course,previous,catalog)?{...row,courseCode:course.code,name:course.name}:row);
         if(!selected.has(record.id))return {...record,authorizedCourses:rows};
         const matches=rows.filter(row=>row.courseCode===course.code),date=dates[record.id];
         if(date){
@@ -1469,7 +1466,7 @@ function normalizePersonNames(key, value) {
       const input=event.target,row=input.closest('.course-instructor-row'),hidden=row.querySelector('[name="instructorIds"]');
       const start=input.selectionStart,end=input.selectionEnd;input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
       const match=instructors.find(item=>item.type===$('#course-instructor-class').value && norm(instructorLookupLabel(item))===norm(input.value));
-      const priorId=hidden.value;hidden.value='';input.setCustomValidity(match?'':'Busca por nombre y selecciona un instructor registrado.');
+      const priorId=hidden.value;hidden.value='';input.setCustomValidity(match||!input.value?'':'Busca por nombre y selecciona un instructor registrado.');
       if(!match)return;
       if(priorId===match.id||courseCertificationDraft[match.id]){hidden.value=match.id;return;}
       if(courseCertificationPromptPending)return;
@@ -1479,7 +1476,7 @@ function normalizePersonNames(key, value) {
       courseCertificationPromptPending=true;input.readOnly=true;
       try{
         const dates=await askCourseCertificationDates(draft,[match]);
-        if(dates===null){input.value='';input.setCustomValidity('Selecciona un instructor y confirma su fecha de certificación.');return;}
+        if(dates===null){input.value='';input.setCustomValidity('');return;}
         Object.assign(courseCertificationDraft,dates);hidden.value=match.id;input.setCustomValidity('');
       }finally{courseCertificationPromptPending=false;input.readOnly=false;}
     });
@@ -1519,7 +1516,7 @@ function normalizePersonNames(key, value) {
         instructorRecords = instructorIds.map(id => instructors.find(item => item.id === id)).filter(Boolean),
         instructorId = instructorIds[0] || '',
         instructorName = instructorRecords.map(fullInstructorName).join(', ');
-      if (!instructorRecords.length) {
+      if (!instructorRecords.length && !previous) {
         $('#course-form > .course-fold').open = true;
         toast('Selecciona al menos un instructor certificado.');
         return;
@@ -1562,14 +1559,14 @@ function normalizePersonNames(key, value) {
         time: previous?.time || 'Según programa anual',
         participants: previous?.participants || 0
       };
-      const button=courseForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
+      const button=courseForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;const buttonLabel=button.textContent;button.textContent='Guardando…';courseForm.setAttribute('aria-busy','true');
       try{
         const nextCourses=previous?courses.map(course=>course.code===editingCourseCode?item:course):[item,...courses];
         const dates=await askCourseCertificationDates(item,courseCertificationRequests(item,instructorRecords,nextCourses,previous).filter(record=>!courseCertificationDraft[record.id]));if(dates===null)return;
         Object.assign(dates,courseCertificationDraft);
         const nextInstructors=syncCourseInstructorAuthorizations(item,instructors,nextCourses,dates,previous);
         await persistCollections({'samara.courses.v2':nextCourses,'samara.instructors.v1':nextInstructors});courses=nextCourses;instructors=nextInstructors;renderInstructors();
-      }catch(error){toast('No se guardó el curso: '+error.message);return;}finally{button.disabled=false;}
+      }catch(error){toast('No se guardó el curso: '+error.message);return;}finally{button.disabled=false;button.textContent=buttonLabel;courseForm.removeAttribute('aria-busy');}
       editingCourseCode = code;
       courseDialog.close();
       renderCourses();

@@ -1,0 +1,31 @@
+SAMARA — SINCRONIZACIÓN AL AGREGAR Y QUITAR CURSOS/INSTRUCTORES
+
+Sustituye en tu proyecto existente los archivos completos del ZIP:
+App.html, Code.gs, Index.html y Estilos.html.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar >
+Nueva versión > Implementar. Después recarga la aplicación.
+Conserva hojas, propiedades, usuarios y catálogos.
+
+Al borrar un curso autorizado del instructor y guardar, su asignación también
+se retira del glosario. El curso se conserva y sus otros instructores permanecen.
+Al quitar un instructor desde un curso y guardar, ese curso también se retira
+de sus autorizaciones, incluidas sus fechas de certificación para ese curso.
+Las otras autorizaciones no cambian. Puedes dejar un instructor sin cursos o
+un curso existente sin instructores. Las listas de asistencia no se eliminan.
+Las asignaciones retiradas no se reconstruyen al recargar la aplicación.
+
+El botón muestra Guardando… y queda bloqueado mientras se confirma el guardado.
+Se omiten colecciones sin cambios. En el servidor, si no cambia la cantidad ni
+la posición de los fragmentos guardados, solo se escribe el tramo modificado y
+la revisión; no se reescriben los catálogos que están fuera de ese tramo. Si cambia
+la estructura, se usa la escritura completa que conserva las demás colecciones.
+Se mantienen el bloqueo entre usuarios, la detección de conflictos y los reintentos.
+La latencia del servicio Google puede variar; no hay un tiempo garantizado.
+
+VERIFICACIÓN
+60 comprobaciones automatizadas y pruebas en Chromium con Google simulado:
+eliminación en ambos sentidos, retiro de la última asignación, conservación de
+otros instructores y cursos, recarga sin reapariciones, indicador Guardando…,
+conflictos de revisión, crecimiento y reducción de fragmentos, catálogos intactos
+y guardados de más de 15 segundos sin perder cambios.
+La publicación en Apps Script y la conexión real a Sheets requieren tu cuenta.

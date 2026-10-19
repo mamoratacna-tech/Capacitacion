@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Cursos, instructores y objetivos](descargas/SAMARA_CORRECCION_VINCULOS.zip).
-Repara asignaciones anteriores en ambos módulos y solicita la fecha al seleccionar al instructor en el glosario.
+Última actualización: [Sincronización al agregar y quitar asignaciones](descargas/SAMARA_SINCRONIZACION_ELIMINACION.zip).
+Mantiene alineadas las asignaciones al agregarlas o quitarlas desde ambos módulos, con indicador de guardado y menos escrituras en Sheets.
 
 ## Ver el código
 
