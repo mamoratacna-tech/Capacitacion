@@ -847,7 +847,7 @@ function normalizePersonNames(key, value) {
       wrap.innerHTML = rows.map((row, index) => {
         const courseCode = row.courseCode || '',
           isOther = courseCode === '__other__';
-        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><label class=\"instructor-certification-date\">Fecha de certificación CMCAP<input type=\"date\" data-certification-date value=\"").concat(escapeHtml(row.certificationDate||''), "\" ").concat(courseCode ? 'required' : '', "></label><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat(rows.length === 1 ? 'disabled' : '', ">×</button></div>");
+        return "<div class=\"authorized-course-row\" data-course-row=\"".concat(index, "\"><div class=\"authorized-course-select\"><b>Curso ").concat(index + 1, "</b><select id=\"authorized-course-").concat(index, "\" name=\"authorized-course-").concat(index, "\"><option value=\"\">Selecciona un curso</option>").concat(courses.map(course => "<option value=\"".concat(escapeHtml(course.code), "\" ").concat(course.code === courseCode ? 'selected' : '', ">").concat(escapeHtml(course.code), " · ").concat(escapeHtml(course.name), "</option>")).join(''), "<option value=\"__other__\" ").concat(isOther ? 'selected' : '', ">Otro curso</option></select><input id=\"authorized-course-other-").concat(index, "\" name=\"authorized-course-other-").concat(index, "\" class=\"authorized-course-other\" placeholder=\"Nombre del curso\" value=\"").concat(isOther ? escapeHtml(row.name) : '', "\" ").concat(isOther ? '' : 'hidden', " ").concat(isOther ? 'required' : '', "></div><label class=\"instructor-certification-date\">Fecha de certificación<input type=\"date\" data-certification-date value=\"").concat(escapeHtml(row.certificationDate||''), "\" ").concat(courseCode ? 'required' : '', "></label><div class=\"experience-options\"><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Experiencia empírica\" ").concat((row.experience || []).includes('Experiencia empírica') ? 'checked' : '', "> Experiencia empírica</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Documento comprobatorio\" ").concat((row.experience || []).includes('Documento comprobatorio') ? 'checked' : '', "> Documento comprobatorio</label><label><input type=\"checkbox\" name=\"experience-").concat(index, "\" value=\"Otro\" ").concat((row.experience || []).includes('Otro') ? 'checked' : '', "> Otro</label></div><button type=\"button\" class=\"remove-authorized-course\" data-remove-authorized-course=\"").concat(index, "\" aria-label=\"Quitar curso ").concat(index + 1, "\" ").concat(rows.length === 1 ? 'disabled' : '', ">×</button></div>");
       }).join('');
     }
     function setInstructorFields(type) {
@@ -856,7 +856,7 @@ function normalizePersonNames(key, value) {
       $('#internal-instructor-fields').hidden = !internal;
       $('#external-instructor-fields').hidden = internal;
       $('#external-instructor-guidance').hidden = internal;
-      $('#instructor-course-fold').hidden = !internal;
+      $('#instructor-course-fold').hidden = false;
       $('#internal-instructor-fields').querySelectorAll('input,select').forEach(input => input.disabled = !internal);
       $('#external-instructor-fields').querySelectorAll('input,select').forEach(input => input.disabled = internal);
     }
@@ -897,7 +897,7 @@ function normalizePersonNames(key, value) {
         const employee = employees.find(row => norm(row.curp) === norm(item?.employeeCurp) || norm(row.no) === norm(item?.employeeNo) || norm(fullEmployeeName(row)) === norm(item?.employeeName));
         fillInstructorEmployeeOptions(employee?.curp || '', item?.employeeDepartment || '');
         renderInstructorCourseRows((item?.authorizedCourses || []).map(row=>({...row,certificationDate:instructorCertificationDate(row,item),legacyDate:!row.certificationDate&&!!item.authorizationDate})));
-      } else renderInstructorCourseRows([]);
+      } else renderInstructorCourseRows((item?.authorizedCourses||[]).map(row=>({...row,certificationDate:instructorCertificationDate(row,item)})));
       instructorDialog.showModal();
     }
     function readInstructorCourseRows() {
@@ -918,14 +918,14 @@ function normalizePersonNames(key, value) {
         return;
       }
       const authorizedCourses = [];
-      if (type === 'Interno') for (const [index, row] of readInstructorCourseRows().entries()) {
+      for (const [index, row] of readInstructorCourseRows().entries()) {
         if (!row.courseCode) continue;
         const name = row.courseCode === '__other__' ? row.name : courses.find(course => course.code === row.courseCode)?.name || '';
         if (!name) {
           toast("Escribe el nombre del curso ".concat(index + 1, "."));
           return;
         }
-        if (!row.experience.length) {
+        if (type==='Interno'&&!row.experience.length) {
           toast("Marca el tipo de experiencia del curso ".concat(index + 1, "."));
           return;
         }
@@ -989,6 +989,43 @@ function normalizePersonNames(key, value) {
         const linked=ids.map(id=>records.find(record=>record.id===id)).filter(Boolean),names=linked.map(fullInstructorName).join(', ');
         const types=[...new Set(linked.map(record=>record.type))];
         return {...course,instructorIds:ids,instructorId:ids[0]||'',instructor:names,owner:names,...(types.length===1?{instructorClass:types[0],agent:types[0]}:{})};
+      });
+    }
+    function courseAuthorizationMatches(row,course,previous,catalog){
+      if(row.courseCode===course.code||previous&&row.courseCode===previous.code)return true;
+      if(row.courseCode&&row.courseCode!=='__other__')return false;
+      const names=[course.name,previous?.name].filter(Boolean).map(norm);
+      return !!row.name&&names.includes(norm(row.name))&&catalog.filter(item=>norm(item.name)===norm(row.name)).length<=1;
+    }
+    function courseCertificationRequests(course,records,catalog,previous){
+      return records.filter(record=>!(record.authorizedCourses||[]).some(row=>courseAuthorizationMatches(row,course,previous,catalog)&&Cmcap.valid(instructorCertificationDate(row,record))));
+    }
+    function syncCourseInstructorAuthorizations(course,records,catalog,dates={},previous=null){
+      const selected=new Set(course.instructorIds||[]);
+      return records.map(record=>{
+        const rows=(record.authorizedCourses||[]).map(row=>courseAuthorizationMatches(row,course,previous,catalog)?{...row,courseCode:course.code,name:course.name}:row);
+        if(!selected.has(record.id))return {...record,authorizedCourses:rows};
+        const matches=rows.filter(row=>row.courseCode===course.code),date=dates[record.id];
+        if(date){
+          if(!Cmcap.valid(date))throw Error('Completa una fecha válida para '+fullInstructorName(record)+'.');
+          if(!matches.some(row=>instructorCertificationDate(row,record)===date)){
+            const pending=rows.findIndex(row=>row.courseCode===course.code&&!Cmcap.valid(instructorCertificationDate(row,record)));
+            if(pending>=0)rows[pending]={...rows[pending],certificationDate:date};else rows.push({courseCode:course.code,name:course.name,certificationDate:date,experience:[]});
+          }
+        }
+        if(!rows.some(row=>row.courseCode===course.code&&Cmcap.valid(instructorCertificationDate(row,record))))throw Error('Falta la fecha de certificación de '+fullInstructorName(record)+'.');
+        return {...record,authorizedCourses:rows};
+      });
+    }
+    function askCourseCertificationDates(course,records){
+      if(!records.length)return Promise.resolve({});
+      return new Promise(resolve=>{
+        const dialog=document.createElement('dialog');dialog.id='course-certification-dialog';dialog.innerHTML='<form class="record-editor" id="course-certification-form"><div class="dialog-head"><div><div class="eyebrow">VINCULAR CURSO E INSTRUCTORES</div><h2>Fecha de certificación</h2></div><button type="button" class="close-dialog" data-certification-cancel aria-label="Cerrar">×</button></div><p class="certification-course-name"></p><p>Indica desde qué fecha está certificado cada instructor para impartir este curso. Se agregará también a sus cursos autorizados.</p><div class="certification-date-rows"></div><p class="certification-error" role="alert"></p><div class="dialog-actions"><button type="button" class="button outline" data-certification-cancel>Cancelar</button><button type="submit" class="button primary">Confirmar y guardar</button></div></form>';
+        dialog.querySelector('.certification-course-name').textContent=course.code+' · '+course.name;
+        dialog.querySelector('.certification-date-rows').innerHTML=records.map(record=>'<label>'+escapeHtml(fullInstructorName(record))+'<input type="date" data-certification-instructor="'+escapeHtml(record.id)+'" required></label>').join('');
+        let result=null;dialog.querySelectorAll('[data-certification-cancel]').forEach(button=>button.onclick=()=>dialog.close());
+        dialog.querySelector('form').addEventListener('submit',event=>{event.preventDefault();const dates={};for(const input of dialog.querySelectorAll('[data-certification-instructor]')){if(!Cmcap.valid(input.value)){dialog.querySelector('.certification-error').textContent='Completa todas las fechas de certificación.';return;}dates[input.dataset.certificationInstructor]=input.value;}result=dates;dialog.close();});
+        dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});document.body.append(dialog);dialog.showModal();
       });
     }
     function instructorApprovalHtml(item) {
@@ -1432,7 +1469,7 @@ function normalizePersonNames(key, value) {
       if (['department', 'entity'].includes(event.target.name)) updateCourseCodePreview();
     });
     $('#course-position-search').addEventListener('input', () => renderCoursePositionChecklist([...selectedCoursePositions], $('#course-position-search').value));
-    courseForm.addEventListener('submit', event => {
+    courseForm.addEventListener('submit', async event => {
       event.preventDefault();
       if (!courseForm.elements.theme.value || !courseForm.elements.objectiveCode.value) {
         courseForm.querySelector('.course-fold:not(.position-fold)').open = true;
@@ -1496,20 +1533,13 @@ function normalizePersonNames(key, value) {
         time: previous?.time || 'Según programa anual',
         participants: previous?.participants || 0
       };
-      courses = previous ? courses.map(c => c.code === editingCourseCode ? item : c) : [item, ...courses];
-      saveStore('samara.courses.v2', courses);
-      if (previous) {
-        instructors = instructors.map(instructor => ({
-          ...instructor,
-          authorizedCourses: (instructor.authorizedCourses || []).map(authorized => authorized.courseCode === editingCourseCode ? {
-            ...authorized,
-            courseCode: code,
-            name: item.name
-          } : authorized)
-        }));
-        saveStore('samara.instructors.v1', instructors);
-        renderInstructors();
-      }
+      const button=courseForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
+      try{
+        const nextCourses=previous?courses.map(course=>course.code===editingCourseCode?item:course):[item,...courses];
+        const dates=await askCourseCertificationDates(item,courseCertificationRequests(item,instructorRecords,nextCourses,previous));if(dates===null)return;
+        const nextInstructors=syncCourseInstructorAuthorizations(item,instructors,nextCourses,dates,previous);
+        await persistCollections({'samara.courses.v2':nextCourses,'samara.instructors.v1':nextInstructors});courses=nextCourses;instructors=nextInstructors;renderInstructors();
+      }catch(error){toast('No se guardó el curso: '+error.message);return;}finally{button.disabled=false;}
       editingCourseCode = code;
       courseDialog.close();
       renderCourses();
@@ -2446,7 +2476,7 @@ function normalizePersonNames(key, value) {
       ed: null,
       cola: []
     };
-    const AT_OBJ = ['1. Actualizar conocimientos', '2. Mejorar nivel educativo', '3. Preparar para vacantes', '4. Prevenir riesgos de trabajo', '5. Incremento a la productividad'];
+    const AT_OBJ = ['1. '+objectiveLabel('1'),'2. '+objectiveLabel('4'),'3. '+objectiveLabel('5'),'4. '+objectiveLabel('2'),'5. '+objectiveLabel('3')];
     const AT_MODS = ['Presencial', 'Online', 'Mixta', 'E-learning'],
       AT_HORAS = ['0.5', '1', '1.5', '2', '3', '4', '6', '8', '16', '40'],
       AT_LUG = ['Planta 1', 'Planta 2'];
@@ -2791,7 +2821,7 @@ function normalizePersonNames(key, value) {
           m = atCoincide(k, v, cv),
           libre = k === 'registro' || k === 'rfc';
         const pill = m === null ? '' : m ? atPill('ok', 'Coincide') : e.encOk[k] ? atPill('nt', 'Se deja la lista') : atPill('wa', 'Diferente');
-        return "<div class=\"att-hrow\"><label>".concat(l, " ").concat(pill).concat(libre ? "<input data-h=\"".concat(k, "\" value=\"").concat(atE(v), "\">") : "<select data-h=\"".concat(k, "\">").concat(atOpciones(k, v), "</select>"), "</label>").concat(m === false && !e.encOk[k] ? "<div class=\"att-hint\">Curso: <b>".concat(atE(atCatTexto(k, cv)), "</b> <button class=\"button outline att-sm\" data-att=\"usarcat\" data-k=\"").concat(k, "\">Usar el del curso</button> <button class=\"button outline att-sm\" data-att=\"dejar\" data-k=\"").concat(k, "\">Dejar lista</button></div>") : '', "</div>");
+        return "<div class=\"att-hrow\"><label>".concat(l, " ").concat(pill).concat(libre ? "<input data-h=\"".concat(k, "\" value=\"").concat(atE(v), "\">") : "<select data-h=\"".concat(k, "\">").concat(atOpciones(k, v), "</select>"), "</label>").concat(k==='objetivo'&&AT_OBJ[v]?'<small class="objective-full-label">'+atE(AT_OBJ[v])+'</small>':'').concat(m === false && !e.encOk[k] ? "<div class=\"att-hint\">Curso: <b>".concat(atE(atCatTexto(k, cv)), "</b> <button class=\"button outline att-sm\" data-att=\"usarcat\" data-k=\"").concat(k, "\">Usar el del curso</button> <button class=\"button outline att-sm\" data-att=\"dejar\" data-k=\"").concat(k, "\">Dejar lista</button></div>") : '', "</div>");
       }).join('');
       $('#att-rw').innerHTML = e.asistentes.length ? e.asistentes.map((a, i) => {
         const [cl, t] = atEst(a),
@@ -3118,7 +3148,10 @@ function normalizePersonNames(key, value) {
       if(instructor){result.agente=instructor.type==='Interno'?'1':'2';result.rfc=instructor.type==='Interno'?'':result.rfc||instructor.rfc||'';}
       return result;
     }
-    function ssSelect(field,label,kind,value,rows=null){return '<label>'+label+'<select data-sirce-field="'+field+'"><option value="">Selecciona del catálogo</option>'+(rows||SirceListados.catalogs[kind]).map(item=>'<option value="'+atE(item.code)+'" '+(String(value)===item.code?'selected':'')+'>'+atE(item.code+' · '+item.name)+'</option>').join('')+'</select></label>';}
+    function sirceObjectiveFullLabel(code,fallback=''){
+      return {'1':'Actualizar y perfeccionar conocimientos y habilidades del trabajador','2':'Proporcionar información sobre la aplicación de nuevas tecnologías en las actividades productivas','3':'Preparar al trabajador para ocupar una vacante o puesto de nueva creación','4':'Prevenir riesgos de trabajo','5':'Incrementar la productividad'}[String(code)]||fallback;
+    }
+    function ssSelect(field,label,kind,value,rows=null){return '<label>'+label+'<select data-sirce-field="'+field+'"><option value="">Selecciona del catálogo</option>'+(rows||SirceListados.catalogs[kind]).map(item=>'<option value="'+atE(item.code)+'" '+(String(value)===item.code?'selected':'')+'>'+atE(item.code+' · '+(kind==='objectives'?sirceObjectiveFullLabel(item.code,item.name):item.name))+'</option>').join('')+'</select>'+(kind==='objectives'?'<small class="objective-full-label">'+atE(sirceObjectiveFullLabel(value))+'</small>':'')+'</label>';}
     function ssFields(list){
       const m=ssDefaults(list),internal=(ssInstructor(list)?.type||list.encabezado?.clasificacion||list.enc?.clasificacion)==='Interno'||m.agente==='1',state=SirceListados.catalogs.states.find(row=>row.code===m.estado);
       return '<div class="sirce-fields"><label>CLAVE CURSO SIRCE · opcional al capturar<input data-sirce-field="claveCurso" value="'+atE(m.claveCurso)+'" placeholder="Completar después del alta en SIRCE" autocomplete="off"></label><label>Establecimiento<input readonly value="862341"></label><label>Fecha de inicio<input type="date" data-sirce-field="inicio" value="'+atE(m.inicio)+'"></label><label>Fecha de término<input type="date" data-sirce-field="fin" value="'+atE(m.fin)+'"></label>'+ssSelect('estado','Estado','states',m.estado)+ssSelect('municipio','Municipio','municipalities',m.municipio,SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)))+ssSelect('area','Área temática','areas',m.area)+ssSelect('modalidad','Modalidad','modalities',m.modalidad)+ssSelect('objetivo','Objetivo de capacitación','objectives',m.objetivo)+ssSelect('agente','Tipo de agente','agents',m.agente).replace('<select ',ssInstructor(list)?'<select disabled ':'<select ')+'<label data-sirce-rfc '+(internal?'hidden':'')+'>RFC AGENTE STPS<input data-sirce-field="rfc" value="'+atE(internal?'':m.rfc)+'"></label></div><p class="form-hint">La clave corresponde a este listado, no al código del curso en el glosario. Interno: RFC AGENTE STPS vacío. Los catálogos son los archivos que proporcionaste.</p>';
@@ -3126,6 +3159,7 @@ function normalizePersonNames(key, value) {
     function ssRead(root){const data={establecimiento:'862341'};root.querySelectorAll('[data-sirce-field]').forEach(input=>data[input.dataset.sirceField]=input.value.trim());if(data.agente==='1')data.rfc='';return data;}
     function ssKeyAvailable(id,key){if(key&&attendance.some(list=>list.id!==id&&String(list.sirceDatos?.claveCurso||'').trim()===key))throw Error('Esta CLAVE CURSO ya está asignada a otro listado.');}
     function ssRefreshFields(root,target){
+      if(target.dataset.sirceField==='objetivo'){const description=target.closest('label').querySelector('.objective-full-label');if(description)description.textContent=sirceObjectiveFullLabel(target.value);}
       if(target.dataset.sirceField==='estado'){
         const state=SirceListados.catalogs.states.find(row=>row.code===target.value),select=root.querySelector('[data-sirce-field="municipio"]');select.innerHTML='<option value="">Selecciona municipio</option>'+SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)).map(row=>'<option value="'+atE(row.code)+'">'+atE(row.code+' · '+row.name)+'</option>').join('');
       }

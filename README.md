@@ -13,6 +13,9 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
+Última actualización: [Cursos, instructores y objetivos](descargas/SAMARA_CURSOS_INSTRUCTORES_OBJETIVOS.zip).
+Incluye asignación en ambos módulos y captura de fecha de certificación desde el glosario.
+
 ## Ver el código
 
 Los archivos completos están en [SAMARA/ACTUALIZAR](SAMARA/ACTUALIZAR).

@@ -1,0 +1,30 @@
+CURSOS, INSTRUCTORES Y OBJETIVOS
+
+En el proyecto existente sustituye los archivos completos:
+- App.html
+- Index.html
+- Estilos.html
+Guarda y publica: Implementar > Gestionar implementaciones > Editar > Nueva versión > Implementar.
+No cambies hojas, propiedades, usuarios, catálogos ni DatosIniciales.
+
+Asignar un instructor en el glosario agrega el curso a sus autorizaciones.
+Para las asignaciones nuevas aparece una ventana dentro de la aplicación para
+capturar desde qué fecha está certificado cada instructor. No se inventan fechas.
+Cancelar esa ventana no guarda el curso ni modifica instructores.
+Las fechas ya registradas se conservan y no se duplican al editar el curso.
+Asignar un curso desde Instructores también actualiza el glosario. Se incluyen
+instructores internos y externos; los externos pueden editar sus cursos asociados.
+El tipo de experiencia puede completarse en la edición del instructor; no se
+marca evidencia o experiencia que no haya sido indicada.
+
+Los objetivos completos se muestran en Encabezado y Datos SIRCE, con un texto
+debajo del selector para poder leerlos aunque no quepan en el campo.
+Se mantienen las claves y las selecciones existentes. El encabezado previo usa
+el objetivo 2 para nivel educativo, mientras que el catálogo SIRCE proporcionado
+usa el 2 para nuevas tecnologías. Se conserva el significado de cada catálogo;
+esta actualización no recodifica registros ni cambia exportaciones SIRCE.
+
+VERIFICACIÓN
+Pruebas automatizadas de vinculaciones, fechas, duplicados, renombrado y externos,
+y pruebas de navegador con los servicios Google simulados. La publicación real
+y la conexión a Google Sheets se comprueban en la cuenta propietaria.
