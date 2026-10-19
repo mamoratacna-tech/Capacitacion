@@ -8,9 +8,14 @@ Guarda y publica: Implementar > Gestionar implementaciones > Editar > Nueva vers
 No cambies hojas, propiedades, usuarios, catálogos ni DatosIniciales.
 
 Asignar un instructor en el glosario agrega el curso a sus autorizaciones.
-Para las asignaciones nuevas aparece una ventana dentro de la aplicación para
-capturar desde qué fecha está certificado cada instructor. No se inventan fechas.
+Al seleccionar un instructor nuevo en el glosario aparece de inmediato una
+ventana para capturar desde qué fecha está certificado en ese curso.
+Confirma la fecha y luego pulsa Guardar curso para guardar ambos módulos. No se inventan fechas.
 Cancelar esa ventana no guarda el curso ni modifica instructores.
+Al abrir la aplicación se reparan las asignaciones anteriores que existían
+solo en uno de los módulos. No se inventan fechas; los vínculos sin fecha
+específica deben completarse al guardar el curso. La fecha general de registro
+del instructor no se toma como certificación del curso para esta asignación.
 Las fechas ya registradas se conservan y no se duplican al editar el curso.
 Asignar un curso desde Instructores también actualiza el glosario. Se incluyen
 instructores internos y externos; los externos pueden editar sus cursos asociados.

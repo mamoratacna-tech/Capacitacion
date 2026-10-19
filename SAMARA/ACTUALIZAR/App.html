@@ -425,6 +425,7 @@ function normalizePersonNames(key, value) {
       editingMatrixId = null,
       activeReport = '';
     let selectedCoursePositions = new Set();
+    let courseCertificationDraft={},courseCertificationPromptPending=false;
     const courseDialog = $('#course-dialog'),
       courseForm = $('#course-form'),
       instructorDialog = $('#instructor-dialog'),
@@ -991,6 +992,21 @@ function normalizePersonNames(key, value) {
         return {...course,instructorIds:ids,instructorId:ids[0]||'',instructor:names,owner:names,...(types.length===1?{instructorClass:types[0],agent:types[0]}:{})};
       });
     }
+    function reconcileCourseInstructorLinks(catalog,records){
+      let nextCourses=catalog;
+      records.forEach(record=>{nextCourses=syncInstructorCourseAssignments(nextCourses,record,records);});
+      const nextRecords=records.map(record=>({...record,authorizedCourses:[...(record.authorizedCourses||[])]}));
+      nextCourses=nextCourses.map(course=>{
+        const ids=new Set(course.instructorIds||[course.instructorId].filter(Boolean));
+        if(!ids.size&&course.instructor){const matches=records.filter(record=>norm(fullInstructorName(record))===norm(course.instructor));if(matches.length===1)ids.add(matches[0].id);}
+        if(!ids.size)return course;
+        const linked=nextRecords.filter(record=>ids.has(record.id));
+        linked.forEach(record=>{if(!record.authorizedCourses.some(row=>courseAuthorizationMatches(row,course,null,catalog)))record.authorizedCourses.push({courseCode:course.code,name:course.name,certificationDate:'',experience:[]});});
+        const names=linked.map(fullInstructorName).join(', '),types=[...new Set(linked.map(record=>record.type))];
+        return {...course,instructorIds:[...ids],instructorId:[...ids][0]||'',...(linked.length?{instructor:names,owner:names}:{}),...(types.length===1?{instructorClass:types[0],agent:types[0]}:{})};
+      });
+      return {courses:nextCourses,instructors:nextRecords};
+    }
     function courseAuthorizationMatches(row,course,previous,catalog){
       if(row.courseCode===course.code||previous&&row.courseCode===previous.code)return true;
       if(row.courseCode&&row.courseCode!=='__other__')return false;
@@ -998,7 +1014,7 @@ function normalizePersonNames(key, value) {
       return !!row.name&&names.includes(norm(row.name))&&catalog.filter(item=>norm(item.name)===norm(row.name)).length<=1;
     }
     function courseCertificationRequests(course,records,catalog,previous){
-      return records.filter(record=>!(record.authorizedCourses||[]).some(row=>courseAuthorizationMatches(row,course,previous,catalog)&&Cmcap.valid(instructorCertificationDate(row,record))));
+      return records.filter(record=>!(record.authorizedCourses||[]).some(row=>courseAuthorizationMatches(row,course,previous,catalog)&&Cmcap.valid(row.certificationDate)));
     }
     function syncCourseInstructorAuthorizations(course,records,catalog,dates={},previous=null){
       const selected=new Set(course.instructorIds||[]);
@@ -1008,21 +1024,21 @@ function normalizePersonNames(key, value) {
         const matches=rows.filter(row=>row.courseCode===course.code),date=dates[record.id];
         if(date){
           if(!Cmcap.valid(date))throw Error('Completa una fecha válida para '+fullInstructorName(record)+'.');
-          if(!matches.some(row=>instructorCertificationDate(row,record)===date)){
-            const pending=rows.findIndex(row=>row.courseCode===course.code&&!Cmcap.valid(instructorCertificationDate(row,record)));
+          if(!matches.some(row=>row.certificationDate===date)){
+            const pending=rows.findIndex(row=>row.courseCode===course.code&&!Cmcap.valid(row.certificationDate));
             if(pending>=0)rows[pending]={...rows[pending],certificationDate:date};else rows.push({courseCode:course.code,name:course.name,certificationDate:date,experience:[]});
           }
         }
-        if(!rows.some(row=>row.courseCode===course.code&&Cmcap.valid(instructorCertificationDate(row,record))))throw Error('Falta la fecha de certificación de '+fullInstructorName(record)+'.');
+        if(!rows.some(row=>row.courseCode===course.code&&Cmcap.valid(row.certificationDate)))throw Error('Falta la fecha de certificación de '+fullInstructorName(record)+'.');
         return {...record,authorizedCourses:rows};
       });
     }
     function askCourseCertificationDates(course,records){
       if(!records.length)return Promise.resolve({});
       return new Promise(resolve=>{
-        const dialog=document.createElement('dialog');dialog.id='course-certification-dialog';dialog.innerHTML='<form class="record-editor" id="course-certification-form"><div class="dialog-head"><div><div class="eyebrow">VINCULAR CURSO E INSTRUCTORES</div><h2>Fecha de certificación</h2></div><button type="button" class="close-dialog" data-certification-cancel aria-label="Cerrar">×</button></div><p class="certification-course-name"></p><p>Indica desde qué fecha está certificado cada instructor para impartir este curso. Se agregará también a sus cursos autorizados.</p><div class="certification-date-rows"></div><p class="certification-error" role="alert"></p><div class="dialog-actions"><button type="button" class="button outline" data-certification-cancel>Cancelar</button><button type="submit" class="button primary">Confirmar y guardar</button></div></form>';
+        const dialog=document.createElement('dialog');dialog.id='course-certification-dialog';dialog.innerHTML='<form class="record-editor" id="course-certification-form"><div class="dialog-head"><div><div class="eyebrow">VINCULAR CURSO E INSTRUCTORES</div><h2>Fecha de certificación</h2></div><button type="button" class="close-dialog" data-certification-cancel aria-label="Cerrar">×</button></div><p class="certification-course-name"></p><p>Indica desde qué fecha está certificado cada instructor para impartir este curso. Al guardar el curso, se agregará también a sus cursos autorizados.</p><div class="certification-date-rows"></div><p class="certification-error" role="alert"></p><div class="dialog-actions"><button type="button" class="button outline" data-certification-cancel>Cancelar</button><button type="submit" class="button primary">Confirmar fecha</button></div></form>';
         dialog.querySelector('.certification-course-name').textContent=course.code+' · '+course.name;
-        dialog.querySelector('.certification-date-rows').innerHTML=records.map(record=>'<label>'+escapeHtml(fullInstructorName(record))+'<input type="date" data-certification-instructor="'+escapeHtml(record.id)+'" required></label>').join('');
+        dialog.querySelector('.certification-date-rows').innerHTML=records.map(record=>'<label>'+escapeHtml(fullInstructorName(record))+'<input type="date" data-certification-instructor="'+escapeHtml(record.id)+'" value="'+escapeHtml((record.authorizedCourses||[]).find(row=>row.courseCode===course.code&&Cmcap.valid(row.certificationDate))?.certificationDate||'')+'" required></label>').join('');
         let result=null;dialog.querySelectorAll('[data-certification-cancel]').forEach(button=>button.onclick=()=>dialog.close());
         dialog.querySelector('form').addEventListener('submit',event=>{event.preventDefault();const dates={};for(const input of dialog.querySelectorAll('[data-certification-instructor]')){if(!Cmcap.valid(input.value)){dialog.querySelector('.certification-error').textContent='Completa todas las fechas de certificación.';return;}dates[input.dataset.certificationInstructor]=input.value;}result=dates;dialog.close();});
         dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});document.body.append(dialog);dialog.showModal();
@@ -1422,6 +1438,7 @@ function normalizePersonNames(key, value) {
     }
     function openCourseEditor(code = null) {
       editingCourseCode = code;
+      courseCertificationDraft={};
       const c = courses.find(item => item.code === code);
       selectedCoursePositions = new Set(c?.applicablePositions || []);
       courseForm.reset();
@@ -1447,20 +1464,31 @@ function normalizePersonNames(key, value) {
     }
     $('#course-add-instructor').addEventListener('click',()=>appendCourseInstructorRow());
     $('#course-register-instructor').addEventListener('click',()=>openInstructorEditor('', $('#course-instructor-class').value));
-    $('#course-instructor-options').addEventListener('input',event=>{
+    $('#course-instructor-options').addEventListener('input',async event=>{
       if(!event.target.matches('.course-instructor-lookup'))return;
-      const input=event.target,row=input.closest('.course-instructor-row');
+      const input=event.target,row=input.closest('.course-instructor-row'),hidden=row.querySelector('[name="instructorIds"]');
       const start=input.selectionStart,end=input.selectionEnd;input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
       const match=instructors.find(item=>item.type===$('#course-instructor-class').value && norm(instructorLookupLabel(item))===norm(input.value));
-      row.querySelector('[name="instructorIds"]').value=match?.id || '';
-      input.setCustomValidity(match?'':'Busca por nombre y selecciona un instructor registrado.');
+      const priorId=hidden.value;hidden.value='';input.setCustomValidity(match?'':'Busca por nombre y selecciona un instructor registrado.');
+      if(!match)return;
+      if(priorId===match.id||courseCertificationDraft[match.id]){hidden.value=match.id;return;}
+      if(courseCertificationPromptPending)return;
+      const current=courses.find(item=>item.code===editingCourseCode),draft={code:current?.code||courseForm.elements.code.value||'',name:courseForm.elements.name.value||'Curso nuevo'};
+      const needsDate=!current||(current.instructorIds||[current.instructorId].filter(Boolean)).indexOf(match.id)===-1||courseCertificationRequests(draft,[match],courses,current).length;
+      if(!needsDate){hidden.value=match.id;return;}
+      courseCertificationPromptPending=true;input.readOnly=true;
+      try{
+        const dates=await askCourseCertificationDates(draft,[match]);
+        if(dates===null){input.value='';input.setCustomValidity('Selecciona un instructor y confirma su fecha de certificación.');return;}
+        Object.assign(courseCertificationDraft,dates);hidden.value=match.id;input.setCustomValidity('');
+      }finally{courseCertificationPromptPending=false;input.readOnly=false;}
     });
     $('#course-instructor-options').addEventListener('click',event=>{
       if(!event.target.closest('[data-remove-course-instructor]'))return;
       event.target.closest('.course-instructor-row').remove();
       if(!$('#course-instructor-options').children.length)appendCourseInstructorRow();
     });
-    $('#course-instructor-class').addEventListener('change',()=>fillCourseInstructorOptions());
+    $('#course-instructor-class').addEventListener('change',()=>{courseCertificationDraft={};fillCourseInstructorOptions();});
     courseForm.addEventListener('change', event => {
       if (event.target.matches('[name="applicablePositions"]')) {
         if (event.target.checked) selectedCoursePositions.add(event.target.value);else selectedCoursePositions.delete(event.target.value);
@@ -1471,6 +1499,7 @@ function normalizePersonNames(key, value) {
     $('#course-position-search').addEventListener('input', () => renderCoursePositionChecklist([...selectedCoursePositions], $('#course-position-search').value));
     courseForm.addEventListener('submit', async event => {
       event.preventDefault();
+      if(courseCertificationPromptPending)return;
       if (!courseForm.elements.theme.value || !courseForm.elements.objectiveCode.value) {
         courseForm.querySelector('.course-fold:not(.position-fold)').open = true;
         toast('Selecciona el área temática SIRCE y uno de los objetivos DC-2.');
@@ -1536,7 +1565,8 @@ function normalizePersonNames(key, value) {
       const button=courseForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
       try{
         const nextCourses=previous?courses.map(course=>course.code===editingCourseCode?item:course):[item,...courses];
-        const dates=await askCourseCertificationDates(item,courseCertificationRequests(item,instructorRecords,nextCourses,previous));if(dates===null)return;
+        const dates=await askCourseCertificationDates(item,courseCertificationRequests(item,instructorRecords,nextCourses,previous).filter(record=>!courseCertificationDraft[record.id]));if(dates===null)return;
+        Object.assign(dates,courseCertificationDraft);
         const nextInstructors=syncCourseInstructorAuthorizations(item,instructors,nextCourses,dates,previous);
         await persistCollections({'samara.courses.v2':nextCourses,'samara.instructors.v1':nextInstructors});courses=nextCourses;instructors=nextInstructors;renderInstructors();
       }catch(error){toast('No se guardó el curso: '+error.message);return;}finally{button.disabled=false;}
@@ -2418,6 +2448,9 @@ function normalizePersonNames(key, value) {
       $('#print-stage').innerHTML = html;
       printPreparedDocument(true);
     });
+    const repairedLinks=reconcileCourseInstructorLinks(courses,instructors);
+    if(JSON.stringify(repairedLinks.courses)!==JSON.stringify(courses)){courses=repairedLinks.courses;saveStore('samara.courses.v2',courses);}
+    if(JSON.stringify(repairedLinks.instructors)!==JSON.stringify(instructors)){instructors=repairedLinks.instructors;saveStore('samara.instructors.v1',instructors);}
     fillCourseThemeOptions();
     renderSessions();
     renderCourses();
