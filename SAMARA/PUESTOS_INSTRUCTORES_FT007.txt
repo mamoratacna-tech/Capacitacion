@@ -1,0 +1,49 @@
+SAMARA: DEPARTAMENTOS SINCRONIZADOS, TABLAS COMPACTAS Y FT-RH-007
+
+ACTUALIZAR TU PROYECTO EXISTENTE
+Reemplaza completos App.html, Index.html y Estilos.html.
+Conserva Code.gs, UsuariosServidor.gs, los demás archivos, las propiedades,
+la hoja vinculada y los usuarios actuales. No configures usuarios otra vez.
+Guarda y publica en Implementar > Administrar implementaciones > lápiz >
+Nueva versión > Implementar. Recarga el enlace publicado /exec.
+
+DEPARTAMENTOS Y PUESTOS EN SIRCE
+Al editar un departamento en Matriz > Departamentos, su nombre se actualiza
+en el catálogo de puestos, las combinaciones de la matriz, personal y los
+datos del instructor interno. Al abrir la aplicación se reparan también las
+referencias que todavía usan un nombre anterior guardado como alias.
+Se conservan los IDs, códigos SIRCE y asignaciones de cursos. El catálogo de
+nomenclaturas del glosario de cursos sigue siendo independiente: no se cambian
+los códigos ni las abreviaciones de cursos al renombrar un departamento físico.
+Al actualizar un puesto, los datos del instructor vinculado al empleado
+siguen su puesto y departamento actuales. No se reescriben listados históricos.
+La tabla de puestos usa columnas más compactas y nombres completos en varias
+líneas. Eliminar aparece como × roja. Las acciones permanecen al borde derecho
+si es necesario desplazarse en una pantalla pequeña. Se conserva la confirmación
+antes de eliminar un puesto.
+
+INSTRUCTORES
+La edición de cada curso tiene una tarjeta con bordes completos, fecha de
+certificación con el mismo estilo de los otros campos y opciones de experiencia
+abajo. La ventana se adapta a pantallas pequeñas sin desbordamiento horizontal.
+El listado principal muestra los cursos autorizados sin fechas debajo; las
+fechas se conservan en la edición y en la selección para imprimir.
+
+IMPRIMIR FT-RH-007
+Primero selecciona los cursos certificados. Puedes buscarlos por nombre o
+código. El filtro opcional de fechas está debajo de la lista, plegado inicialmente.
+Se imprimen los cursos seleccionados que coinciden con los filtros.
+Cada fecha de certificación genera sus propias hojas, fechadas ese día, con
+los firmantes de CMCAP vigentes en esa fecha. Se incluyen hasta seis cursos
+por hoja de la misma fecha. Si hay más de seis, se genera otra hoja.
+Ejemplo: siete cursos del 15/01/2025 y dos del 10/03/2026 producen tres hojas:
+seis y uno del 15/01/2025, más dos del 10/03/2026.
+La tabla de cursos del formato original se adapta a seis renglones; se
+conservan los demás campos, imagen de fondo y firmas de la plantilla.
+
+VERIFICACIÓN
+46 pruebas automáticas. Pruebas en navegador de reparación de nombres anteriores,
+renombrado en módulos relacionados, tabla compacta, edición en escritorio y
+móvil, impresión 6+1+2 por fecha con firmas históricas, acceso y exportaciones.
+Se revisó visualmente la hoja FT-RH-007 generada. Las pruebas usan un simulador
+de servicios de Google; falta publicar los archivos en tu Apps Script.
