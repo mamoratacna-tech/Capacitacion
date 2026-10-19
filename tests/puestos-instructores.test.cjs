@@ -20,8 +20,12 @@ test('departamentos inactivos o eliminados excluyen sus puestos, incluidos nombr
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
  assert.equal(context.activeMatrixPositions().length,1);assert.equal(context.activeMatrixPositions()[0].department,'RH');context.matrixDepartments[0].activeStatus='Activo';assert.equal(context.activeMatrixPositions().length,2);
 });
-test('matriz exige empleado SAMARA activo en la misma combinación; excluye TACNA y vacantes',()=>{
+test('matriz conserva puestos sin activos hasta inactivarlos; excluye TACNA',()=>{
  const context=vm.createContext({employeeIsActive:e=>e.activeStatus!=='Inactivo',norm:value=>String(value||'').toLowerCase(),employeeCompany:e=>e.company||'SAMARA',positions:[],matrixDepartments:[],employees:[{position:'ASESOR',company:'TACNA',department:'OTRO NOMBRE'},{position:'TÉCNICO',department:'RH',company:'TACNA'},{position:'TÉCNICO',department:'RH',company:'SAMARA'},{position:'NUEVO',department:'RH',company:'SAMARA',activeStatus:'Inactivo'}],matrixPositions:[{job:'ASESOR',department:'RH'},{job:'TÉCNICO',department:'RH'},{job:'NUEVO',department:'RH'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
- assert.equal(context.activeMatrixPositions().map(p=>p.job).join(','),'TÉCNICO');
+ assert.equal(context.activeMatrixPositions().map(p=>p.job).join(','),'TÉCNICO,NUEVO');
+});
+test('vacante se conserva en matriz hasta elegir inactivar esa combinación, sin afectar otros departamentos',()=>{
+ const context=vm.createContext({norm:value=>String(value||'').toLowerCase(),employeeCompany:e=>e.company||'SAMARA',employees:[{position:'OPERADOR',department:'A',company:'SAMARA'},{position:'OPERADOR',department:'B',company:'SAMARA',activeStatus:'Inactivo'}],matrixDepartments:[],positions:[{job:'OPERADOR'}],matrixPositions:[{id:'a',job:'OPERADOR',department:'A'},{id:'b',job:'OPERADOR',department:'B'}]});
+ vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);assert.equal(context.activeMatrixPositions().length,2);context.matrixPositions[1].activeStatus='Inactivo';assert.equal(context.activeMatrixPositions().map(x=>x.id).join(','),'a');assert.equal(context.matrixPositions.length,2);
 });

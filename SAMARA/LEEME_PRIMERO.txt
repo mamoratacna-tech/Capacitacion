@@ -31,3 +31,6 @@ SIRCE POR LISTADO: crea también SirceListados.html si no existe. Consulta SIRCE
 ACCESO CON USUARIOS: instala también Acceso.html, Usuarios.html y UsuariosServidor.gs.
 Sigue USUARIOS_ACCESO.txt para añadir el permiso de correo de la propietaria
 y configurar las dos contraseñas iniciales antes de empezar a capturar.
+
+PERSONAL Y PUESTOS: consulta PERSONAL_CLASIFICACION.txt para clasificación D/I
+y la elección de puestos vacantes que pasarán a inactivos.

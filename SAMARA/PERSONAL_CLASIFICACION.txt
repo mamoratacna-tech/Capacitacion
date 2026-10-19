@@ -1,0 +1,47 @@
+SAMARA: CLASIFICACIÓN D/I, REVISIÓN DE PUESTOS Y MÁRGENES
+
+INSTALAR
+Reemplaza completos App.html, Index.html y Estilos.html en tu proyecto actual.
+Conserva Code.gs, UsuariosServidor.gs, Acceso, Usuarios, los demás archivos,
+la hoja vinculada y todas las propiedades. No reconfigures los usuarios.
+Guarda y publica: Implementar > Administrar implementaciones > lápiz > Nueva
+versión > Implementar. Recarga el enlace publicado /exec.
+
+CARGA DE ACTIVOS SAMARA
+Antes de guardar, el apartado «Clasificación de los puestos del personal
+activo» permite escoger D · Directo o I · Indirecto por puesto y departamento.
+Se aplica al personal activo de esa combinación y a la matriz. Si el Excel
+incluye una columna Clasificación con D/I o Directo/Indirecto, se recupera
+para revisión. Se conserva la clasificación existente cuando está disponible;
+si falta o hay valores contradictorios, debes elegirla antes de aplicar.
+La exportación del padrón también incluye Clasificación.
+
+PUESTOS SIN PERSONAL ACTIVO
+Los puestos no se borran ni desaparecen de la matriz por quedar sin activos.
+La revisión incluye «Puestos sin personal activo». Deja las casillas sin
+marcar para conservarlos activos. Marca únicamente aquellos que deseas pasar
+a inactivos. Se conservan IDs, código SIRCE, cursos y asociaciones históricas.
+Si inactivas todas las combinaciones de un puesto, su registro en Puestos en
+SIRCE también queda inactivo. Una combinación con personal activo no se ofrece
+para inactivación en esta revisión. Las combinaciones reocupadas por personal
+activo se reactivan al aplicar la carga.
+Los puestos inactivos no aparecen en la matriz; siguen en los catálogos y se
+pueden editar. TACNA sigue excluido de la matriz y de la carga de activos SAMARA.
+Se conserva la regla de departamentos inactivos: no aparecen en la matriz.
+Esto sustituye la regla anterior que ocultaba automáticamente las vacantes.
+
+ALTA Y EDICIÓN DE PUESTOS
+En Matriz > Puestos en SIRCE > Nuevo puesto se exige elegir D · Directo o
+I · Indirecto. También está disponible al editar un puesto. La selección se
+guarda en el catálogo y en la combinación correspondiente de la matriz.
+
+USUARIOS
+El módulo ahora está dentro del mismo contenedor que los demás módulos,
+con los mismos márgenes laterales y superiores. Se conservan los accesos,
+contraseñas y mejoras de entrada y salida de la actualización anterior.
+
+PRUEBAS
+44 comprobaciones automáticas, pruebas de navegador de clasificación en carga,
+inactivación elegida, conservación de vacantes y cursos, alta de puesto I,
+márgenes de Usuarios, acceso y exportaciones. Comprobación local con simulación
+de servicios de Google; debes publicar los archivos en tu Apps Script.

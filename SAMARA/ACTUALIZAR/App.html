@@ -551,7 +551,13 @@ function normalizePersonNames(key, value) {
     }
     function activeMatrixPositions() {
       const inactive=new Set(positions.filter(position=>!positionIsActive(position)).map(position=>norm(position.job)));
-      return matrixPositions.filter(position=>!inactive.has(norm(position.job))&&matrixDepartmentIsActive(position.department)&&employees.some(employee=>employeeCompany(employee)==='SAMARA'&&employeeIsActive(employee)&&norm(employee.position)===norm(position.job)&&norm(employee.department)===norm(position.department)));
+      return matrixPositions.filter(position=>{
+        if(inactive.has(norm(position.job))||!positionIsActive(position)||!matrixDepartmentIsActive(position.department))return false;
+        const workforce=employees.filter(employee=>norm(employee.position)===norm(position.job));
+        if(workforce.length&&workforce.every(employee=>employeeCompany(employee)==='TACNA'))return false;
+        const pair=workforce.filter(employee=>norm(employee.department)===norm(position.department));
+        return !pair.length||pair.some(employee=>employeeCompany(employee)==='SAMARA');
+      });
     }
 
     function filteredMatrixRows() {
@@ -630,6 +636,7 @@ function normalizePersonNames(key, value) {
         if(previous&&norm(previous.position)!==norm(item.position)&&!row.department)item.department='';
         if(!item.department&&departments.length===1)item.department=departments[0];
         if(!item.department){errors.push(tag+'falta Departamento; no se puede resolver de forma única para el puesto.');continue;}
+        if(row.classification){const classification=positionClassification(row.classification);if(!classification){errors.push(tag+'clasificación inválida; usa D (Directo) o I (Indirecto).');continue;}item.classification=classification;}
         try{item.activeStatus=options.mode==='active'?'Activo':employeeStatus(row.activeStatus,previous?employeeIsActive(previous)?'Activo':'Inactivo':'Activo');}catch(error){errors.push(tag+error.message);continue;}
         if(previous){if(!employeeIsActive(previous)&&item.activeStatus==='Activo')activated++;if(employeeIsActive(previous)&&item.activeStatus==='Inactivo')deactivated++;next[next.indexOf(previous)]=item;updated++;}else{next.push(item);added++;if(item.activeStatus==='Activo')activated++;}
       }
@@ -648,12 +655,40 @@ function normalizePersonNames(key, value) {
         let area=departments.find(item=>norm(item.name)===norm(department));
         if(!area){area={id:'md-'+crypto.randomUUID(),name:department,activeStatus:'Activo',aliases:[]};departments.push(area);additions.departments.push(department);}else{area.activeStatus='Activo';area.deleted=false;}
         let pair=matrix.find(item=>norm(item.job)===norm(job)&&norm(item.department)===norm(department));
-        if(!pair){pair={id:job+'|'+department,job,department};matrix.push(pair);additions.matrix.push(job+' · '+department);}
+        if(!pair){pair={id:job+'|'+department,job,department};matrix.push(pair);additions.matrix.push(job+' · '+department);}pair.activeStatus='Activo';
       }
       return {jobs,matrix,departments,additions};
     }
+    function positionClassification(value){const key=norm(value);return ['d','directo','directa'].includes(key)?'D':['i','indirecto','indirecta'].includes(key)?'I':'';}
+    function employeeImportPositionReview(workforce,jobCatalog,jobMatrix,departmentCatalog,choices={},inactiveIds=[]) {
+      const catalogs=employeeImportCatalogs(workforce,jobCatalog,jobMatrix,departmentCatalog),rows=[],vacancies=[],inactive=new Set(inactiveIds);
+      for(const pair of catalogs.matrix){
+        const workers=workforce.filter(employee=>employeeCompany(employee)==='SAMARA'&&employeeIsActive(employee)&&norm(employee.position)===norm(pair.job)&&norm(employee.department)===norm(pair.department));
+        if(workers.length){
+          const values=[...new Set(workers.map(employee=>positionClassification(employee.classification)).filter(Boolean))],job=catalogs.jobs.find(item=>norm(item.job)===norm(pair.job));
+          const classification=Object.prototype.hasOwnProperty.call(choices,pair.id)?positionClassification(choices[pair.id]):values.length>1?'':values[0]||positionClassification(pair.classification)||positionClassification(job?.classification);
+          pair.classification=classification;rows.push({id:pair.id,job:pair.job,department:pair.department,classification,count:workers.length});
+        }else if(positionIsActive(pair)){
+          const related=workforce.filter(employee=>norm(employee.position)===norm(pair.job));
+          if(related.length&&related.every(employee=>employeeCompany(employee)==='TACNA'))continue;
+          vacancies.push({id:pair.id,job:pair.job,department:pair.department});
+          if(inactive.has(pair.id))pair.activeStatus='Inactivo';
+        }
+      }
+      for(const job of catalogs.jobs){
+        const pairs=catalogs.matrix.filter(pair=>norm(pair.job)===norm(job.job));
+        if(!pairs.length&&positionIsActive(job)){
+          const related=workforce.filter(employee=>norm(employee.position)===norm(job.job)),id='catalog-job:'+norm(job.job);
+          if(!related.length||related.some(employee=>employeeCompany(employee)==='SAMARA')){vacancies.push({id,job:job.job,department:job.department||'Sin departamento'});if(inactive.has(id))job.activeStatus='Inactivo';}
+        }
+        if(pairs.length&&pairs.every(pair=>!positionIsActive(pair))&&pairs.some(pair=>inactive.has(pair.id)))job.activeStatus='Inactivo';
+        const primary=pairs.find(pair=>norm(pair.department)===norm(job.department));if(primary?.classification)job.classification=primary.classification;
+      }
+      const next=workforce.map(employee=>{const row=rows.find(pair=>employeeCompany(employee)==='SAMARA'&&employeeIsActive(employee)&&norm(pair.job)===norm(employee.position)&&norm(pair.department)===norm(employee.department));return row?{...employee,classification:row.classification}:employee;});
+      return {...catalogs,rows,vacancies,next,missing:rows.filter(row=>!row.classification)};
+    }
     function employeeImportChanges(before,after){
-      const labels={no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
+      const labels={classification:'Clasificación',no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
       return after.map(employee=>{
         const previous=before.find(item=>norm(item.curp)===norm(employee.curp));
         const fields=previous?Object.keys(labels).filter(key=>String(previous[key]||'')!==String(employee[key]||'')).map(key=>({label:labels[key],before:previous[key]||'—',after:employee[key]||'—'})):[];
@@ -1581,6 +1616,7 @@ function normalizePersonNames(key, value) {
       editingPositionJob=job;const position=positions.find(item=>norm(item.job)===norm(job));
       positionForm.reset();$('#position-form-title').textContent=position?'Editar puesto':'Agregar puesto';
       positionForm.elements.job.value=position?.job||job;
+      positionForm.elements.classification.value=positionClassification(matrixPositions.find(row=>norm(row.job)===norm(job)&&norm(row.department)===norm(position?.department))?.classification||position?.classification);
       positionForm.elements.activeStatus.value=position && !positionIsActive(position)?'Inactivo':'Activo';
       fillPositionDepartmentOptions(position);fillOccupationSelectors(position);positionDialog.showModal();
     }
@@ -1632,11 +1668,13 @@ function normalizePersonNames(key, value) {
       if(!occupation){positionForm.reportValidity();return;}
       const form = new FormData(positionForm),
         job = String(form.get('job') || '').trim().toUpperCase(),
+        classification = positionClassification(form.get('classification')),
         sirceCode = String(occupation.code),
         sirceOccupation = String(occupation.occupation),
         activeStatus = String(form.get('activeStatus') || 'Activo'),
         department = String(form.get('department') || '').trim().toLocaleUpperCase('es-MX'),
         previous = positions.find(item => norm(item.job) === norm(editingPositionJob));
+      if(!classification){toast('Selecciona Directo (D) o Indirecto (I).');return;}
       if (positions.some(item => norm(item.job) === norm(job) && norm(item.job) !== norm(editingPositionJob))) {
         toast('Ya existe ese puesto.');
         return;
@@ -1665,17 +1703,19 @@ function normalizePersonNames(key, value) {
       }
       const oldDepartment=previous?.department || matrixPositions.find(row=>norm(row.job)===norm(previous?.job)||norm(row.job)===norm(job))?.department;
       if(previous){
-        matrixPositions=matrixPositions.map(row=>norm(row.job)===norm(job)&&(!oldDepartment||norm(row.department)===norm(oldDepartment))?{...row,department}:row);
-        employees=employees.map(employee=>norm(employee.position)===norm(job)&&(!employee.department||norm(employee.department)===norm(oldDepartment))?{...employee,department}:employee);
+        matrixPositions=matrixPositions.map(row=>norm(row.job)===norm(job)&&(!oldDepartment||norm(row.department)===norm(oldDepartment))?{...row,department,classification,activeStatus}:row);
+        employees=employees.map(employee=>norm(employee.position)===norm(job)&&(!employee.department||norm(employee.department)===norm(oldDepartment))?{...employee,department,classification}:employee);
       }
       positions = previous ? positions.map(item => norm(item.job) === norm(editingPositionJob) ? {
-        ...item, job, sirceCode, sirceOccupation, activeStatus, department
+        ...item, job, sirceCode, sirceOccupation, activeStatus, department, classification
       } : item) : [...positions, {
-        job, sirceCode, sirceOccupation, activeStatus, department
+        job, sirceCode, sirceOccupation, activeStatus, department, classification
       }].sort((a, b) => a.job.localeCompare(b.job));
+      if(!previous)matrixPositions=matrixPositions.map(row=>norm(row.job)===norm(job)&&norm(row.department)===norm(department)?{...row,classification,activeStatus}:row);
       if (!previous && !matrixPositions.some(row=>norm(row.job)===norm(job)&&norm(row.department)===norm(department))) matrixPositions = [...matrixPositions, {
         id: "".concat(job, "|").concat(department),
-        classification: '',
+        classification,
+        activeStatus,
         job,
         department,
         applies: {}
@@ -1770,6 +1810,7 @@ function normalizePersonNames(key, value) {
           institutionType: ['tipodeinstitucion', 'tipoinstitucion'],
           company: ['empresa','company'],
           department: ['departamento','depto','area'],
+          classification: ['clasificacion','clasificaciondelpuesto','clasificacionpuesto','directoindirecto','di'],
           activeStatus: ['estado','estatus','status','activo','activoinactivo','estadodelempleado','situacion'],
           position: ['puesto', 'ocupacion']
         };
@@ -2094,20 +2135,23 @@ function normalizePersonNames(key, value) {
       if (button) openEmployeeEditor(button.dataset.editEmployee);
       const remove=event.target.closest('[data-delete-employee]');if(remove)deleteEmployee(remove.dataset.deleteEmployee,remove);
     });
-    let employeeImportMode='general',employeeImportRows=null;
+    let employeeImportMode='general',employeeImportRows=null,employeeImportClasses={},employeeImportInactive=new Set();
     function previewEmployeeImport(){
       if(!employeeImportRows)return;
       const complete=$('#employee-import-complete').checked,plan=planEmployeeImport(employees,employeeImportRows,{mode:employeeImportMode,company:employeeImportMode==='active'?'SAMARA':activeEmployeeCompany,complete},positions,matrixPositions);
       $('#employee-import-summary').textContent=plan.errors.length?'No se guardará nada. Corrige:\n'+plan.errors.join('\n'):'Empresa: '+(employeeImportMode==='active'?'SAMARA':activeEmployeeCompany)+' · '+plan.added+' nuevos · '+plan.updated+' actualizados · '+plan.activated+' activados · '+plan.deactivated+' marcados como baja/inactivos.'+(employeeImportMode==='active'&&complete?' Los ausentes de esta empresa quedarán inactivos; no se borran registros.':' Los empleados que no aparecen conservan su estado.');
-      const catalogs=employeeImportCatalogs(plan.next,positions,matrixPositions,matrixDepartments),changes=employeeImportChanges(employees,plan.next);
+      const catalogs=employeeImportPositionReview(plan.next,positions,matrixPositions,matrixDepartments,employeeImportClasses,[...employeeImportInactive]),changes=employeeImportChanges(employees,catalogs.next);
       $('#employee-import-details').innerHTML=plan.errors.length?'':
         '<p>Se sincronizarán los puestos y departamentos del personal activo SAMARA. Las ocupaciones SIRCE existentes se conservan; los puestos nuevos quedan pendientes de asignar ocupación SIRCE.</p>'+
         '<p><b>Catálogos nuevos:</b> '+catalogs.additions.jobs.length+' puestos, '+catalogs.additions.departments.length+' departamentos y '+catalogs.additions.matrix.length+' combinaciones puesto/departamento. Los catálogos inactivos utilizados por activos se reactivarán.</p>'+
         ['Baja','Alta nueva','Reactivación','Actualización'].map(type=>{const rows=changes.filter(item=>item.type===type);return '<details open><summary>'+type+' ('+rows.length+')</summary>'+rows.map(({employee,fields})=>'<article class="employee-change"><b>'+escapeHtml(employee.no+' · '+fullEmployeeName(employee))+'</b><p>'+escapeHtml(employee.position+' · '+employee.department)+'</p>'+fields.map(field=>'<div>'+escapeHtml(field.label)+': <del>'+escapeHtml(field.before)+'</del> → <strong>'+escapeHtml(field.after)+'</strong></div>').join('')+'</article>').join('')+'</details>';}).join('');
-      $('#employee-import-apply').disabled=!!plan.errors.length;return plan;
+      $('#employee-import-position-review').innerHTML=plan.errors.length?'':'<h3>Clasificación de los puestos del personal activo</h3><p>Selecciona Directo (D) o Indirecto (I) por puesto y departamento. Se aplicará al personal activo de esa combinación y a la matriz.</p>'+catalogs.rows.map(row=>'<label class="import-position-choice"><span><b>'+escapeHtml(row.job)+'</b><small>'+escapeHtml(row.department)+' · '+row.count+' activos</small></span><select data-import-class="'+escapeHtml(row.id)+'" aria-label="Clasificación de '+escapeHtml(row.job+' · '+row.department)+'"><option value="">Selecciona clasificación</option><option value="D" '+(row.classification==='D'?'selected':'')+'>D · Directo</option><option value="I" '+(row.classification==='I'?'selected':'')+'>I · Indirecto</option></select></label>').join('')+
+        '<h3>Puestos sin personal activo</h3><p>Se conservan los puestos, sus cursos y sus datos. Marca solo los que deseas pasar a inactivos. Si todas las combinaciones de un puesto quedan inactivas, también se marcará inactivo en Puestos en SIRCE.</p>'+(catalogs.vacancies.map(row=>'<label class="import-vacancy-choice"><input type="checkbox" data-import-inactive="'+escapeHtml(row.id)+'" '+(employeeImportInactive.has(row.id)?'checked':'')+'><span>Pasar a inactivo: <b>'+escapeHtml(row.job)+'</b> · '+escapeHtml(row.department)+'</span></label>').join('')||'<p>No hay puestos pendientes de revisar.</p>');
+      $('#employee-import-class-message').textContent=catalogs.missing.length&&!plan.errors.length?'Falta seleccionar la clasificación de '+catalogs.missing.length+' combinaciones de puesto/departamento.':'';
+      $('#employee-import-apply').disabled=!!plan.errors.length||!!catalogs.missing.length;return {...plan,next:catalogs.next,catalogs};
     }
     function openEmployeeImport(mode){
-      employeeImportMode=mode;$('#employee-file').value='';$('#employee-file').click();
+      employeeImportMode=mode;employeeImportClasses={};employeeImportInactive=new Set();$('#employee-file').value='';$('#employee-file').click();
     }
     $('#import-employees').addEventListener('click',()=>openEmployeeImport('general'));
     $('#import-active-employees').addEventListener('click',()=>openEmployeeImport('active'));
@@ -2122,19 +2166,20 @@ function normalizePersonNames(key, value) {
         $('#employee-import-dialog').showModal();previewEmployeeImport();
       }catch(error){toast(error.message);}finally{event.target.value='';}
     });
-    $('#employee-import-complete').addEventListener('change',previewEmployeeImport);
+    $('#employee-import-complete').addEventListener('change',()=>{employeeImportInactive.clear();previewEmployeeImport();});
+    $('#employee-import-position-review').addEventListener('change',event=>{const scrollTop=event.currentTarget.scrollTop;if(event.target.matches('[data-import-class]'))employeeImportClasses[event.target.dataset.importClass]=event.target.value;if(event.target.matches('[data-import-inactive]')){const id=event.target.dataset.importInactive;if(event.target.checked)employeeImportInactive.add(id);else employeeImportInactive.delete(id);}previewEmployeeImport();$('#employee-import-position-review').scrollTop=scrollTop;});
     $('#employee-import-apply').addEventListener('click',async event=>{
       const button=event.target;if(button.disabled)return;button.disabled=true;
       try{
-        const plan=previewEmployeeImport();button.disabled=true;if(!plan||plan.errors.length)return;
+        const plan=previewEmployeeImport();button.disabled=true;if(!plan||plan.errors.length||plan.catalogs.missing.length)return;
         const draft=normalizePersonNames('samara.employees.v2',plan.next);
-        const catalogs=employeeImportCatalogs(draft,positions,matrixPositions,matrixDepartments);
+        const catalogs=plan.catalogs;
         await persistCollections({'samara.employees.v2':draft,'samara.positions.v2':catalogs.jobs,'samara.matrixPositions.v2':catalogs.matrix,'samara.matrixDepartments.v1':catalogs.departments});
         employees=draft;positions=catalogs.jobs;matrixPositions=catalogs.matrix;matrixDepartments=catalogs.departments;renderMatrixDepartments();
         renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
       }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Departamento', 'Estado', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e)])]));
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e)])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
