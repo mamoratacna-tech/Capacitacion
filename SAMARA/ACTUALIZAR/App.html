@@ -545,16 +545,9 @@ function normalizePersonNames(key, value) {
     }
     function activeMatrixPositions() {
       const inactive=new Set(positions.filter(position=>!positionIsActive(position)).map(position=>norm(position.job)));
-      const workers=new Map();
-      employees.forEach(employee=>{const key=norm(employee.position);if(!workers.has(key))workers.set(key,[]);workers.get(key).push(employee);});
-      return matrixPositions.filter(position=>{
-        if(inactive.has(norm(position.job))||!matrixDepartmentIsActive(position.department))return false;
-        const workforce=workers.get(norm(position.job))||[];
-        if(workforce.length&&workforce.every(employee=>employeeCompany(employee)==='TACNA'))return false;
-        const relevant=workforce.filter(employee=>!employee.department||norm(employee.department)===norm(position.department));
-        return !relevant.length || relevant.some(employee=>employeeCompany(employee)==='SAMARA');
-      });
+      return matrixPositions.filter(position=>!inactive.has(norm(position.job))&&matrixDepartmentIsActive(position.department)&&employees.some(employee=>employeeCompany(employee)==='SAMARA'&&employeeIsActive(employee)&&norm(employee.position)===norm(position.job)&&norm(employee.department)===norm(position.department)));
     }
+
     function filteredMatrixRows() {
       const query = ($('#matrix-search').value || '').toLowerCase(),
         status = $('#matrix-status').value,
@@ -631,13 +624,36 @@ function normalizePersonNames(key, value) {
         if(previous&&norm(previous.position)!==norm(item.position)&&!row.department)item.department='';
         if(!item.department&&departments.length===1)item.department=departments[0];
         if(!item.department){errors.push(tag+'falta Departamento; no se puede resolver de forma única para el puesto.');continue;}
-        if(row.department&&departments.length&&!departments.some(department=>norm(department)===norm(item.department))){errors.push(tag+'el departamento no corresponde al puesto '+item.position+'. Revisa Puestos en SIRCE.');continue;}
         try{item.activeStatus=options.mode==='active'?'Activo':employeeStatus(row.activeStatus,previous?employeeIsActive(previous)?'Activo':'Inactivo':'Activo');}catch(error){errors.push(tag+error.message);continue;}
         if(previous){if(!employeeIsActive(previous)&&item.activeStatus==='Activo')activated++;if(employeeIsActive(previous)&&item.activeStatus==='Inactivo')deactivated++;next[next.indexOf(previous)]=item;updated++;}else{next.push(item);added++;if(item.activeStatus==='Activo')activated++;}
       }
       if(!incoming.length)errors.push('El archivo no contiene empleados.');
       if(options.mode==='active'&&options.complete){for(let index=0;index<next.length;index++){const employee=next[index];if(employeeCompany(employee)===scope&&!seen.has(norm(employee.curp))&&employeeIsActive(employee)){next[index]={...employee,activeStatus:'Inactivo'};deactivated++;}}}
       return {next,errors,added,updated,activated,deactivated};
+    }
+    function employeeImportCatalogs(workforce,jobCatalog,jobMatrix,departmentCatalog) {
+      const jobs=jobCatalog.map(item=>({...item})),matrix=jobMatrix.map(item=>({...item})),departments=departmentCatalog.map(item=>({...item}));
+      const additions={jobs:[],matrix:[],departments:[]};
+      for(const employee of workforce){
+        if(employeeCompany(employee)!=='SAMARA'||!employeeIsActive(employee)||!employee.position||!employee.department)continue;
+        const job=String(employee.position).toUpperCase(),department=String(employee.department).toUpperCase();
+        let entry=jobs.find(item=>norm(item.job)===norm(job));
+        if(!entry){entry={job,department,sirceCode:'',sirceOccupation:'',activeStatus:'Activo'};jobs.push(entry);additions.jobs.push(job);}else entry.activeStatus='Activo';
+        let area=departments.find(item=>norm(item.name)===norm(department));
+        if(!area){area={id:'md-'+crypto.randomUUID(),name:department,activeStatus:'Activo',aliases:[]};departments.push(area);additions.departments.push(department);}else{area.activeStatus='Activo';area.deleted=false;}
+        let pair=matrix.find(item=>norm(item.job)===norm(job)&&norm(item.department)===norm(department));
+        if(!pair){pair={id:job+'|'+department,job,department};matrix.push(pair);additions.matrix.push(job+' · '+department);}
+      }
+      return {jobs,matrix,departments,additions};
+    }
+    function employeeImportChanges(before,after){
+      const labels={no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
+      return after.map(employee=>{
+        const previous=before.find(item=>norm(item.curp)===norm(employee.curp));
+        const fields=previous?Object.keys(labels).filter(key=>String(previous[key]||'')!==String(employee[key]||'')).map(key=>({label:labels[key],before:previous[key]||'—',after:employee[key]||'—'})):[];
+        if(previous&&employeeIsActive(previous)!==employeeIsActive(employee))fields.push({label:'Estado',before:employeeIsActive(previous)?'Activo':'Inactivo',after:employeeIsActive(employee)?'Activo':'Inactivo'});
+        return {employee,fields,type:!previous?'Alta nueva':employeeIsActive(previous)&&!employeeIsActive(employee)?'Baja':!employeeIsActive(previous)&&employeeIsActive(employee)?'Reactivación':fields.length?'Actualización':'Sin cambios'};
+      }).filter(item=>item.type!=='Sin cambios');
     }
     function instructorCertificationDate(row,item) {return row.certificationDate||item.authorizationDate||'';}
     function instructorPrintGroups(item,selected,from='',to='') {
@@ -676,7 +692,9 @@ function normalizePersonNames(key, value) {
       try {
         if(!await appConfirm('¿Eliminar a '+fullEmployeeName(employee)+' del padrón de '+employeeCompany(employee)+'? Se conservarán sus registros históricos de asistencia y nombramientos.'))return;
         const draft=employees.filter(item=>norm(item.curp)!==norm(curp));
-        await persistCollection('samara.employees.v2',draft);employees=draft;renderPeople();renderPositions();toast('Empleado eliminado.');
+        const catalogs=employeeImportCatalogs(draft,positions,matrixPositions,matrixDepartments);
+        await persistCollections({'samara.employees.v2':draft,'samara.positions.v2':catalogs.jobs,'samara.matrixPositions.v2':catalogs.matrix,'samara.matrixDepartments.v1':catalogs.departments});
+        employees=draft;positions=catalogs.jobs;matrixPositions=catalogs.matrix;matrixDepartments=catalogs.departments;renderMatrixDepartments();renderPeople();renderPositions();toast('Empleado eliminado.');
       }catch(error){toast(error.message);}finally{button.disabled=false;}
     }
     async function deleteSircePosition(job,button) {
@@ -2072,6 +2090,11 @@ function normalizePersonNames(key, value) {
       if(!employeeImportRows)return;
       const complete=$('#employee-import-complete').checked,plan=planEmployeeImport(employees,employeeImportRows,{mode:employeeImportMode,company:employeeImportMode==='active'?'SAMARA':activeEmployeeCompany,complete},positions,matrixPositions);
       $('#employee-import-summary').textContent=plan.errors.length?'No se guardará nada. Corrige:\n'+plan.errors.join('\n'):'Empresa: '+(employeeImportMode==='active'?'SAMARA':activeEmployeeCompany)+' · '+plan.added+' nuevos · '+plan.updated+' actualizados · '+plan.activated+' activados · '+plan.deactivated+' marcados como baja/inactivos.'+(employeeImportMode==='active'&&complete?' Los ausentes de esta empresa quedarán inactivos; no se borran registros.':' Los empleados que no aparecen conservan su estado.');
+      const catalogs=employeeImportCatalogs(plan.next,positions,matrixPositions,matrixDepartments),changes=employeeImportChanges(employees,plan.next);
+      $('#employee-import-details').innerHTML=plan.errors.length?'':
+        '<p>Se sincronizarán los puestos y departamentos del personal activo SAMARA. Las ocupaciones SIRCE existentes se conservan; los puestos nuevos quedan pendientes de asignar ocupación SIRCE.</p>'+
+        '<p><b>Catálogos nuevos:</b> '+catalogs.additions.jobs.length+' puestos, '+catalogs.additions.departments.length+' departamentos y '+catalogs.additions.matrix.length+' combinaciones puesto/departamento. Los catálogos inactivos utilizados por activos se reactivarán.</p>'+
+        ['Baja','Alta nueva','Reactivación','Actualización'].map(type=>{const rows=changes.filter(item=>item.type===type);return '<details open><summary>'+type+' ('+rows.length+')</summary>'+rows.map(({employee,fields})=>'<article class="employee-change"><b>'+escapeHtml(employee.no+' · '+fullEmployeeName(employee))+'</b><p>'+escapeHtml(employee.position+' · '+employee.department)+'</p>'+fields.map(field=>'<div>'+escapeHtml(field.label)+': <del>'+escapeHtml(field.before)+'</del> → <strong>'+escapeHtml(field.after)+'</strong></div>').join('')+'</article>').join('')+'</details>';}).join('');
       $('#employee-import-apply').disabled=!!plan.errors.length;return plan;
     }
     function openEmployeeImport(mode){
@@ -2096,7 +2119,9 @@ function normalizePersonNames(key, value) {
       try{
         const plan=previewEmployeeImport();button.disabled=true;if(!plan||plan.errors.length)return;
         const draft=normalizePersonNames('samara.employees.v2',plan.next);
-        await persistCollection('samara.employees.v2',draft);employees=draft;
+        const catalogs=employeeImportCatalogs(draft,positions,matrixPositions,matrixDepartments);
+        await persistCollections({'samara.employees.v2':draft,'samara.positions.v2':catalogs.jobs,'samara.matrixPositions.v2':catalogs.matrix,'samara.matrixDepartments.v1':catalogs.departments});
+        employees=draft;positions=catalogs.jobs;matrixPositions=catalogs.matrix;matrixDepartments=catalogs.departments;renderMatrixDepartments();
         renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
       }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
     });

@@ -14,12 +14,13 @@ const html=include('Index').replace(/<\?!= include\('([^']+)'\); \?>/g,(_,name)=
  await page.locator('[data-view="people"]').click();
  assert.ok((await page.locator('#people-table').textContent()).includes('PRODUCCIÓN'));
  await page.locator('#import-active-employees').click();
- await page.locator('#employee-file').setInputFiles({name:'activos.csv',mimeType:'text/csv',buffer:Buffer.from('No\r\n1\r\n')});
+ await page.locator('#employee-file').setInputFiles({name:'activos.csv',mimeType:'text/csv',buffer:Buffer.from('No,Departamento\r\n1,NUEVA AREA\r\n')});
  await page.locator('#employee-import-dialog').waitFor({state:'visible'});
  assert.ok((await page.locator('#employee-import-summary').textContent()).includes('1 marcados como baja'));
+ assert.ok((await page.locator('#employee-import-details').textContent()).includes('LUIS DOS'));assert.ok((await page.locator('#employee-import-details').textContent()).includes('NUEVA AREA'));
  assert.equal(await page.evaluate(()=>window.__testDb.state['samara.employees.v2'][1].activeStatus),undefined);
  await page.locator('#employee-import-apply').click();await page.locator('#employee-import-dialog').waitFor({state:'hidden'});
- const employees=await page.evaluate(()=>window.__testDb.state['samara.employees.v2']);assert.equal(employees[1].activeStatus,'Inactivo');assert.equal(employees[2].activeStatus,undefined);assert.equal(employees.length,3);
+ const employees=await page.evaluate(()=>window.__testDb.state['samara.employees.v2']);assert.equal(employees[1].activeStatus,'Inactivo');assert.equal(employees[2].activeStatus,undefined);assert.equal(employees.length,3);assert.equal(employees[0].department,'NUEVA AREA');assert.ok(await page.evaluate(()=>window.__testDb.state['samara.matrixPositions.v2'].some(x=>x.job==='OPERADOR'&&x.department==='NUEVA AREA')));
  await page.locator('[data-employee-company="TACNA"]').click();assert.ok(await page.locator('#import-active-employees').isHidden());
  await page.locator('[data-view="instructors"]').click();
  await page.locator('[data-edit-instructor="i"]').click();

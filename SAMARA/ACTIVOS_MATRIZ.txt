@@ -1,0 +1,11 @@
+ACTUALIZACIÓN: ACTIVOS, CATÁLOGOS Y REVISIÓN DE CAMBIOS
+
+Reemplaza completos App.html, Index.html y Estilos.html en tu proyecto actual de Apps Script. Conserva tu Code.gs y los demás archivos, especialmente DatosIniciales y CatalogoSIRCE.
+Guarda y publica: Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar. Recarga la aplicación.
+
+La carga ahora acepta el departamento indicado en Excel aunque ese puesto todavía no esté asociado a él. Antes de guardar se muestran las personas que pasarán a baja, altas nuevas, reactivaciones y actualizaciones, con datos anteriores y nuevos.
+La casilla de lista completa determina si los ausentes se marcan inactivos. Desmárcala para cargas parciales. TACNA no se modifica con la carga de activos SAMARA. No se eliminan personas ni registros históricos.
+Al aplicar se guardan juntos empleados, puestos, combinaciones puesto/departamento y departamentos de matriz. Se agregan los faltantes y se reactivan los utilizados por empleados activos SAMARA. Los IDs existentes y ocupaciones SIRCE se conservan. Un puesto nuevo queda sin código SIRCE hasta que elijas su ocupación del catálogo en Puestos en SIRCE.
+La matriz utiliza únicamente combinaciones exactas de puesto/departamento con al menos un empleado activo SAMARA. No incluye bajas, TACNA ni puestos sin personal activo; los catálogos e históricos permanecen disponibles. Los cursos aplicables existentes se conservan: para una combinación nueva debes asignar los cursos que correspondan.
+
+Comprobado localmente: 33 pruebas automáticas, carga con departamento nuevo, revisión previa por persona, conservación de TACNA, sincronización sin duplicados, exportación CSV y ZIP SIRCE en navegador. Falta publicar los archivos en tu proyecto de Apps Script.

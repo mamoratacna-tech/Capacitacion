@@ -10,18 +10,18 @@ test('instructor autorizado se agrega sin duplicarse ni quitar otros instructore
  const repeated=context.syncInstructorCourseAssignments(updated,instructor,[other,instructor]);assert.equal(repeated[0].instructorIds.join(','),'old,new');
 });
 test('puestos inactivos se excluyen por nombre de todos sus departamentos, activos anteriores se conservan',()=>{
- const context=vm.createContext({employees:[],employeeCompany:e=>e.company||'SAMARA',matrixDepartments:[],norm:value=>String(value||'').toLowerCase(),positions:[{job:'Operador',activeStatus:'Inactivo'},{job:'Técnico'},{job:'Supervisor',_legacy:{estado:'Inactivo'}}],matrixPositions:[{job:'OPERADOR',department:'A'},{job:'OPERADOR',department:'B'},{job:'Técnico',department:'A'},{job:'Supervisor',department:'A'}]});
+ const context=vm.createContext({employeeIsActive:e=>e.activeStatus!=='Inactivo',employees:[{position:'Operador',department:'A'},{position:'Operador',department:'B'},{position:'Técnico',department:'A'},{position:'Supervisor',department:'A'}],employeeCompany:e=>e.company||'SAMARA',matrixDepartments:[],norm:value=>String(value||'').toLowerCase(),positions:[{job:'Operador',activeStatus:'Inactivo'},{job:'Técnico'},{job:'Supervisor',_legacy:{estado:'Inactivo'}}],matrixPositions:[{job:'OPERADOR',department:'A'},{job:'OPERADOR',department:'B'},{job:'Técnico',department:'A'},{job:'Supervisor',department:'A'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
  assert.equal(context.activeMatrixPositions().length,1);assert.equal(context.activeMatrixPositions()[0].job,'Técnico');
  context.positions[0].activeStatus='Activo';assert.equal(context.activeMatrixPositions().length,3);
 });
 test('departamentos inactivos o eliminados excluyen sus puestos, incluidos nombres anteriores',()=>{
- const context=vm.createContext({employees:[],employeeCompany:e=>e.company||'SAMARA',norm:value=>String(value||'').toLowerCase(),positions:[],matrixDepartments:[{name:'Producción general',aliases:['Producción'],activeStatus:'Inactivo'},{name:'Calidad',activeStatus:'Activo',deleted:true}],matrixPositions:[{job:'Uno',department:'Producción'},{job:'Dos',department:'Calidad'},{job:'Tres',department:'RH'}]});
+ const context=vm.createContext({employeeIsActive:e=>e.activeStatus!=='Inactivo',employees:[{position:'Uno',department:'Producción'},{position:'Dos',department:'Calidad'},{position:'Tres',department:'RH'}],employeeCompany:e=>e.company||'SAMARA',norm:value=>String(value||'').toLowerCase(),positions:[],matrixDepartments:[{name:'Producción general',aliases:['Producción'],activeStatus:'Inactivo'},{name:'Calidad',activeStatus:'Activo',deleted:true}],matrixPositions:[{job:'Uno',department:'Producción'},{job:'Dos',department:'Calidad'},{job:'Tres',department:'RH'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
  assert.equal(context.activeMatrixPositions().length,1);assert.equal(context.activeMatrixPositions()[0].department,'RH');context.matrixDepartments[0].activeStatus='Activo';assert.equal(context.activeMatrixPositions().length,2);
 });
-test('TACNA exclusivo no entra en matriz; puestos compartidos y nuevos de catálogo se conservan',()=>{
- const context=vm.createContext({norm:value=>String(value||'').toLowerCase(),employeeCompany:e=>e.company||'SAMARA',positions:[],matrixDepartments:[],employees:[{position:'ASESOR',company:'TACNA',department:'OTRO NOMBRE'},{position:'TÉCNICO',company:'TACNA'},{position:'TÉCNICO',company:'SAMARA'}],matrixPositions:[{job:'ASESOR',department:'RH'},{job:'TÉCNICO',department:'RH'},{job:'NUEVO',department:'RH'}]});
+test('matriz exige empleado SAMARA activo en la misma combinación; excluye TACNA y vacantes',()=>{
+ const context=vm.createContext({employeeIsActive:e=>e.activeStatus!=='Inactivo',norm:value=>String(value||'').toLowerCase(),employeeCompany:e=>e.company||'SAMARA',positions:[],matrixDepartments:[],employees:[{position:'ASESOR',company:'TACNA',department:'OTRO NOMBRE'},{position:'TÉCNICO',department:'RH',company:'TACNA'},{position:'TÉCNICO',department:'RH',company:'SAMARA'},{position:'NUEVO',department:'RH',company:'SAMARA',activeStatus:'Inactivo'}],matrixPositions:[{job:'ASESOR',department:'RH'},{job:'TÉCNICO',department:'RH'},{job:'NUEVO',department:'RH'}]});
  vm.runInContext(source.slice(source.indexOf('    function positionIsActive('),source.indexOf('    function filteredMatrixRows(')),context);
- assert.equal(context.activeMatrixPositions().map(p=>p.job).join(','),'TÉCNICO,NUEVO');
+ assert.equal(context.activeMatrixPositions().map(p=>p.job).join(','),'TÉCNICO');
 });
