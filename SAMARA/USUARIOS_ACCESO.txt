@@ -1,0 +1,85 @@
+SAMARA: ACCESO PRIVADO Y PANEL DE USUARIOS
+
+INSTALAR EN TU PROYECTO ACTUAL
+1. Reemplaza completos Code.gs, App.html, Index.html y Listados.html.
+2. Crea UsuariosServidor como archivo de secuencia de comandos (.gs).
+   Crea Acceso y Usuarios como archivos HTML. Copia completos los archivos
+   correspondientes. No añadas .html ni .gs al nombre que pide el editor.
+   Conserva los demás archivos y la hoja vinculada. No borres propiedades,
+   hojas ni ejecutes instalar de nuevo.
+3. En Configuración del proyecto activa «Mostrar el archivo de manifiesto
+   appsscript.json en el editor». En ese archivo añade a oauthScopes:
+   "https://www.googleapis.com/auth/userinfo.email"
+   Conserva los demás permisos y opciones. CONFIGURACION/appsscript.json
+   es una referencia completa para proyectos con los dos permisos originales
+   (hojas de cálculo y solicitudes externas). Este permiso comprueba que
+   solo la cuenta propietaria prepare códigos de configuración/recuperación.
+4. Guarda TODO. Publica en Implementar > Administrar implementaciones > lápiz
+   > Nueva versión > Implementar. Conserva «Ejecutar como: yo/propietaria».
+   El alcance de acceso de Google debe permitir entrar a tus colaboradores
+   según las políticas de tu organización. Aun si Google permite abrir el
+   enlace, la aplicación exige uno de los usuarios autorizados de SAMARA.
+
+ELEGIR LAS DOS CONTRASEÑAS, UNA SOLA VEZ
+5. En el editor selecciona prepararAccesoSAMARA y pulsa Ejecutar con la
+   cuenta propietaria. Autoriza el permiso que Google solicite.
+   Copia el código del Registro de ejecución. Vence en 30 minutos.
+6. Abre el enlace publicado /exec. Verás «Primera configuración».
+   Pega el código y elige dos contraseñas distintas, de al menos 12 caracteres.
+   Pulsa Crear usuarios. Entrarás como Recursos Humanos.
+   Si vence el código, ejecuta de nuevo prepararAccesoSAMARA.
+
+USUARIOS INICIALES
+- recursos.humanos: RECURSOS HUMANOS, administrador general.
+- coordinador.cmcap: COORDINADOR CMCAP, captura y consulta de la aplicación.
+No existen contraseñas predeterminadas. Solo tú eliges las iniciales.
+No hay formulario de registro público. Comparte el enlace /exec y entrega
+privadamente a cada persona su usuario y contraseña; no necesita ser editora
+del proyecto de Apps Script ni de la hoja para capturar en la aplicación.
+Si Google exige acceso con cuenta Google, ese acceso es adicional al de SAMARA.
+
+PANEL USUARIOS
+Solo administradores pueden abrirlo o usar sus operaciones en el servidor.
+Permite crear, editar, activar/desactivar, eliminar accesos y cambiar claves.
+Al modificar un usuario se cierran sus sesiones anteriores. Si modificas tu
+propio usuario, se guardan primero los cambios pendientes y tendrás que entrar
+de nuevo. No puedes eliminarte, desactivarte ni quitar tu propia administración.
+Se conserva al menos un administrador activo. Borrar un usuario no borra los
+datos que capturó. El Coordinador no puede gestionar cuentas; puede trabajar
+en los demás módulos. No se agregaron restricciones adicionales de captura.
+
+CONTRASEÑAS
+Puedes mostrar la contraseña NUEVA mientras la escribes; después de guardar
+no se recupera ni se muestra la contraseña anterior. Para dar acceso otra vez,
+asigna una nueva. Deja el campo vacío al editar para conservar la actual.
+Al cambiar el nombre de usuario de acceso también debes asignar contraseña.
+Se usa PBKDF2-SHA256 (600000 iteraciones), sal aleatoria por credencial y un
+verificador con secreto del servidor. No se almacenan claves en texto claro
+ni en las colecciones que recibe la aplicación. No compartas ni borres las
+propiedades SAMARA_USER_*, SAMARA_AUTH_SECRET ni los códigos de configuración.
+Las sesiones duran hasta 6 horas y pueden terminar antes por cierre, cambio
+de usuario o eliminación del caché de Google. Cinco intentos fallidos bloquean
+ese usuario durante 15 minutos. Al cambiar su contraseña se limpia el bloqueo.
+Los datos pendientes ante sesión vencida se pueden descargar desde el aviso
+de guardado antes de volver a cargar. «Cerrar sesión» espera el guardado y
+avisa si hay pendientes que todavía no se pudieron guardar.
+
+RECUPERAR LA ADMINISTRACIÓN
+Solo la propietaria del proyecto: ejecuta prepararRecuperacionSAMARA desde el
+editor. En la pantalla de acceso abre «Recuperar acceso de administración».
+Escribe el usuario administrador, el código del registro y una contraseña
+nueva. El código vence en 30 minutos y solo funciona una vez. Invalida sesiones
+anteriores. Esta vía no permite registrarse ni crear usuarios nuevos.
+
+ALCANCE Y VERIFICACIÓN
+La pantalla pública ya no entrega la aplicación ni sus datos antes del login.
+El servidor exige sesión en las operaciones de lectura, guardado y listados.
+Los archivos UsuariosServidor.gs y Acceso.html deben publicarse junto con los
+otros archivos; no publiques una actualización incompleta.
+No se cambió la hoja vinculada, los catálogos ni los registros existentes.
+Pruebas locales: 39 casos automáticos, flujo de configuración/login y CRUD
+de usuarios en navegador, conservación del puente de Google, bloqueo del
+Coordinador, carga de empleados, exportaciones y cola de guardado.
+La prueba local usa un simulador de servicios Apps Script. La publicación y
+la comprobación con tus permisos reales de Google se hacen con los pasos
+anteriores. El diagnóstico antiguo de datos sin sesión ya no es aplicable.

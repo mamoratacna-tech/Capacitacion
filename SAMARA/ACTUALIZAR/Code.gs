@@ -7,29 +7,26 @@ const SHEETS = {
   catalogos:['id','tipo','clave','valor']
 };
 function doGet(e){
-  const page=e&&e.parameter&&e.parameter.page;
-  const pagina=page==='listados-clasico'?'Listados':'Index';
-  const t=HtmlService.createTemplateFromFile(pagina);
-  t.appUrl=ScriptApp.getService().getUrl();
-  t.initialView=page==='listados'?'attendance':'dashboard';
-  return t.evaluate().setTitle(page==='listados'?'Listados de asistencia | SAMARA':'Entrenamiento | SAMARA').addMetaTag('viewport','width=device-width, initial-scale=1');
+  return HtmlService.createHtmlOutputFromFile('Acceso').setTitle('Acceso | SAMARA').addMetaTag('viewport','width=device-width, initial-scale=1');
 }
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
 function include(nombre){
+  if(!authRendering_)throw Error('Inicia sesión para abrir la aplicación.');
+  if(!['Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
   return HtmlService.createTemplateFromFile(nombre).getRawContent();
 }
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.
-function instalar(){ const ss=database_(); Logger.log('Listo. Hoja de datos: '+ss.getUrl()); }
+function instalar(){if(!Session.getActiveUser().getEmail()||Session.getActiveUser().getEmail()!==Session.getEffectiveUser().getEmail())throw Error('Ejecuta instalar desde el editor con la cuenta propietaria.'); const ss=database_(); Logger.log('Listo. Hoja de datos: '+ss.getUrl()); }
 function getDb_(){const p=PropertiesService.getScriptProperties();let id=p.getProperty('DB_ID');if(id)return SpreadsheetApp.openById(id);let ss=SpreadsheetApp.create('SAMARA | Gestión de Capacitación — Datos');p.setProperty('DB_ID',ss.getId());setup_();return ss;}
 function setup_(){const ss=SpreadsheetApp.getActiveSpreadsheet()||(()=>{const p=PropertiesService.getScriptProperties();const id=p.getProperty('DB_ID');return id?SpreadsheetApp.openById(id):null;})();if(!ss)return;Object.keys(SHEETS).forEach(k=>{let sh=ss.getSheetByName(k);if(!sh){sh=ss.insertSheet(k);sh.appendRow(SHEETS[k]);sh.setFrozenRows(1);sh.getRange(1,1,1,SHEETS[k].length).setFontWeight('bold').setBackground('#eaf2f2');}});}
 function database_(){const p=PropertiesService.getScriptProperties();let id=p.getProperty('DB_ID');if(!id){const ss=SpreadsheetApp.create('SAMARA | Gestión de Capacitación — Datos');id=ss.getId();p.setProperty('DB_ID',id);}const ss=SpreadsheetApp.openById(id);Object.keys(SHEETS).forEach(k=>{let sh=ss.getSheetByName(k);if(!sh){sh=ss.insertSheet(k);sh.appendRow(SHEETS[k]);sh.setFrozenRows(1);sh.getRange(1,1,1,SHEETS[k].length).setFontWeight('bold').setBackground('#eaf2f2');}});return ss;}
-function api_init(){const ss=database_();seed_(ss);return {data:readAll_(ss),url:ss.getUrl(),objectives:['Actualizar y perfeccionar conocimientos y habilidades, y proporcionar información de nuevas tecnologías.','Prevenir riesgos de trabajo.','Incrementar la productividad.','Mejorar el nivel educativo.','Preparar para ocupar vacantes o puestos de nueva creación.'],frequencies:['1era vez ingreso','1 vez anual'],cmcapRoles:['Coordinador','Representante de los trabajadores','Vocal','Secretario']};}
+function api_init(){authRequire_(arguments[arguments.length-1]);const ss=database_();seed_(ss);return {data:readAll_(ss),url:ss.getUrl(),objectives:['Actualizar y perfeccionar conocimientos y habilidades, y proporcionar información de nuevas tecnologías.','Prevenir riesgos de trabajo.','Incrementar la productividad.','Mejorar el nivel educativo.','Preparar para ocupar vacantes o puestos de nueva creación.'],frequencies:['1era vez ingreso','1 vez anual'],cmcapRoles:['Coordinador','Representante de los trabajadores','Vocal','Secretario']};}
 function seed_(ss){const sh=ss.getSheetByName('puestos');if(sh.getLastRow()===1){[['p1','Operador de producción I','Producción','','Activo'],['p2','Operador de producción II','Producción','','Activo']].forEach(r=>sh.appendRow(r));}const e=ss.getSheetByName('empleados');if(e.getLastRow()===1){[['e1','1','CURP DEMO 001','Ana','Prueba','Uno','Preparatoria','Constancia','Pública','p1','Activo'],['e2','2','CURP DEMO 002','Luis','Ejemplo','Dos','Secundaria','Certificado','Pública','p2','Activo'],['e3','3','CURP DEMO 003','Marta','Muestra','Tres','Licenciatura','Título','Privada','p1','Activo']].forEach(r=>e.appendRow(r));}const c=ss.getSheetByName('cmcap');if(c.getLastRow()===1){['Coordinador','Representante de los trabajadores','Vocal','Secretario'].forEach((r,i)=>c.appendRow(['c'+(i+1),r,'','']));}}
 function readAll_(ss){const out={};Object.keys(SHEETS).forEach(k=>{const sh=ss.getSheetByName(k),v=sh.getDataRange().getValues(),h=v.shift();out[k]=v.filter(r=>r[0]).map(r=>{const o={};h.forEach((x,i)=>o[x]=r[i]);return o;});});return out;}
-function api_save(entity,obj){if(!SHEETS[entity])throw Error('Sección desconocida');const ss=database_(),sh=ss.getSheetByName(entity),headers=SHEETS[entity];obj=obj||{};if(entity==='cursos'&&!obj.id){obj.id=Utilities.getUuid();obj.codigo=nextCourseCode_(ss,obj.sede,obj.departamento);}if(entity==='empleados'&&!obj.id){obj.id=Utilities.getUuid();obj.no=String(Math.max(0,sh.getLastRow()-1)+1);}if(!obj.id)obj.id=Utilities.getUuid();const rows=sh.getDataRange().getValues();let at=rows.findIndex((r,i)=>i>0&&String(r[0])===String(obj.id));const row=headers.map(h=>obj[h]===undefined?'':obj[h]);if(at<0)sh.appendRow(row);else sh.getRange(at+1,1,1,row.length).setValues([row]);return readAll_(ss)[entity];}
+function api_save(entity,obj){authRequire_(arguments[arguments.length-1]);if(!SHEETS[entity])throw Error('Sección desconocida');const ss=database_(),sh=ss.getSheetByName(entity),headers=SHEETS[entity];obj=obj||{};if(entity==='cursos'&&!obj.id){obj.id=Utilities.getUuid();obj.codigo=nextCourseCode_(ss,obj.sede,obj.departamento);}if(entity==='empleados'&&!obj.id){obj.id=Utilities.getUuid();obj.no=String(Math.max(0,sh.getLastRow()-1)+1);}if(!obj.id)obj.id=Utilities.getUuid();const rows=sh.getDataRange().getValues();let at=rows.findIndex((r,i)=>i>0&&String(r[0])===String(obj.id));const row=headers.map(h=>obj[h]===undefined?'':obj[h]);if(at<0)sh.appendRow(row);else sh.getRange(at+1,1,1,row.length).setValues([row]);return readAll_(ss)[entity];}
 function nextCourseCode_(ss,sede,dep){let base=String(sede||'').toUpperCase();if(base!=='SAMARA'&&base!=='TACNA')base=String(dep||'GENERAL').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/gi,'').toUpperCase()||'GENERAL';base='RH-'+base;const rows=ss.getSheetByName('cursos').getDataRange().getValues();let n=0;rows.slice(1).forEach(r=>{const m=String(r[1]||'').match(new RegExp('^'+base+'(\\d+)$'));if(m)n=Math.max(n,Number(m[1]));});return base+String(n+1).padStart(3,'0');}
-function api_delete(entity,id){if(!SHEETS[entity])throw Error('Sección desconocida');const sh=database_().getSheetByName(entity),v=sh.getDataRange().getValues();for(let i=1;i<v.length;i++)if(String(v[i][0])===String(id)){sh.deleteRow(i+1);break;}return true;}
-function api_importEmployees(rows){if(!Array.isArray(rows)||!rows.length)return 0;const ss=database_(),sh=ss.getSheetByName('empleados'),headers=SHEETS.empleados;let count=0;rows.slice(1).forEach(r=>{if(!r||!r.some(x=>String(x||'').trim()))return;const o={id:Utilities.getUuid(),no:String(sh.getLastRow()),curp:r[1]||'',nombres:r[2]||'',apellidoPaterno:r[3]||'',apellidoMaterno:r[4]||'',estudios:r[5]||'',docProbatorio:r[6]||'',tipoInstitucion:r[7]||'',puestoId:'',estado:'Activo'};sh.appendRow(headers.map(h=>o[h]||''));count++;});return count;}
+function api_delete(entity,id){authRequire_(arguments[arguments.length-1]);if(!SHEETS[entity])throw Error('Sección desconocida');const sh=database_().getSheetByName(entity),v=sh.getDataRange().getValues();for(let i=1;i<v.length;i++)if(String(v[i][0])===String(id)){sh.deleteRow(i+1);break;}return true;}
+function api_importEmployees(rows){authRequire_(arguments[arguments.length-1]);if(!Array.isArray(rows)||!rows.length)return 0;const ss=database_(),sh=ss.getSheetByName('empleados'),headers=SHEETS.empleados;let count=0;rows.slice(1).forEach(r=>{if(!r||!r.some(x=>String(x||'').trim()))return;const o={id:Utilities.getUuid(),no:String(sh.getLastRow()),curp:r[1]||'',nombres:r[2]||'',apellidoPaterno:r[3]||'',apellidoMaterno:r[4]||'',estudios:r[5]||'',docProbatorio:r[6]||'',tipoInstitucion:r[7]||'',puestoId:'',estado:'Activo'};sh.appendRow(headers.map(h=>o[h]||''));count++;});return count;}
 
 // Store the advanced Site's collections in the existing DB. Legacy tabs remain intact.
 const APP_KEYS_ = ['samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendanceMigration.v1','samara.attendance.v1','samara.matrixPositions.v2','samara.positions.v2','samara.occupationCatalog.v1','samara.employees.v2','samara.demoEmployees.v1','samara.instructors.v1','samara.cmcap.v2','samara.courses.v2'];
@@ -65,12 +62,12 @@ function appRead_(sheet){
   Object.keys(fragments).forEach(key=>{state[key]=normalizePersonNames(key,JSON.parse(fragments[key].join('')));});
   return {state:state,revision:revision};
 }
-function api_loadAppState(){
+function api_loadAppState(){authRequire_(arguments[arguments.length-1]);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{const ss=database_(),result=appRead_(appSheet_(ss));if(result.revision===0)result.legacy=readAll_(ss);return result;}
   finally{lock.releaseLock();}
 }
-function api_saveAppState(updates,expectedRevision){
+function api_saveAppState(updates,expectedRevision){authRequire_(arguments[arguments.length-1]);
   if(!updates||typeof updates!=='object'||Array.isArray(updates))throw Error('Cambios inválidos');
   const keys=Object.keys(updates);
   if(!keys.length||keys.some(key=>!APP_KEYS_.includes(key)))throw Error('Colección desconocida');
@@ -115,7 +112,7 @@ function alLeer_(){
   const v=lsHoja_('AltasColaboradores',AL_HEAD).getDataRange().getValues().slice(1);
   return v.filter(r=>r[0]!=='').map(r=>{const o={};AL_HEAD.forEach((h,i)=>o[h]=lsTexto_(r[i]));return o;});
 }
-function listados_cargar(){
+function listados_cargar(){authRequire_(arguments[arguments.length-1]);
   const s=SpreadsheetApp.openById(SIRCE_ID);
   const rango=(hoja,a1)=>{const sh=s.getSheetByName(hoja);return sh?sh.getRange(a1).getValues().map(r=>r.map(lsTexto_)):[];};
   let ins=[];
@@ -133,7 +130,7 @@ function listados_cargar(){
   }catch(e){}
   return {tr:rango('Trabajadores','A8:H1009'),gl:rango('Glosario','A6:O200'),bd:rango('BD','A2:K1000'),ins:ins,listados:lsLeer_(),altas:alLeer_()};
 }
-function listados_guardar(doc){
+function listados_guardar(doc){authRequire_(arguments[arguments.length-1]);
   if(!doc||typeof doc!=='object')throw Error('Listado inválido');
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
@@ -148,13 +145,13 @@ function listados_guardar(doc){
   }finally{lock.releaseLock();}
   return lsLeer_();
 }
-function listados_eliminar(id){
+function listados_eliminar(id){authRequire_(arguments[arguments.length-1]);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{const sh=lsHoja_('Listados',LS_HEAD),v=sh.getDataRange().getValues();for(let i=v.length-1;i>0;i--)if(String(v[i][0])===String(id))sh.deleteRow(i+1);}
   finally{lock.releaseLock();}
   return lsLeer_();
 }
-function listados_alta(o){
+function listados_alta(o){authRequire_(arguments[arguments.length-1]);
   if(!o||!/^\d{3,}$/.test(String(o.numero||'')))throw Error('Número de empleado inválido');
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
@@ -165,7 +162,7 @@ function listados_alta(o){
   return alLeer_();
 }
 // Lee la foto de la lista con Gemini. La foto no se guarda en ningún lado.
-function listados_leerFoto(base64,mime,instrucciones){
+function listados_leerFoto(base64,mime,instrucciones){authRequire_(arguments[arguments.length-1]);
   const props=PropertiesService.getScriptProperties();
   const clave=props.getProperty('GEMINI_API_KEY');
   if(!clave)throw Error('Falta GEMINI_API_KEY en Propiedades del script');
@@ -185,7 +182,7 @@ function listados_leerFoto(base64,mime,instrucciones){
 
 // Compatibilidad con el módulo de asistencia integrado.
 // Las funciones listados_* y sus hojas originales se conservan.
-function api_leerHojaSIRCE(rango){
+function api_leerHojaSIRCE(rango){authRequire_(arguments[arguments.length-1]);
   const partes=String(rango||'').split('!');
   if(partes.length!==2)throw Error('Rango inválido');
   const id=PropertiesService.getScriptProperties().getProperty('SIRCE_ID')||SIRCE_ID;
@@ -193,13 +190,13 @@ function api_leerHojaSIRCE(rango){
   if(!hoja)throw Error('No existe la pestaña '+partes[0]+' en la hoja SIRCE');
   return hoja.getRange(partes[1]).getValues().map(fila=>fila.map(lsTexto_));
 }
-function api_leerListaFT(base64,mime,instrucciones){
-  return listados_leerFoto(base64,mime,instrucciones);
+function api_leerListaFT(base64,mime,instrucciones){authRequire_(arguments[arguments.length-1]);
+  return listados_leerFoto(base64,mime,instrucciones,arguments[arguments.length-1]);
 }
 
 
 // Firmas de DC-3 resueltas por la fecha del documento, desde la página Listados.
-function api_cmcapFirmantes(fecha){
+function api_cmcapFirmantes(fecha){authRequire_(arguments[arguments.length-1]);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha||'')))throw Error('Selecciona una fecha válida para el documento.');
   const parsed=new Date(fecha+'T12:00:00Z');
   if(isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==fecha)throw Error('Fecha del documento inválida.');
@@ -223,7 +220,7 @@ function api_cmcapFirmantes(fecha){
 
 // Lectura del histórico para incorporarlo una vez al módulo integrado.
 // No modifica ni elimina la hoja Listados original.
-function api_listadosHistoricos(){
+function api_listadosHistoricos(){authRequire_(arguments[arguments.length-1]);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{return lsLeer_();}finally{lock.releaseLock();}
 }

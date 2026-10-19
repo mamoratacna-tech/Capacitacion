@@ -194,7 +194,7 @@ const hoy=()=>{const t=new Date();return `${t.getFullYear()}-${pad(t.getMonth()+
 const fmt=d=>d?d.split('-').reverse().join('/'):'—';
 const objIdx=t=>{const n=norm(t);if(/actualiz/.test(n))return 0;if(/educativ/.test(n))return 1;if(/vacant/.test(n))return 2;if(/riesgo/.test(n))return 3;if(/productiv/.test(n))return 4;return -1};
 const APP_URL=document.getElementById('app-url').value;
-function api(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a))}
+function api(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a,sessionStorage.getItem('samara.session')||''))}
 const errTxt=e=>String((e&&e.message)||e||'error');
 const S={view:'sesiones',filtro:'todos',sheet:{},altas:[],padron:{},padronList:[],cursos:[],sesiones:[],instructores:[],bd:{},cargaError:'',ed:null};
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3600)}

@@ -20,14 +20,14 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand"><div class="brand-mark">S</div><div><strong>SAMARA</strong><span>Centro de entrenamiento</span></div></div>
       <div class="workspace-label">GESTIÓN RH</div>
-      <nav class="nav" aria-label="Navegación principal">
+      <div id="session-user" style="padding:12px;color:inherit"></div><button id="logout-user" class="button outline" type="button">Cerrar sesión</button><nav class="nav" aria-label="Navegación principal">
         <button class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span>Resumen</button>
         <button class="nav-item" data-view="courses"><span class="nav-icon">▤</span>Cursos <span class="nav-count" id="course-count">8</span></button>
         <button class="nav-item" data-view="matrix"><span class="nav-icon">▦</span>Matriz</button>
         <button class="nav-item" data-view="people"><span class="nav-icon">♙</span>Personal</button>
         <button class="nav-item" data-view="instructors"><span class="nav-icon">♙</span>Instructores certificados</button>
         <button class="nav-item" data-view="attendance"><span class="nav-icon">☑</span>Listados de asistencia</button>
-        <button class="nav-item" data-view="cmcap"><span class="nav-icon">✎</span>CMCAP</button>
+        <button class="nav-item" data-view="users" id="users-nav" hidden><span class="nav-icon">♙</span>Usuarios</button><button class="nav-item" data-view="cmcap"><span class="nav-icon">✎</span>CMCAP</button>
         <button class="nav-item" data-view="reports"><span class="nav-icon">▥</span>Reportes</button>
       </nav>
       <div class="sidebar-bottom"><div class="demo-note"><span class="pulse"></span><div><b>Google Sheets</b><small>Centro de entrenamiento</small></div></div><div class="user-card"><div class="avatar">RH</div><div><b>Recursos Humanos</b><small>Administración</small></div><span class="dots">•••</span></div></div>
@@ -64,6 +64,7 @@
 <section class="view" id="view-cmcap"><div class="page-heading"><div><div class="eyebrow">COMISIÓN DE CAPACITACIÓN</div><h1>CMCAP</h1><p>Consulta integrantes y su vigencia de nombramiento.</p></div><button type="button" class="button primary" id="add-cmcap">＋ Agregar integrante</button></div><div id="cmcap-grid" class="cmcap-list"></div><div class="panel legal-panel"><h2>Representante legal de la empresa</h2><p>Firma las DC-3. Este nombramiento es independiente de la CMCAP y del padrón de personal.</p><div id="legal-card"></div><p id="legal-message" role="status"></p></div></section>
         <section class="view" id="view-reports"><div class="page-heading"><div><div class="eyebrow">FORMATOS DE CAPACITACIÓN</div><h1>Reportes y constancias</h1><p>Salidas alineadas con el catálogo, el programa anual y las pestañas SIRCE de tu archivo.</p></div></div><div class="report-grid"><article class="panel report-card"><span class="stat-icon teal">▤</span><div class="report-kicker">FT-RH-008</div><h3>Ficha técnica del curso</h3><p>Código, duración, instructor, modalidad, frecuencia, objetivo DC-2, área temática DC-3 y marca SIRCE.</p><button class="button outline" data-report="ficha">Vista previa →</button></article><article class="panel report-card"><span class="stat-icon orange">⇧</span><div class="report-kicker">SIRCE 2026</div><h3>Exportación SIRCE</h3><p>Genera el catálogo de cursos y el listado de asistentes seleccionados, con las columnas de las pestañas SIRCE.</p><div class="report-actions"><button class="button outline" data-report="sirce-cursos">Cursos CSV</button><button class="button outline" data-report="sirce-asistencia">Asistencia CSV</button></div></article><article class="panel report-card"><span class="stat-icon purple">▧</span><div class="report-kicker">CONSTANCIA</div><h3>DC-3</h3><p>Prepara una constancia con datos de la persona, curso, empresa, instructor y espacios de autenticación.</p><button class="button outline" data-report="dc3">Preparar DC-3 →</button></article></div><div class="notice-box"><b>Datos y validación</b><p>Este prototipo usa datos de curso de ejemplo y no carga nombres, CURP ni expedientes de la hoja. La asistencia SIRCE se completa con los empleados seleccionados. Antes de enviar, RH debe verificar claves y catálogos vigentes. La vista DC-3 requiere completar y validar los datos y firmas correspondientes.</p></div></section>
       </div>
+<section class="view" id="view-users"><div class="page-heading"><div><div class="eyebrow">ADMINISTRACIÓN GENERAL</div><h1>Usuarios</h1><p>Solo las cuentas autorizadas pueden ingresar a SAMARA.</p></div><button class="button primary" id="new-user" type="button">＋ Crear usuario</button></div><p id="users-message" role="status"></p><article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="users-table"></tbody></table></div></article></section>
     </main>
   </div>
   <div class="toast" id="toast" role="status"></div>
@@ -92,6 +93,7 @@
 <script>window.SAMARA_INITIAL_VIEW='<?= initialView ?>';</script>
 <?!= include('Cmcap'); ?>
 <?!= include('SirceListados'); ?>
+<?!= include('Usuarios'); ?>
 <?!= include('App'); ?>
 
 </body>
