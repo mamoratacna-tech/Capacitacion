@@ -1,0 +1,67 @@
+SAMARA — OBJETIVOS UNIFICADOS, PLANTAS Y ACCIONES DE ASISTENCIA
+
+Sustituye en tu proyecto existente estos cuatro archivos completos:
+App.html, Index.html, Estilos.html y SirceListados.html.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar >
+Nueva versión > Implementar. Recarga la aplicación.
+Conserva tus hojas, propiedades, usuarios, DatosIniciales y demás catálogos.
+
+1. CATÁLOGO ÚNICO
+Las tres listas (Glosario, Encabezado y Datos SIRCE) usan exactamente las claves
+y descripciones del Excel Catalogo de Objetivos de la Capacitacion-.xlsx:
+1 Actualizar y perfeccionar conocimientos y habilidades
+2 Proporcionar información de nuevas tecnologías
+3 Preparar para ocupar vacantes o puestos de nueva creación
+4 Prevenir riesgos de trabajo
+5 Incremento a la Productividad
+
+Al cambiar el objetivo en el encabezado se actualiza el campo SIRCE y viceversa.
+Al elegir un curso se toman sus valores predeterminados. La lectura de fotos
+usa estos mismos significados, no copia números impresos sin comprobar el texto.
+
+COMPATIBILIDAD CON LO CAPTURADO
+Se actualizan las claves antiguas por equivalencia de significado. Por ejemplo,
+Prevenir riesgos de trabajo pasa de la antigua clave 2 del glosario a la 4;
+Incrementar productividad pasa de la 3 a la 5; Preparar para vacantes, de la 5 a la 3.
+Los antiguos índices del encabezado se convierten también a claves 1–5.
+Se conserva el dato anterior en objectiveLegacy y se identifica la versión para
+no volver a convertir los registros al recargar. Las claves SIRCE válidas anteriores
+se conservan; su catálogo ya tenía este orden. No se borran cursos ni listados.
+El antiguo Mejorar nivel educativo no existe en el Excel: queda señalado para
+revisión, conservando el original. Selecciona un objetivo válido al editarlo;
+no se le asigna automáticamente un significado diferente.
+
+2. BOTONES DE ASISTENCIA
+Cancelar, Eliminar y Guardar listado quedan juntos al pie del editor.
+En una captura nueva, Eliminar confirma si deseas descartar lo que no has guardado.
+En un listado guardado, Eliminar confirma la eliminación del registro y asistentes.
+Cancelar una eliminación conserva los datos y el SVG del botón; se corrigió
+la restauración del icono que antes quedaba vacío.
+
+3. ASISTENTES
+Al elegir un asistente para agregar, el buscador se limpia y conserva el foco
+para buscar al siguiente. Se mantiene el bloqueo de asistentes duplicados.
+
+4. ESTABLECIMIENTOS SIRCE
+Planta 1: 862341
+Planta 2: 862974
+Puedes elegir el establecimiento en Datos SIRCE. En el editor se actualiza
+junto con Lugar del encabezado. En la ventana SIRCE independiente, al guardar,
+se actualiza también el lugar del listado. Los listados antiguos de Planta 2
+usan 862974 aunque tuvieran el antiguo establecimiento fijo 862341.
+El Excel individual y cada Excel dentro del ZIP incluyen la clave correspondiente.
+
+5. NOMBRES DE EXPORTACIÓN
+Exportar listados de asistencia
+Exportar listados de cursos para SIRCE
+Se conservan los formatos y filtros de esas exportaciones.
+
+VERIFICACIÓN
+73 comprobaciones automáticas y pruebas Chromium: catálogo exacto en las tres
+listas, migración sin reinterpretar nivel educativo, cambios de objetivos en
+ambos sentidos, botones inferiores, buscador limpio tras dos asistentes,
+establecimientos sincronizados, conservación del icono al cancelar borrado
+desde curso/tabla/editor y ZIP con Excel reales de ambas plantas.
+También se verificaron CSV, lectura autenticada, reintentos de saturación,
+valores predeterminados del glosario y sincronización de instructores.
+Servicios de Google y Gemini simulados. La publicación real requiere tu cuenta.

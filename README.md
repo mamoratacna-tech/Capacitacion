@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Encabezado y SIRCE desde el glosario](descargas/SAMARA_SIRCE_DESDE_GLOSARIO.zip).
-Completa los campos vacíos del encabezado y de SIRCE desde el glosario, también en listados existentes, conservando clave, fechas y asistentes.
+Última actualización: [Objetivos, plantas y acciones de asistencia](descargas/SAMARA_OBJETIVOS_PLANTAS_ASISTENCIA.zip).
+Unifica los objetivos con el catálogo adjunto, incorpora ambos establecimientos SIRCE, agrupa los botones inferiores y limpia el buscador al agregar asistentes.
 
 ## Ver el código
 

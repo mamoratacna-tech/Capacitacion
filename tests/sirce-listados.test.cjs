@@ -15,3 +15,5 @@ test('archivo nuevo no asigna claves cuando hay dos listados indistinguibles',()
  const row=['MISMO CURSO','2','ÁREA','Externo','Objetivo','Presencial','01-01-26','01-01-26','XAXX010101000','123'];
  const lists=['a','b'].map(id=>({id,sirceExport:[...row]}));const plan=S.bulkPlan([S.courseHeaders,row],lists);assert.match(plan.errors.join(' '),/varios listados/);assert.equal(plan.changes.length,0);
 });
+
+test('exportación de Planta 2 usa 862974 en la columna de establecimiento',()=>{const f=fixture();f.list.encabezado.lugar='Planta 2';f.list.sirceDatos.establecimiento='862341';const result=S.rows(f.list,f.people,f.positions,{}, {type:'Interno'});assert.equal(result.issues.length,0);assert.equal(result.rows[0][20],'862974');});
