@@ -34,6 +34,9 @@
         dialog.querySelector('[data-answer="cancel"]').focus();
       });
     }
+    appOn(document,'click',event=>{const module=window.SamaraAccess?.writeModule?.(event.target.closest('button'));if(module&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('Tu perfil permite consultar este módulo, pero no editarlo.');}},true);
+    const formModules={'course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
+    appOn(document,'submit',event=>{const module=formModules[event.target.id];if(module&&window.SamaraAccess?.can&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('No tienes permiso para guardar cambios en este módulo.');}},true);
     appOn(window,'samara-access-error',event=>toast(event.detail));
     function googleCall(method, ...args) {
       return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args, sessionStorage.getItem('samara.session')||''));
@@ -109,6 +112,7 @@ function normalizePersonNames(key, value) {
     }
     function saveStore(key, value) {
       if (!cloudKeys.includes(key)) throw new Error('Colección desconocida');
+      if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key))return;
       value = normalizePersonNames(key,value);
       cloud.cache[key] = structuredClone(value);
       cloud.pending[key] = structuredClone(value);
@@ -413,6 +417,7 @@ function normalizePersonNames(key, value) {
         button.dataset.samaraAction=kind;button.classList.add('samara-action','samara-action-'+kind);const label=button.getAttribute('aria-label')||button.title||(remove?'Eliminar registro':'Editar registro');button.setAttribute('aria-label',label);button.title=label;
         const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.innerHTML=remove?'<path d="M6 6l12 12M18 6L6 18"/>':'<path d="M15 5l4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/>';button.replaceChildren(svg);if(button.classList.contains('att-footer-delete')){const caption=document.createElement('span');caption.textContent='Eliminar';button.append(caption);}
       }
+      window.SamaraAccess?.apply?.(root);
     }
     const actionObserver=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1)normalizeActionButtons(node);});
     normalizeActionButtons(document.body);actionObserver.observe(document.body,{childList:true,subtree:true});
@@ -776,6 +781,7 @@ function normalizePersonNames(key, value) {
       $('#tacna-employee-count').textContent=employees.filter(e=>employeeCompany(e)==='TACNA').length+' empleados TACNA';
     }
     async function persistCollections(updates) {
+      for(const key of Object.keys(updates))if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key)&&JSON.stringify(normalizePersonNames(key,updates[key]))!==JSON.stringify(cloud.cache[key]))throw Error('No tienes permiso de edición en un módulo vinculado. Solicita que revisen tu perfil.');
       if(cloud.blocked)throw cloud.lastError || new Error('Reintenta el guardado pendiente antes de continuar.');
       Object.entries(updates).forEach(([key,value])=>{if(JSON.stringify(normalizePersonNames(key,value))!==JSON.stringify(cloud.cache[key]))saveStore(key,value);});await flushCloud();
       if(cloud.blocked)throw cloud.lastError || new Error('No se pudieron guardar los cambios.');
@@ -1215,6 +1221,7 @@ function normalizePersonNames(key, value) {
       return persistCollection('samara.cmcap.v2', draft);
     }
     async function persistCollection(key, draft) {
+      if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key))throw Error('No tienes permiso de edición en este módulo.');
       if (cloud.blocked) throw cloud.lastError || new Error('Hay cambios pendientes. Reintenta el guardado desde el aviso de conexión.');
       // Join the same queue as automatic saves, including an already running request.
       // Keep the draft pending until Google confirms it; slow saves are not failures.
@@ -1268,6 +1275,7 @@ function normalizePersonNames(key, value) {
       }
     });
     function showView(name) {
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can(name)){toast('No tienes acceso a este módulo.');return;}
       if(name==='users'&&window.SamaraAccess?.user?.role!=='admin'){toast('Solo la administradora puede gestionar usuarios.');return;}
       if(name==='users')window.SamaraAccess?.loadUsers();
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
@@ -2525,7 +2533,7 @@ function normalizePersonNames(key, value) {
 
     /* ==================== MÓDULO: LISTADOS DE ASISTENCIA (FT-RH-010 / DC-3) ==================== */
 
-    if (!loadStore('samara.attendanceMigration.v1', false)) {
+    if ((!window.SamaraAccess?.can||window.SamaraAccess.can('attendance'))&&!loadStore('samara.attendanceMigration.v1', false)) {
       try {
         const legacy = await googleCall('api_listadosHistoricos');
         const current = loadStore('samara.attendance.v1', []),
@@ -2877,7 +2885,7 @@ function normalizePersonNames(key, value) {
     }
     function atAttendanceRow(s){
         const v = (s.asistentes || []).filter(a => a.estado === 'ok').length;
-        return "<tr><td><b>".concat(atE(s.cursoNombre || (s.listaCurso ? '“' + s.listaCurso + '” (sin vincular)' : 'Curso sin vincular')), "</b><br><small class=\"att-sub\">").concat(atE(s.cursoCodigo || ''), "</small><br><small class=\"att-sub\">Clave SIRCE: ").concat(atE(s.sirceDatos?.claveCurso || 'Pendiente'), "</small></td><td>").concat(atFmt(s.fecha), "<br><small class=\"att-sub\">").concat(atE(s.encabezado?.lugar || ''), "</small></td><td>").concat(atE(s.encabezado?.instructor || '—'), "</td><td>").concat((s.asistentes || []).length, "<br><small class=\"att-sub\">").concat(v, " validados</small></td><td>").concat(atPill(atSirce(s) ? 'ok' : 'nt', atSirce(s) ? 'Sí' : 'No'), "</td><td>").concat(s.estado === 'Borrador' ? atPill('wa', '⚠ Borrador · ' + atConteo(s) + ' por revisar') + (s.origen ? "<br><small class=\"att-sub\">".concat(atE(s.origen), "</small>") : '') : atPill(s.estado === 'Validada' ? 'ok' : 'wa', s.estado), "</td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"pdflista\" data-id=\"").concat(s.id, "\">Lista</button> <button class=\"button outline att-sm\" data-att=\"pdfdc3\" data-id=\"").concat(s.id, "\">DC-3</button> <button class=\"button outline att-sm\" data-sirce-open=\"").concat(atE(s.id), "\">SIRCE</button></td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"").concat(s.id, "\" title=\"Editar\" aria-label=\"Editar\">✎</button> <button class=\"button outline att-sm att-del\" data-att=\"borrar\" data-id=\"").concat(s.id, "\" title=\"Eliminar\" aria-label=\"Eliminar\">🗑</button></td></tr>");
+        return "<tr><td><b>".concat(atE(s.cursoNombre || (s.listaCurso ? '“' + s.listaCurso + '” (sin vincular)' : 'Curso sin vincular')), "</b><br><small class=\"att-sub\">").concat(atE(s.cursoCodigo || ''), "</small><br><small class=\"att-sub\">Clave SIRCE: ").concat(atE(s.sirceDatos?.claveCurso || 'Pendiente'), "</small></td><td>").concat(atFmt(s.fecha), "<br><small class=\"att-sub\">").concat(atE(s.encabezado?.lugar || ''), "</small></td><td>").concat(atE(s.encabezado?.instructor || '—'), "</td><td>").concat((s.asistentes || []).length, "<br><small class=\"att-sub\">").concat(v, " validados</small></td><td>").concat(atPill(atSirce(s) ? 'ok' : 'nt', atSirce(s) ? 'Sí' : 'No'), "</td><td>").concat(s.estado === 'Borrador' ? atPill('wa', '⚠ Borrador · ' + atConteo(s) + ' por revisar') + (s.origen ? "<br><small class=\"att-sub\">".concat(atE(s.origen), "</small>") : '') : atPill(s.estado === 'Validada' ? 'ok' : 'wa', s.estado), "</td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"pdflista\" data-id=\"").concat(s.id, "\">Lista</button> <button class=\"button outline att-sm\" data-att=\"pdfdc3\" data-id=\"").concat(s.id, "\">DC-3</button> <button type=\"button\" class=\"button outline att-sm\" data-att=\"recepcion\" data-id=\"").concat(s.id, "\">Recepción DC-3</button> <button class=\"button outline att-sm\" data-sirce-open=\"").concat(atE(s.id), "\">SIRCE</button></td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"").concat(s.id, "\" title=\"Editar\" aria-label=\"Editar\">✎</button> <button class=\"button outline att-sm att-del\" data-att=\"borrar\" data-id=\"").concat(s.id, "\" title=\"Eliminar\" aria-label=\"Eliminar\">🗑</button></td></tr>");
 
     }
     function attendanceYear(list){const match=String(list.fecha||'').match(/^(\d{4})-\d{2}-\d{2}$/);return match?match[1]:'Sin fecha';}
@@ -3282,8 +3290,10 @@ function normalizePersonNames(key, value) {
     function ssOpen(id){
       const list=attendance.find(row=>row.id===id);if(!list)return;
       atDialog('<div class="att-dlg sirce-dialog" data-sirce-list-id="'+atE(id)+'"><div class="dialog-head"><div><div class="eyebrow">SIRCE · LISTADO DE ASISTENCIA</div><h2>'+atE(list.cursoNombre||list.cursoCodigo)+'</h2></div><button type="button" class="close-dialog" data-att="cerrar" aria-label="Cerrar">×</button></div><p>Fecha de ejecución: '+atE(atFmt(list.fecha))+'</p>'+ssFields(list)+'<p id="sirce-result" role="status"></p><div class="dialog-actions"><button class="button outline" data-sirce-action="save">Guardar datos SIRCE</button><button class="button primary" data-sirce-action="xlsx">Descargar Excel SIRCE</button></div></div>');
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit')){const root=$('.sirce-dialog');root.querySelectorAll('input,select').forEach(input=>input.disabled=true);}
     }
     async function ssSave(list,root){
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return list;
       const data=ssRead(root);ssKeyAvailable(list.id,data.claveCurso);
       const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,encabezado:{...row.encabezado,objetivo:data.objetivo,lugar:data.establecimiento==='862974'?'Planta 2':'Planta 1'},actualizado:new Date().toISOString()}:row);
       await persistCollection('samara.attendance.v1',next);attendance=next;return next.find(row=>row.id===list.id);
@@ -3500,6 +3510,24 @@ function normalizePersonNames(key, value) {
         console.error(e);
         toast('No se pudo generar la lista.');
       }
+    }
+    function atRecepcion(id){
+      const list=attendance.find(row=>row.id===id);if(!list)return;
+      const eligible=(list.asistentes||[]).filter(row=>row.estado==='ok'&&row.firmo);
+      if(list.estado==='Borrador'||!eligible.length){toast('Primero valida el listado. La recepción incluye a los asistentes validados que firmaron.');return;}
+      atDialog('<div class="att-dlg"><div class="dialog-head"><div><div class="eyebrow">FT-RH-011</div><h2>Recepción de DC-3</h2></div><button type="button" class="close-dialog" data-att="cerrar" aria-label="Cerrar">×</button></div><p>'+atE(list.cursoNombre||list.cursoCodigo)+'</p><label>Fecha de recepción<input id="receipt-date" type="date" value="'+atHoy()+'" required></label><p>'+eligible.length+' asistentes validados que firmaron. Los espacios de firma quedarán vacíos.</p><p id="receipt-error" role="alert"></p><div class="dialog-actions"><button type="button" class="button outline" data-att="cerrar">Cancelar</button><button type="button" class="button primary" data-att="imprimirrecepcion" data-id="'+atE(id)+'">Imprimir recepción</button></div></div>');
+    }
+    async function atImprimirRecepcion(id,button){
+      const list=attendance.find(row=>row.id===id),date=$('#receipt-date').value;if(!list||!SirceListados.date(date)){$('#receipt-error').textContent='Selecciona una fecha válida.';return;}
+      if(button.disabled)return;button.disabled=true;
+      try{
+        if(!window.PDFLib)await window.samaraLoadPdfLibrary('generator');
+        atRefrescarPadron();
+        const eligible=(list.asistentes||[]).filter(row=>row.estado==='ok'&&row.firmo).map(row=>({nombre:AT_P[row.numero]?.nombre||row.nombre||row.escrito||''})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+        const place=list.encabezado?.lugar||(SirceListados.establishment(list)==='862974'?'Planta 2':'Planta 1');
+        const bytes=await pdfRecepcion(atB64(window.TPL_RECEPCION),{curso:list.cursoNombre,fecha:date,lugar:place,asistentes:eligible});
+        await atEntregar(bytes,'FT-RH-011 '+(list.cursoCodigo||'')+' '+date);
+      }catch(error){$('#receipt-error').textContent='No se pudo generar la recepción: '+error.message;}finally{button.disabled=false;}
     }
     async function atPdfDC3(id) {
       try{if(!window.PDFLib&&window.samaraLoadPdfLibrary){toast('Preparando herramienta de PDF…');await window.samaraLoadPdfLibrary('generator');}}catch(error){return toast(error.message);}
@@ -3799,6 +3827,8 @@ function normalizePersonNames(key, value) {
       borrarlista: (d, el) => atEliminarListado(AT.ed?.id,el),
       descartarlista: async()=>{if(await appConfirm('¿Eliminar esta captura de asistencia sin guardar?')){AT.ed=null;renderAttendance();}},
       pdflista: d => atPdfLista(d.id),
+      recepcion: d=>atRecepcion(d.id),
+      imprimirrecepcion:(d,button)=>atImprimirRecepcion(d.id,button),
       pdfdc3: d => atPdfDC3(d.id),
       guardar: () => atGuardar(),
       usarcat: d => {
@@ -3967,7 +3997,8 @@ function normalizePersonNames(key, value) {
       atPintar();
     });
     renderAttendance();
-    if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');
+    if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
+    else if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');
     /* ==================== FIN MÓDULO LISTADOS ==================== */
   } catch (error) {
     document.getElementById('cloud-loading')?.remove();

@@ -34,7 +34,7 @@ test('DC3 usa representante legal independiente del coordinador en backend',()=>
  const source=fs.readFileSync('SAMARA/ACTUALIZAR/Code.gs','utf8');
  const fn=source.slice(source.indexOf('function api_cmcapFirmantes('),source.indexOf('// Lectura del histórico'));
  const state={'samara.cmcap.v2':[{role:'Representante de los trabajadores',name:'Firma trabajadores',startDate:'2026-01-01',endDate:'2027-12-31'}]};
- const context={authRequire_:()=>({role:"admin"}),LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},appRead_:()=>({state}),appSheet_:()=>null,database_:()=>null};
+ const context={authCan_:()=>true,authRequire_:()=>({role:"admin"}),LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},appRead_:()=>({state}),appSheet_:()=>null,database_:()=>null};
  vm.createContext(context);vm.runInContext(fn,context);
  assert.equal(context.api_cmcapFirmantes('2026-10-16').legal,'MIRNA ULBRICH LABASTIDA');
  state['samara.legalRepresentative.v1']=[{name:'Otra representante'}];

@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Objetivos, plantas y acciones de asistencia](descargas/SAMARA_OBJETIVOS_PLANTAS_ASISTENCIA.zip).
-Unifica los objetivos con el catálogo adjunto, incorpora ambos establecimientos SIRCE, agrupa los botones inferiores y limpia el buscador al agregar asistentes.
+Última actualización: [Formatos, recepción DC-3 y permisos de usuarios](descargas/SAMARA_FORMATOS_USUARIOS_PROGRAMA.zip).
+Actualiza FT-RH-010, agrega recepción FT-RH-011, fija el orden de usuarios y personaliza permisos por módulo. Incluye una propuesta visual de Programa de cursos para revisar.
 
 ## Ver el código
 

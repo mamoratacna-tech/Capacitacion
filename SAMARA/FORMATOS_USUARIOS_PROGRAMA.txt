@@ -1,0 +1,76 @@
+SAMARA — FORMATOS ACTUALIZADOS, RECEPCIÓN DC-3 Y PERMISOS POR USUARIO
+
+ACTUALIZACIÓN
+Sustituye en tu proyecto existente estos seis archivos completos:
+App.html, Code.gs, Estilos.html, PlantillasListados.html, Usuarios.html y UsuariosServidor.gs.
+Los dos archivos .gs son de secuencia de comandos; los cuatro .html son HTML.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar > Nueva versión > Implementar.
+Recarga la aplicación. Conserva usuarios, contraseñas, hojas, propiedades, manifest y catálogos.
+No ejecutes otra vez la configuración inicial de usuarios.
+Es necesario actualizar los seis archivos para mantener coordinados interfaz y permisos del servidor.
+
+BOTÓN ELIMINAR
+Se corrige la prioridad de estilos que comprimía el botón a 30 píxeles. El botón inferior
+conserva su icono, texto, ancho y separación de Cancelar y Guardar listado.
+
+FT-RH-010
+La impresión usa como base el PDF nuevo que proporcionaste. Se ajustan curso, instructor,
+área temática, nombres y puestos a sus celdas, con ajuste de tamaño y varias líneas.
+Se mantienen 15 asistentes por página, encabezado repetido, numeración de páginas y firmas vacías.
+Los cinco objetivos se marcan conforme al catálogo unificado, con claves 1 a 5.
+
+FT-RH-011
+Cada listado incluye el botón Recepción DC-3. Abre una ventana para elegir la fecha de recepción,
+con fecha de hoy inicialmente. Incluye solo asistentes validados que firmaron, como la emisión
+DC-3. Los nombres se toman del padrón cuando están disponibles y del listado como respaldo.
+El formato usa el PDF que proporcionaste, numera receptores y admite 17 por página. Imprime
+curso, lugar y fecha; las firmas quedan vacías. No modifica los datos de asistencia al imprimir.
+
+USUARIOS: ORDEN Y PERSONALIZACIÓN
+La lista se ordena siempre por administradores primero y luego nombre, usuario e ID. Ya no
+depende del orden de lectura de las propiedades de Apps Script. Se aplica en servidor e interfaz.
+
+En Usuarios > Editar usuario puedes configurar, por separado para cada módulo:
+- Sin acceso: no aparece el módulo y no puede abrirlo desde la aplicación.
+- Solo consulta: permite consultar e imprimir/exportar; impide guardar cambios.
+- Captura/edición: permite crear, modificar y eliminar registros de ese módulo.
+Módulos actuales: Resumen, Cursos, Matriz (incluye puestos y departamentos), Personal,
+Instructores certificados, Listados de asistencia, CMCAP y Reportes.
+Los administradores conservan acceso completo y la administración de usuarios permanece exclusiva.
+Los usuarios existentes conservan sus accesos anteriores hasta que la administradora los personalice.
+Guardar un perfil invalida las sesiones anteriores de esa cuenta; deberá iniciar sesión de nuevo.
+No se cambian sus contraseñas al modificar permisos.
+
+La comprobación de edición está también en el servidor, antes de escribir. No depende solo de
+ocultar botones. La lectura inicial se filtra por módulos autorizados y referencias necesarias.
+Un módulo puede necesitar datos de otros para cruzar información: por ejemplo, asistencia usa
+cursos, personal, puestos e instructores. Esas referencias no conceden permiso de edición en
+los otros módulos ni permiten abrir sus pantallas si tienen Sin acceso.
+
+MÓDULOS VINCULADOS
+Para modificar asignaciones entre Cursos e Instructores, autoriza edición en ambos. Para importar
+personal creando o actualizando puestos/departamentos, autoriza edición en Personal y Matriz.
+Si falta un permiso de un módulo vinculado, la operación informa el motivo y no confirma el guardado.
+Esto preserva la sincronización sin conceder accesos adicionales implícitamente.
+
+PROPUESTA: PROGRAMA DE CURSOS
+La carpeta PROPUESTA contiene una maqueta HTML navegable, una imagen y la propuesta escrita.
+Es una propuesta de acomodo con datos ficticios: todavía no guarda programaciones ni añade un módulo
+a la aplicación. Responde a tu solicitud de revisar la idea antes de arrancar.
+
+Recomendación: Agenda por sesión (curso, fecha/hora, planta, instructor, puestos y evidencia) y
+Programa anual con los 12 meses y las columnas de tu FT-RH-012. Una sesión pasará a Realizado
+cuando tenga una lista validada vinculada. Las listas por validar mostrarán Evidencia por revisar.
+No se marcarán todas las fechas de un curso como cumplidas por tener una sola lista.
+El documento de propuesta detalla reprogramaciones, cancelaciones, impresión anual y etapas.
+
+MUESTRAS Y VERIFICACIÓN
+La carpeta MUESTRAS contiene PDFs generados con nombres de ejemplo para revisar alineación.
+78 comprobaciones automáticas y pruebas Chromium de permisos configurados desde Usuarios,
+orden repetible, navegación por perfil, consulta sin edición, guardado directo rechazado por el
+servidor, sesiones revocadas y conservación del acceso administrativo.
+Se generaron PDFs reales: FT-RH-010 con 31 asistentes/3 páginas y FT-RH-011 con 35 receptores/3 páginas.
+Se revisaron visualmente y se probaron descargas desde la interfaz y filtrado de receptores.
+También se comprobaron usuarios existentes, sincronización de módulos, CSV/ZIP SIRCE, objetivos,
+plantas, reintentos de lectura y guardado lento sin pérdida de cambios. Google y Gemini simulados.
+La publicación y conexión reales con tu cuenta requieren aplicar los archivos en Apps Script.

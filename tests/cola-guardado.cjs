@@ -9,7 +9,7 @@ const persist = source.slice(source.indexOf('    async function persistCollectio
 function setup() {
   const calls = [];
   const cloud = {pending:{},cache:{},revision:10,saving:false,blocked:false,inFlight:null};
-  const context = vm.createContext({cloud, cloudKeys:['attendance','employees'], structuredClone, setTimeout, clearTimeout,
+  const context = vm.createContext({window:{},cloud, cloudKeys:['attendance','employees'], structuredClone, setTimeout, clearTimeout,
     cloudLabel(){}, cloudError(error){cloud.blocked=true;},
     googleCall(method,batch,revision){return new Promise((resolve,reject)=>calls.push({batch,revision,resolve,reject}));}});
   vm.runInContext(names + queue + store + persist + ';globalThis.api={persistCollection,flushCloud,saveStore};',context);
