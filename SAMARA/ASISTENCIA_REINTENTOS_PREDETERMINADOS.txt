@@ -1,0 +1,48 @@
+SAMARA — LECTURA, CONFIRMACIÓN DE BORRADO Y PREDETERMINADOS
+
+Sustituye en tu proyecto existente estos dos archivos completos:
+App.html y EstilosListados.html.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar >
+Nueva versión > Implementar. Recarga la aplicación.
+No cambies usuarios, hojas, propiedades ni catálogos.
+
+1. LECTURA Y ERROR 503
+El mensaje 503 de la captura indica saturación temporal del servicio Gemini.
+La aplicación hace hasta tres intentos por lectura ante errores temporales
+500, 502, 503 y 504, con pausas de 1.5 y 3.5 segundos. La pantalla informa que
+está reintentando. La imagen se prepara una vez y se reutiliza en los intentos.
+Si Gemini sigue fallando, aparece una explicación en español y el botón
+Reintentar. Ese botón usa el archivo ya cargado y no duplica lecturas exitosas.
+El archivo fallido solo se conserva en memoria de esa ventana: se pierde si
+cierras sesión, recargas, ocultas la cola o inicias otra carga. No se guarda en Sheets.
+Los archivos ya leídos se liberan de memoria. Los errores de sesión, configuración
+y petición inválida no generan reintentos automáticos. Se mantienen los permisos.
+El servicio externo puede seguir saturado; esta actualización no garantiza
+que Gemini se recupere ni cambia el modelo o tu clave API.
+
+2. BORRADO
+Tanto Eliminar en la tabla como Eliminar dentro del editor abren una ventana
+emergente integrada con curso, fecha y pregunta de confirmación.
+Cancelar o cerrar esa ventana conserva el listado y sus datos.
+Aceptar guarda la eliminación en Google antes de retirar la fila y cerrar
+el editor, con indicador Eliminando… y bloqueo de envíos repetidos.
+Si falla el guardado, se informa el error y no se muestra como eliminado.
+
+3. CAPTURA MANUAL
+Al elegir un curso se completan duración, clasificación, área temática,
+objetivo DC-2 y modalidad con los datos guardados del curso. Se actualizan
+también los valores derivados de Datos SIRCE.
+Si solo hay un instructor asignado, se completa su nombre, clasificación,
+registro y RFC correspondiente. El RFC de instructor interno queda vacío.
+Si hay varios instructores, debes elegir uno; no se decide arbitrariamente.
+Se conserva la fecha de ejecución y los asistentes que ya hayas capturado.
+Al cambiar de curso se aplican sus datos. Las listas leídas de foto conservan
+los valores extraídos para su revisión; no se sustituyen por los del catálogo.
+
+VERIFICACIÓN
+65 comprobaciones automáticas y pruebas Chromium de ambos borrados con aceptar
+y cancelar, predeterminados de cursos internos/externos, instructor único o
+múltiple, conservación de datos de fotos, agotamiento de reintentos 503,
+reintento sin subir otro archivo y sin duplicados, sesión de lectura y
+exportaciones CSV/ZIP. Servicios Google y Gemini simulados.
+No se ha invocado Gemini con tus credenciales ni se ha publicado en tu cuenta.

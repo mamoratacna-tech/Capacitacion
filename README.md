@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Carga, fotos y listados por año](descargas/SAMARA_CARGA_FOTOS_ANIOS.zip).
-Reduce la carga inicial, bloquea cursos duplicados por instructor, corrige el envío de sesión en fotos y PDF y agrupa las listas por años plegables.
+Última actualización: [Lectura, confirmación y predeterminados](descargas/SAMARA_ASISTENCIA_REINTENTOS_PREDETERMINADOS.zip).
+Agrega reintentos ante saturación de Gemini, confirmación en ambas opciones de borrado y los datos predeterminados del curso en la captura manual.
 
 ## Ver el código
 

@@ -2532,7 +2532,8 @@ function normalizePersonNames(key, value) {
       q: '',
       ed: null,
       cola: [],
-      years: {}
+      years: {},
+      reading: false
     };
     const AT_OBJ = ['1. '+objectiveLabel('1'),'2. '+objectiveLabel('4'),'3. '+objectiveLabel('5'),'4. '+objectiveLabel('2'),'5. '+objectiveLabel('3')];
     const AT_MODS = ['Presencial', 'Online', 'Mixta', 'E-learning'],
@@ -2588,7 +2589,7 @@ function normalizePersonNames(key, value) {
       duracion: String(c.duration || ''),
       clasificacion: c.instructorClass || '',
       area: String(c.theme || '').trim(),
-      objetivo: c.objective || '',
+      objetivo: c.objective || objectiveLabel(c.objectiveCode),
       modalidad: c.modality || '',
       sirce: /^s/i.test(String(c.sirce || ''))
     })).sort((a, b) => a.codigo.localeCompare(b.codigo));
@@ -2671,6 +2672,19 @@ function normalizePersonNames(key, value) {
       }
       if (k === 'modalidad') return c.modalidad;
       return null;
+    }
+    function atAplicarPredeterminados(ed){
+      if(ed.leida)return;
+      const course=courses.find(row=>row.code===ed.cursoCodigo),normalized=atC(ed.cursoCodigo);
+      const enc={...ed.enc,instructorId:'',instructor:'',registro:'',rfc:''};
+      for(const key of ['duracion','clasificacion','area','objetivo','modalidad'])enc[key]=atCatVal(key,normalized)??'';
+      if(enc.modalidad)enc.modalidad=AT_MODS.find(value=>atNorm(value)===atNorm(enc.modalidad).replace('en linea','online'))||enc.modalidad;
+      const ids=course?.instructorIds||[course?.instructorId].filter(Boolean);
+      let linked=atIns().filter(item=>ids.includes(item.id));
+      if(!linked.length&&course?.instructor){linked=atIns().filter(item=>atNorm(item.nombre)===atNorm(course.instructor));}
+      if(linked.length===1){const instructor=linked[0];enc.instructorId=instructor.id;enc.instructor=instructor.nombre;enc.clasificacion=instructor.tipo||enc.clasificacion;enc.registro=instructor.registro||'';enc.rfc=instructor.tipo==='Interno'?'':instructor.rfc||'';}
+      if(AT_LUG.includes(course?.plant))enc.lugar=course.plant;
+      ed.enc=enc;ed.encOk={};
     }
     function atCoincide(k, v, cv) {
       if (cv == null || cv === '') return null;
@@ -2844,7 +2858,7 @@ function normalizePersonNames(key, value) {
       if (!AT.cola.length) return '';
       const fin = AT.cola.filter(x => x.estado === 'listo' || x.estado === 'error').length,
         act = fin < AT.cola.length;
-      return "<article class=\"panel att-cola\"><div class=\"att-colah\"><b>".concat(act ? "Leyendo listas… ".concat(fin, " de ").concat(AT.cola.length) : "Lectura terminada: ".concat(AT.cola.filter(x => x.estado === 'listo').length, " de ").concat(AT.cola.length, " listas quedaron como borrador"), "</b>").concat(act ? '' : '<button class="button outline att-sm" data-att="limpiarcola">Ocultar</button>', "</div>\n  <ul>").concat(AT.cola.map(x => "<li><span class=\"att-ico\">".concat(x.estado === 'listo' ? '⚠' : x.estado === 'error' ? '✕' : x.estado === 'leyendo' ? '⟳' : '·', "</span><span class=\"att-cn\">").concat(atE(x.nombre), "</span><span class=\"att-cs ").concat(x.estado, "\">").concat(x.estado === 'listo' ? "Borrador listo · ".concat(x.pend, " por revisar") : x.estado === 'error' ? atE(x.msg) : x.estado === 'leyendo' ? 'Leyendo…' : 'En espera', "</span>").concat(x.estado === 'listo' ? "<button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"".concat(x.id, "\">Revisar</button>") : '', "</li>")).join(''), "</ul></article>");
+      return "<article class=\"panel att-cola\"><div class=\"att-colah\"><b>".concat(act ? "Leyendo listas… ".concat(fin, " de ").concat(AT.cola.length) : "Lectura terminada: ".concat(AT.cola.filter(x => x.estado === 'listo').length, " de ").concat(AT.cola.length, " listas quedaron como borrador"), "</b>").concat(act ? '' : '<button class="button outline att-sm" data-att="limpiarcola">Ocultar</button>', "</div>\n  <ul>").concat(AT.cola.map((x,index) => "<li><span class=\"att-ico\">".concat(x.estado === 'listo' ? '⚠' : x.estado === 'error' ? '✕' : x.estado === 'leyendo' ? '⟳' : '·', "</span><span class=\"att-cn\">").concat(atE(x.nombre), "</span><span class=\"att-cs ").concat(x.estado, "\">").concat(x.estado === 'listo' ? "Borrador listo · ".concat(x.pend, " por revisar") : x.estado === 'error' ? atE(x.msg) : x.estado === 'leyendo' ? atE(x.msg||'Leyendo…') : 'En espera', "</span>").concat(x.estado === 'listo' ? "<button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"".concat(x.id, "\">Revisar</button>") : x.estado==='error'&&x.blob?'<button type="button" class="button outline att-sm" data-att="reintentarlectura" data-i="'+index+'">Reintentar</button>':'', "</li>")).join(''), "</ul></article>");
     }
     function atAttendanceRow(s){
         const v = (s.asistentes || []).filter(a => a.estado === 'ok').length;
@@ -3085,6 +3099,8 @@ function normalizePersonNames(key, value) {
       return out;
     }
     async function atLeerVarios(files) {
+      if(AT.reading){toast('Espera a que termine la lectura actual.');return;}
+      AT.reading=true;
       $('#att-dialog').close();
       AT.ed = null;
       AT.cola=files.map(file=>({nombre:file.name,estado:'leyendo'}));renderAttendance();
@@ -3112,12 +3128,18 @@ function normalizePersonNames(key, value) {
       }
       AT.cola = items;
       renderAttendance();
+      AT.reading=false;
+      await atProcesarCola(items);
+    }
+    async function atProcesarCola(items){
+      if(AT.reading)return;AT.reading=true;
+      try{
       for (const it of items) {
         if (it.estado !== 'pendiente') continue;
-        it.estado = 'leyendo';
+        it.estado = 'leyendo';it.msg='';
         renderAttendance();
         try {
-          const r = await window.leerListaFT(it.blob, atPrompt()),
+          const r = await window.leerListaFT(it.blob, atPrompt(),message=>{it.msg=message;if(!AT.ed)renderAttendance();}),
             ed = atDesdeLectura(r),
             c = atC(ed.cursoCodigo);
           const rec = {
@@ -3150,10 +3172,11 @@ function normalizePersonNames(key, value) {
           it.estado = 'error';
           it.msg = e && e.code === 'formato' ? 'Formato HEIC: usa JPG o PNG.' : 'No se pudo leer: ' + String(e && (e.message || e.code) || e);
         }
-        it.blob = null;
+        if(it.estado==='listo')it.blob = null;
         if (!AT.ed) renderAttendance();
       }
-      toast('Lectura terminada. Revisa cada borrador marcado con ⚠.');
+      toast(items.some(item=>item.estado==='error')?'Quedaron archivos sin leer. Puedes reintentarlos desde la lista.':'Lectura terminada. Revisa cada borrador marcado con ⚠.');
+      }finally{AT.reading=false;}
     }
     function atDesdeLectura(r) {
       r = r || {};
@@ -3700,6 +3723,17 @@ function normalizePersonNames(key, value) {
         btn.textContent = '⇣ Importar padrón SIRCE';
       }
     }
+    async function atEliminarListado(id,button){
+      const list=attendance.find(row=>row.id===id);if(!list||button.disabled)return;
+      const label=button.textContent;button.disabled=true;
+      try{
+        if(!await appConfirm('¿Eliminar el listado “'+(list.cursoNombre||list.cursoCodigo||'Sin curso')+'” del '+atFmt(list.fecha)+' y sus asistentes registrados?'))return;
+        button.textContent='Eliminando…';
+        const next=attendance.filter(row=>row.id!==id);await persistCollection('samara.attendance.v1',next);attendance=next;
+        if(AT.ed?.id===id)AT.ed=null;AT.cola=AT.cola.filter(item=>item.id!==id);renderAttendance();toast('Listado eliminado.');
+      }catch(error){toast('No se eliminó el listado: '+(error.message||String(error)));}
+      finally{button.disabled=false;button.textContent=label;}
+    }
     /* eventos */
     const AT_A = {
       nueva: () => atNuevaDialog(),
@@ -3723,6 +3757,7 @@ function normalizePersonNames(key, value) {
         AT.hasta = '';
         renderAttendance();
       },
+      reintentarlectura: d => {const item=AT.cola[Number(d.i)];if(!item||item.estado!=='error'||!item.blob||AT.reading)return;item.estado='pendiente';return atProcesarCola([item]);},
       limpiarcola: () => {
         AT.cola = [];
         renderAttendance();
@@ -3738,35 +3773,8 @@ function normalizePersonNames(key, value) {
         if (!s) return;
         atAbrir(atEdDe(s));
       },
-      borrar: (d, el) => {
-        if (!el.dataset.armed) {
-          el.dataset.armed = '1';
-          el.textContent = '¿Eliminar?';
-          setTimeout(() => {
-            if (el.isConnected) {
-              delete el.dataset.armed;
-              el.textContent = '🗑';
-            }
-          }, 3000);
-          return;
-        }
-        attendance = attendance.filter(x => x.id !== d.id);
-        saveStore('samara.attendance.v1', attendance);
-        renderAttendance();
-        toast('Listado eliminado.');
-      },
-      borrarlista: (d, el) => {
-        if (!el.dataset.armed) {
-          el.dataset.armed = '1';
-          el.textContent = 'Toca otra vez';
-          return;
-        }
-        attendance = attendance.filter(x => x.id !== AT.ed.id);
-        saveStore('samara.attendance.v1', attendance);
-        AT.ed = null;
-        renderAttendance();
-        toast('Listado eliminado.');
-      },
+      borrar: (d, el) => atEliminarListado(d.id,el),
+      borrarlista: (d, el) => atEliminarListado(AT.ed?.id,el),
       pdflista: d => atPdfLista(d.id),
       pdfdc3: d => atPdfDC3(d.id),
       guardar: () => atGuardar(),
@@ -3898,6 +3906,7 @@ function normalizePersonNames(key, value) {
       } else if (t.id === 'att-curso') {
         AT.ed.cursoCodigo = t.value;
         AT.ed.encOk = {};
+        atAplicarPredeterminados(AT.ed);
         AT.ed.sirceDatos=ssDefaults({...AT.ed,sirceDatos:null});
         atPintar();
         $('#att-sirce-fields').innerHTML=ssFields(AT.ed);
