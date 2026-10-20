@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Lectura, confirmación y predeterminados](descargas/SAMARA_ASISTENCIA_REINTENTOS_PREDETERMINADOS.zip).
-Agrega reintentos ante saturación de Gemini, confirmación en ambas opciones de borrado y los datos predeterminados del curso en la captura manual.
+Última actualización: [Encabezado y SIRCE desde el glosario](descargas/SAMARA_SIRCE_DESDE_GLOSARIO.zip).
+Completa los campos vacíos del encabezado y de SIRCE desde el glosario, también en listados existentes, conservando clave, fechas y asistentes.
 
 ## Ver el código
 

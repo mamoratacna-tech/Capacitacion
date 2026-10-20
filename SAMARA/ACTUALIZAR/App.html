@@ -2673,8 +2673,9 @@ function normalizePersonNames(key, value) {
       if (k === 'modalidad') return c.modalidad;
       return null;
     }
-    function atAplicarPredeterminados(ed){
-      if(ed.leida)return;
+    function atAplicarPredeterminados(ed,fillOnly=false){
+      if(ed.leida&&!fillOnly)return;
+      const previous={...ed.enc},previousOk={...ed.encOk};
       const course=courses.find(row=>row.code===ed.cursoCodigo),normalized=atC(ed.cursoCodigo);
       const enc={...ed.enc,instructorId:'',instructor:'',registro:'',rfc:''};
       for(const key of ['duracion','clasificacion','area','objetivo','modalidad'])enc[key]=atCatVal(key,normalized)??'';
@@ -2684,7 +2685,11 @@ function normalizePersonNames(key, value) {
       if(!linked.length&&course?.instructor){linked=atIns().filter(item=>atNorm(item.nombre)===atNorm(course.instructor));}
       if(linked.length===1){const instructor=linked[0];enc.instructorId=instructor.id;enc.instructor=instructor.nombre;enc.clasificacion=instructor.tipo||enc.clasificacion;enc.registro=instructor.registro||'';enc.rfc=instructor.tipo==='Interno'?'':instructor.rfc||'';}
       if(AT_LUG.includes(course?.plant))enc.lugar=course.plant;
-      ed.enc=enc;ed.encOk={};
+      if(fillOnly){
+        const explicit=Object.fromEntries(Object.entries(previous).filter(([,value])=>value!=null&&String(value).trim()!==''));
+        if(previous.instructor&&atNorm(previous.instructor)!==atNorm(enc.instructor)){enc.instructorId='';enc.registro='';enc.rfc='';}
+        ed.enc={...enc,...explicit};ed.encOk=previousOk;
+      }else{ed.enc=enc;ed.encOk={};}
     }
     function atCoincide(k, v, cv) {
       if (cv == null || cv === '') return null;
@@ -2923,6 +2928,8 @@ function normalizePersonNames(key, value) {
         asistentes: [],
         lista: {}
       }, ed);
+      atAplicarPredeterminados(AT.ed,true);
+      AT.ed.sirceDatos=ssDefaults(AT.ed);
       renderAttendance();
       window.scrollTo({
         top: 0
@@ -3235,9 +3242,13 @@ function normalizePersonNames(key, value) {
     /* guardar */
     function ssInstructor(list){return instructors.find(item=>item.id&&(item.id===list.sirceInstructorId||item.id===list.sirceDatos?.instructorId))||instructors.find(item=>norm(fullInstructorName(item))===norm(list.encabezado?.instructor||list.enc?.instructor));}
     function ssDefaults(list){
-      const course=courses.find(item=>item.code===list.cursoCodigo),h=list.encabezado||list.enc||{},instructor=ssInstructor(list);
-      const objective={1:'1',2:'4',3:'5',5:'3'}[String(course?.objectiveCode||'')]||'';
-      const result={claveCurso:'',inicio:list.fecha||'',fin:list.fecha||'',estado:'2',municipio:'2',area:SirceListados.areaCode(h.area||course?.theme),modalidad:SirceListados.code('modalities',h.modalidad||course?.modality),objetivo:objective,agente:(instructor?.type||h.clasificacion||course?.instructorClass)==='Externo'?'2':'1',rfc:instructor?.rfc||'',...list.sirceDatos,establecimiento:'862341'};
+      const course=courses.find(item=>item.code===list.cursoCodigo),h=list.encabezado||list.enc||{},instructor=ssInstructor(list),saved=list.sirceDatos||{};
+      const first=(resolve,values)=>values.map(value=>resolve(value)).find(Boolean)||'';
+      const objective={1:'1',2:'4',3:'5',5:'3'}[course?objectiveCode(course):'']||'';
+      const defaults={claveCurso:'',inicio:list.fecha||'',fin:list.fecha||'',estado:'2',municipio:'2',area:first(SirceListados.areaCode,[course?.theme,course?.area,h.area]),modalidad:first(value=>SirceListados.code('modalities',value),[course?.modality,h.modalidad]),objetivo:objective,agente:(instructor?.type||h.clasificacion||course?.instructorClass)==='Externo'?'2':'1',rfc:instructor?.rfc||''};
+      const result={...defaults,...saved,establecimiento:'862341'};
+      result.area=SirceListados.areaCode(saved.area)||defaults.area;
+      for(const [field,kind] of [['modalidad','modalities'],['objetivo','objectives'],['agente','agents']])result[field]=SirceListados.code(kind,saved[field])||defaults[field];
       if(instructor){result.agente=instructor.type==='Interno'?'1':'2';result.rfc=instructor.type==='Interno'?'':result.rfc||instructor.rfc||'';}
       return result;
     }
@@ -3267,7 +3278,7 @@ function normalizePersonNames(key, value) {
       const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,actualizado:new Date().toISOString()}:row);
       await persistCollection('samara.attendance.v1',next);attendance=next;return next.find(row=>row.id===list.id);
     }
-    function ssResult(list){const course=courses.find(row=>row.code===list.cursoCodigo);return SirceListados.rows(list,employees,positions,course,ssInstructor(list));}
+    function ssResult(list){const course=courses.find(row=>row.code===list.cursoCodigo);return SirceListados.rows({...list,sirceDatos:ssDefaults(list)},employees,positions,course,ssInstructor(list));}
     function ssCourseExportRecord(list){
       const m=ssDefaults(list),course=courses.find(item=>item.code===list.cursoCodigo),h=list.encabezado||{},instructor=ssInstructor(list);
       const label=(kind,key)=>SirceListados.catalogs[kind].find(item=>item.code===String(key))?.name||'';

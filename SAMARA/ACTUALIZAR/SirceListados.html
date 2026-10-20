@@ -4,8 +4,14 @@ window.SAMARA_SIRCE_DATA={"catalogs":{"agents":[{"code":"1","name":"Interno"},{"
 'use strict';
 const D=window.SAMARA_SIRCE_DATA,C=D.catalogs;
 const norm=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-function code(kind,value){const text=String(value??'').trim(),rows=C[kind]||[];const exact=rows.find(row=>row.code===text);if(exact)return exact.code;const prefix=text.match(/^\d+/)?.[0];if(prefix&&rows.some(row=>row.code===prefix)&&/^\d+\s*[·.\-]/.test(text))return prefix;return rows.find(row=>norm(row.name)===norm(text))?.code||'';}
-function areaCode(value){const text=String(value||'').trim();return code('areas',text)||C.areas.find(row=>norm(row.name).startsWith(norm(text))&&norm(text).length>3)?.code||'';}
+function code(kind,value){const text=String(value??'').trim(),rows=C[kind]||[];const exact=rows.find(row=>row.code===text);if(exact)return exact.code;if(kind==='modalities'){const alias={ONLINE:'2',ELEARNING:'2',VIRTUAL:'2',DISTANCIA:'2',ADISTANCIA:'2',PRESENCIALENLINEA:'3',PRESENCIALONLINE:'3',HIBRIDA:'3'}[norm(text)];if(alias&&rows.some(row=>row.code===alias))return alias;}const prefix=text.match(/^\d+/)?.[0];if(prefix&&rows.some(row=>row.code===prefix)&&/^\d+\s*[·.\-]/.test(text))return prefix;return rows.find(row=>norm(row.name)===norm(text))?.code||'';}
+function areaCode(value){
+ const text=String(value||'').trim(),direct=code('areas',text);if(direct)return direct;
+ const stps=text.match(/^(\d{4})(?:\D|$)/)?.[1],byNumber=stps?C.areas.filter(row=>row.name.match(/^(\d{4})/)?.[1]===stps):[];
+ if(byNumber.length===1)return byNumber[0].code;
+ const clean=norm(text),matches=C.areas.filter(row=>clean.length>3&&(norm(row.name).startsWith(clean)||norm(row.name.replace(/^\d{4}\s*[-·.]?\s*/,'')).startsWith(clean)));
+ return matches.length===1?matches[0].code:'';
+}
 function date(value){const text=String(value||'');return /^\d{4}-\d{2}-\d{2}$/.test(text)&&!isNaN(Date.parse(text+'T12:00:00Z'))&&new Date(text+'T12:00:00Z').toISOString().slice(0,10)===text;}
 function dmy(value){if(!date(value))throw Error('Selecciona fechas válidas para SIRCE.');return value.slice(8,10)+'-'+value.slice(5,7)+'-'+value.slice(2,4);}
 function rows(list,people,positions,course,instructor){

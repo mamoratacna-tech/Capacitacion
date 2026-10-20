@@ -1,0 +1,39 @@
+SAMARA — ENCABEZADO Y DATOS SIRCE DESDE EL GLOSARIO
+
+En tu proyecto existente sustituye estos dos archivos completos:
+App.html y SirceListados.html.
+SirceListados es el HTML del catálogo y exportación SIRCE; en esta entrega
+no se modifica EstilosListados.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar >
+Nueva versión > Implementar. Recarga la aplicación.
+Conserva tus hojas, propiedades, usuarios y demás catálogos.
+
+Al abrir un listado existente se completan los campos vacíos del encabezado
+con los datos de su curso en el glosario: duración, clasificación, área,
+objetivo y modalidad. Si tiene un solo instructor se completa su asignación;
+si tiene varios, debes elegirlo. La captura manual nueva conserva ese llenado
+al seleccionar el curso. Los datos ya capturados, incluidos los de fotos,
+se conservan para revisión y no se sustituyen automáticamente.
+
+En Datos SIRCE, los valores guardados vacíos ya no anulan los predeterminados.
+Área temática, modalidad y objetivo se resuelven desde el glosario usando las
+claves del catálogo SIRCE. Si falta el dato del curso, se considera el encabezado.
+Online y E-learning equivalen a En línea; Presencial, En línea e Híbrida,
+a Mixta. Las áreas pueden reconocerse por clave SIRCE, código temático STPS
+(por ejemplo, 3134), etiqueta completa o nombre inequívoco.
+No se inventan claves si el dato no corresponde al catálogo o es ambiguo.
+Se conservan las equivalencias de objetivos que ya tenía la aplicación.
+
+Se respetan las selecciones SIRCE explícitas válidas, la clave propia del
+listado, fechas de inicio y término, estado, municipio y asistentes.
+Los datos completados se muestran al abrir y se guardan al pulsar Guardar
+listado. No se reescribe el historial automáticamente al ingresar.
+La exportación también usa los predeterminados resueltos.
+
+VERIFICACIÓN
+68 comprobaciones automáticas y pruebas Chromium de listado existente con
+campos vacíos, captura manual nueva, conversión Online a En línea, área STPS
+3134 a clave SIRCE 98, guardado de datos completos y conservación de clave,
+fechas, asistentes y selecciones explícitas de listas leídas de foto.
+También se comprobaron CSV/ZIP, lectura autenticada y años plegables.
+Servicios de Google simulados; la publicación real requiere tu cuenta.
