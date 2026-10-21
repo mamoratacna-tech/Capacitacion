@@ -43,6 +43,7 @@
     }
     function cloudLabel(text) {
       document.getElementById('cloud-status').textContent = text;
+      const source=document.getElementById('sidebar-source-status');if(source)source.textContent=/^(Conectado|Guardado en Google)/.test(text)?'Fuente de datos conectada':text;
     }
     function cloudError(error, conflict = false) {
       cloud.blocked = true;
@@ -1300,7 +1301,7 @@ function normalizePersonNames(key, value) {
         renderCourses();
       }
 
-      $$('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === (['positions','departments'].includes(name) ? 'matrix' : name)));
+      $$('.nav-item').forEach(item => {const active=item.dataset.view === (['positions','departments'].includes(name) ? 'matrix' : name);item.classList.toggle('active',active);if(active)item.setAttribute('aria-current','page');else item.removeAttribute('aria-current');});
       if (name === 'departments') renderMatrixDepartments();
       if (name === 'cmcap') renderCmcap();
       if (name === 'attendance') renderAttendance();
@@ -1320,6 +1321,7 @@ function normalizePersonNames(key, value) {
       };
       $('#crumb').textContent = labels[name] || 'Resumen';
       $('#sidebar').classList.remove('open');
+      $('#menu-toggle').setAttribute('aria-expanded','false');
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
@@ -2235,7 +2237,9 @@ function normalizePersonNames(key, value) {
     // Interface actions
     $$('.nav-item').forEach(item => item.addEventListener('click', () => showView(item.dataset.view)));
     $$('[data-nav]').forEach(item => item.addEventListener('click', () => showView(item.dataset.nav)));
-    $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+    $('#menu-toggle').addEventListener('click', () => {const open=$('#sidebar').classList.toggle('open');$('#menu-toggle').setAttribute('aria-expanded',String(open));});
+    $('#sidebar-close').addEventListener('click',()=>{$('#sidebar').classList.remove('open');$('#menu-toggle').setAttribute('aria-expanded','false');$('#menu-toggle').focus();});
+    appOn(document,'keydown',event=>{if(event.key==='Escape'&&$('#sidebar').classList.contains('open')){$('#sidebar-close').click();}});
     $$('[data-close]').forEach(button => button.addEventListener('click', () => $('#' + button.dataset.close).close()));
     $$('[data-report]').forEach(button => button.addEventListener('click', () => setReportForm(button.dataset.report)));
     $('#close-report').addEventListener('click', () => reportDialog.close());

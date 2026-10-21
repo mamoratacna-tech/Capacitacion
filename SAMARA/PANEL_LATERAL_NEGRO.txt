@@ -1,0 +1,69 @@
+SAMARA — PANEL LATERAL NEGRO AGRUPADO
+
+INSTALACIÓN: CINCO ARCHIVOS COMPLETOS
+1. Descomprime el ZIP. Abre tu proyecto EXISTENTE de Google Apps Script.
+2. Reemplaza COMPLETOS estos cinco archivos con los de ACTUALIZAR:
+   App.html
+   Estilos.html
+   Index.html
+   Resumen.html
+   Usuarios.html
+   No se pegan fragmentos y no necesitas crear un HTML nuevo.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación e inicia sesión.
+
+Conserva los demás archivos, hojas, catálogos, contraseñas y propiedades
+DB_ID, SIRCE_ID y claves existentes. No vuelvas a configurar los usuarios.
+Esta entrega mantiene las funciones de Reportes y Notificaciones ya instaladas.
+
+DISEÑO COMO LA REFERENCIA
+Fondo negro, logotipo S oscuro, texto e iconos blancos, grupos con línea
+divisoria, selección oscura con indicador blanco al lado izquierdo y perfil
+al pie. Los tamaños se adaptan al espacio real de la pantalla.
+
+GENERAL
+  Resumen
+CAPACITACIÓN
+  Cursos
+  Matriz de capacitación
+  Programa de cursos
+  Listados de asistencia
+  Instructores certificados
+ADMINISTRACIÓN
+  Personal
+  CMCAP
+INDICADORES
+  Reportes
+  Google Sheets · Fuente de datos conectada
+CONFIGURACIÓN (solo cuenta maestra)
+  Usuarios
+
+El contador de Cursos muestra el número REAL del catálogo.
+Google Sheets es un indicador de la conexión y del guardado de la aplicación,
+no un enlace público a la base. Su texto refleja el estado de guardado.
+Los iconos se dibujan con SVG y no necesitan librerías nuevas.
+
+PERFIL, PERMISOS Y PANTALLAS PEQUEÑAS
+El pie mantiene nombre, iniciales, rol y Cerrar sesión. La administradora
+aparece como Cuenta maestra; otros perfiles muestran Perfil personalizado.
+Configuración solo se muestra a administradores. Los demás grupos ocultan
+los módulos sin permiso y se ocultan si quedan vacíos (Google Sheets conserva
+su indicador de conexión). No se amplían permisos de lectura ni de edición.
+
+El pie permanece visible. Si la pantalla tiene poca altura, el menú central
+puede recorrerse verticalmente para acceder a todos los módulos sin ocultar
+el cierre de sesión; no hay desplazamiento horizontal.
+En móvil se abre con el botón de menú y se cierra con la x, con Escape o al
+elegir una opción. El menú cerrado no recibe foco por teclado.
+Si falla cerrar sesión, se conserva el icono y el botón vuelve a estar listo
+para reintentar, con el mensaje correspondiente.
+
+VERIFICACIÓN
+120 pruebas de lógica y pruebas de navegador de permisos, acceso, nuevo
+panel y notificaciones. Se comprobaron todos los accesos, selección activa,
+configuración oculta para otros perfiles, cierre de sesión recuperable,
+pantallas de 320/390 px y alturas de 600/768/1000 px sin perder el pie.
+La consulta y navegación no modifican los registros.
+Las imágenes de muestra usan datos ficticios; el catálogo y perfil de tu
+aplicación siguen usando tus registros. Publica la nueva versión en tu
+cuenta de Google mediante los pasos anteriores.

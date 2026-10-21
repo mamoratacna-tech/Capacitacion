@@ -13,9 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Campana de notificaciones](descargas/SAMARA_NOTIFICACIONES_USUARIOS.zip).
-Avisos por prioridad, lectura personal, resolución automática y enlaces a los
-registros, con permisos por usuario. [Instrucciones](SAMARA/NOTIFICACIONES_USUARIOS.txt).
+Última actualización: [Panel lateral negro agrupado](descargas/SAMARA_PANEL_LATERAL_NEGRO.zip).
+Menú con las secciones e iconos de la referencia, cuenta maestra al pie,
+permisos y vista móvil. [Instrucciones](SAMARA/PANEL_LATERAL_NEGRO.txt).
+
+Notificaciones: [archivos](descargas/SAMARA_NOTIFICACIONES_USUARIOS.zip) e
+[instrucciones](SAMARA/NOTIFICACIONES_USUARIOS.txt).
 
 Reportes: [archivos](descargas/SAMARA_REPORTES_INTEGRADOS.zip) e
 [instrucciones](SAMARA/REPORTES_INTEGRADOS.txt).
