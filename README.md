@@ -13,8 +13,10 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Formatos, recepción DC-3 y permisos de usuarios](descargas/SAMARA_FORMATOS_USUARIOS_PROGRAMA.zip).
-Actualiza FT-RH-010, agrega recepción FT-RH-011, fija el orden de usuarios y personaliza permisos por módulo. Incluye una propuesta visual de Programa de cursos para revisar.
+Última actualización: [Programa mensual de cursos](descargas/SAMARA_PROGRAMA_MENSUAL.zip).
+Programa cursos por mes, sin fecha ni horario; calcula población objetivo desde la matriz y el personal activo de SAMARA, y cruza las listas validadas sin duplicar personas. Incluye seguimiento individual, permisos e impresión FT-RH-012. [Guía y criterios de conteo](SAMARA/PROGRAMA_MENSUAL.txt).
+
+[Ver diseño](descargas/PROGRAMA_MENSUAL.png) · [Ejemplo de impresión](descargas/MUESTRA_FT-RH-012.pdf).
 
 ## Ver el código
 

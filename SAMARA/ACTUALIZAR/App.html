@@ -16,7 +16,7 @@
       blocked: false,
       timer: null
     };
-    const cloudKeys = ['samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    const cloudKeys = ['samara.courseProgram.v1','samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
     function appConfirm(message) {
       return new Promise(resolve => {
         const dialog = document.createElement('dialog');
@@ -35,7 +35,7 @@
       });
     }
     appOn(document,'click',event=>{const module=window.SamaraAccess?.writeModule?.(event.target.closest('button'));if(module&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('Tu perfil permite consultar este módulo, pero no editarlo.');}},true);
-    const formModules={'course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
+    const formModules={'program-form':'program','course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
     appOn(document,'submit',event=>{const module=formModules[event.target.id];if(module&&window.SamaraAccess?.can&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('No tienes permiso para guardar cambios en este módulo.');}},true);
     appOn(window,'samara-access-error',event=>toast(event.detail));
     function googleCall(method, ...args) {
@@ -1279,6 +1279,7 @@ function normalizePersonNames(key, value) {
       if(name==='users'&&window.SamaraAccess?.user?.role!=='admin'){toast('Solo la administradora puede gestionar usuarios.');return;}
       if(name==='users')window.SamaraAccess?.loadUsers();
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
+      if(name==='program')window.SamaraProgram.render();
       if(name==='people')renderPeople();
       if(name==='positions')renderPositions();
       if(name==='instructors')renderInstructors();
@@ -1296,6 +1297,7 @@ function normalizePersonNames(key, value) {
       if (name === 'cmcap') renderCmcap();
       if (name === 'attendance') renderAttendance();
       const labels = {
+        program: 'Programa de cursos',
         users: 'Usuarios',
         attendance: 'Listados de asistencia',
         dashboard: 'Resumen',
@@ -2096,7 +2098,7 @@ function normalizePersonNames(key, value) {
     function monthShort(value) {
       return value ? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][Number(value.split('-')[1]) - 1] || '' : '';
     }
-    function printPreparedDocument(landscape = false) {
+    function printPreparedDocument(landscape = false, paper = 'letter') {
       let style = document.getElementById('print-page-layout');
       if (!style) {
         style = document.createElement('style');
@@ -2104,7 +2106,7 @@ function normalizePersonNames(key, value) {
         style.media = 'print';
         document.head.appendChild(style);
       }
-      style.textContent = "@page{size:letter ".concat(landscape ? 'landscape' : 'portrait', ";margin:").concat(landscape ? '10' : '12', "mm}");
+      style.textContent = ("@page{size:" + paper + " ").concat(landscape ? 'landscape' : 'portrait', ";margin:").concat(landscape ? '10' : '12', "mm}");
       setTimeout(() => window.print(), 180);
     }
     function createPrintDocument(title, html) {
@@ -3996,8 +3998,9 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
+    window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');}});
     renderAttendance();
-    if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
+    if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
     else if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');
     /* ==================== FIN MÓDULO LISTADOS ==================== */
   } catch (error) {

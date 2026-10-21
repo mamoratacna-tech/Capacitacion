@@ -1,0 +1,52 @@
+SAMARA — PROGRAMA MENSUAL DE CURSOS
+
+ARCHIVOS COMPLETOS PARA ESTA ACTUALIZACIÓN
+Sustituye App.html, Index.html, Code.gs, Usuarios.html y UsuariosServidor.gs.
+Agrega un archivo HTML llamado Programa y pega todo Programa.html.
+Guarda e implementa una NUEVA VERSIÓN de tu implementación existente.
+Conserva tus DatosIniciales, CatalogoSIRCE, hojas y propiedades del proyecto.
+No ejecutes de nuevo la configuración de usuarios ni crees otra base.
+
+USO
+1. Abre Programa de cursos y elige el año.
+2. Pulsa Programar curso, selecciona un curso del glosario y marca los meses
+   en que se realizará. No se piden fecha ni horario.
+3. Un curso tiene una programación por año; edítala para cambiar sus meses.
+4. Las listas se vinculan automáticamente por código de curso y mes/año.
+   No es necesario agregar otra relación manual en cada lista de asistencia.
+5. Consulta el detalle de personas y listas. Imprimir / PDF genera el programa
+   anual FT-RH-012 adaptado a planeación mensual, en A4 horizontal. Los filtros
+   de año, mes y búsqueda también se aplican a la impresión.
+6. En Usuarios, RH puede otorgar Programa de cursos: Sin acceso, Solo consulta
+   o Captura / edición. Los perfiles personalizados existentes no reciben
+   acceso nuevo automáticamente; RH debe asignarlo.
+
+CÓMO SE CALCULA EL AVANCE
+- Población objetivo: empleados activos actuales de SAMARA cuyo puesto,
+  departamento y clasificación D/I corresponden a filas activas de la matriz
+  donde aplica el curso. Los alias de departamentos se reconocen. TACNA y
+  las bajas quedan fuera. Un puesto vacante no suma personas.
+- Si el empleado no tiene clasificación propia, se usa la clasificación del
+  puesto/departamento de la matriz. Sin clasificación en la matriz no se
+  presume que el puesto sea D o I.
+- Capacitados: personas de esa población presentes en al menos una lista
+  Validada, con firma y estado de asistente validado (ok), del mismo curso,
+  mes y año. Una persona cuenta una sola vez, aunque figure en varias listas.
+- Por revisar: personas con firma en una lista o asistente sin validar, que
+  todavía no tienen asistencia confirmada en otra lista del mismo mes.
+- Faltan de validar / capacitar = población objetivo menos capacitados.
+  Incluye las personas con asistencia por revisar; no deben sumarse otra vez.
+- Cada mes se evalúa por separado; no se arrastra la asistencia de otro mes.
+  Si se programa el mismo curso en varios meses, cada mes tendrá su avance.
+- La población refleja el padrón y matriz actuales, no una foto histórica de
+  la plantilla. Las actualizaciones del personal y matriz modifican el avance.
+- En cursos de comisión o brigada se seleccionan integrantes del personal
+  elegible; no se cuenta automáticamente a toda la plantilla. Revisa esta
+  selección cuando cambien los integrantes.
+- Eliminar la programación no elimina cursos ni listas de asistencia.
+- Los ejemplos PDF e imagen usan datos ficticios para mostrar el diseño.
+
+VERIFICACIÓN
+Pruebas de población por matriz, alias de departamentos, D/I, exclusión de
+TACNA y bajas, cruce por curso/mes, deduplicación, firmas/validación, comisiones,
+permisos, guardado y recarga, duplicados de programación, filtros e impresión.
