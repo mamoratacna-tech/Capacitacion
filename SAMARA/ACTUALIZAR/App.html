@@ -1445,6 +1445,8 @@ function normalizePersonNames(key, value) {
         group.querySelector('small').textContent=marked+'/'+items.length+' seleccionados';
         const check=group.querySelector('[data-select-department]');check.checked=marked===items.length;check.indeterminate=marked>0&&marked<items.length;
       });
+      const active=activeMatrixPositions(),all=$('#course-all-positions'),count=active.filter(item=>selectedCoursePositions.has(item.id)).length;
+      all.checked=active.length>0&&count===active.length;all.indeterminate=count>0&&count<active.length;all.disabled=!active.length;
       $('#selected-position-count').textContent=selectedCoursePositions.size+' seleccionados';
     }
     function renderCoursePositionChecklist(selected = [], query = '') {
@@ -1456,6 +1458,7 @@ function normalizePersonNames(key, value) {
       }).join('') || '<div class="empty-state">No hay puestos para esta búsqueda.</div>';
       updatePositionGroupCounts();
     }
+    $('#course-all-positions').addEventListener('change',event=>{selectedCoursePositions=new Set(event.target.checked?activeMatrixPositions().map(item=>item.id):[]);renderCoursePositionChecklist([...selectedCoursePositions],$('#course-position-search').value);});
     $('#course-job-checklist').addEventListener('click',event=>{if(event.target.matches('[data-select-department]'))event.stopPropagation();});
     $('#course-job-checklist').addEventListener('change',event=>{
       if(!event.target.matches('[data-select-department]'))return;
@@ -1498,8 +1501,9 @@ function normalizePersonNames(key, value) {
       courseForm.elements.emergencyBrigadesOnly.checked = Boolean(c?.emergencyBrigadesOnly);
       courseForm.elements.frequency.value = c?.frequency?.includes('anual') ? '1 vez anual' : c?.frequency?.includes('ingreso') ? '1era vez ingreso' : '';
       courseForm.elements.ec.value = c?.ec === 'Sí' ? 'Sí' : 'No';
-      courseForm.elements.attendanceEvidence.value=c?.attendanceEvidence||c?.program?.attendance||'Listado de asistencia';
-      courseForm.elements.competenceEvidence.value=c?.competenceEvidence||c?.program?.competence||'';
+      courseForm.elements.attendanceEvidence.value='Listado de asistencia';
+      const competence=norm(c?.competenceEvidence||c?.program?.competence||'');
+      courseForm.elements.competenceEvidence.value=competence.includes('carta')?'Carta acreditación':competence.includes('evaluacion')?'Evaluación escrita / virtual':'No aplica';
       renderCoursePositionChecklist([...selectedCoursePositions]);
       $('#course-position-search').value = '';
       $('#selected-position-count').textContent = "".concat(selectedCoursePositions.size, " seleccionados");
@@ -1597,7 +1601,7 @@ function normalizePersonNames(key, value) {
         objective: objectiveLabel(form.get('objectiveCode')),
         objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,
         applicablePositions,
-        attendanceEvidence: String(form.get('attendanceEvidence')||'').trim(),
+        attendanceEvidence: 'Listado de asistencia',
         competenceEvidence: String(form.get('competenceEvidence')||'').trim(),
         cmcapOnly: courseForm.elements.cmcapOnly.checked,
         safetyCommissionOnly: courseForm.elements.safetyCommissionOnly.checked,

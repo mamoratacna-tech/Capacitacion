@@ -1,0 +1,35 @@
+SAMARA — TODOS LOS PUESTOS Y OPCIONES DE EVIDENCIA
+
+ACTUALIZAR
+Sustituye los archivos completos App.html, Index.html y Programa.html de tu
+proyecto existente con los archivos de ACTUALIZAR de este ZIP.
+Guarda y publica una NUEVA VERSIÓN de la implementación existente.
+Conserva los demás archivos, catálogos, hojas y propiedades del proyecto.
+
+USO
+En agregar o editar curso, abre Puestos aplicables y marca Aplica a todos los
+puestos. Selecciona los puestos activos actuales de la matriz, incluidos los
+puestos activos vacantes, aunque estés usando la búsqueda para ver solo una
+parte. Los puestos inactivos no se agregan. Desmarcar la opción quita la selección.
+Si cambias un puesto o departamento, la casilla refleja selección total o parcial.
+
+Evidencia de asistencia tiene únicamente Listado de asistencia.
+Evidencia de competencia tiene estas tres opciones:
+- No aplica
+- Evaluación escrita / virtual
+- Carta acreditación
+
+Los campos tienen separación superior, mayor espacio entre columnas y distancia
+respecto a los botones. La selección se guarda en el glosario y se usa en la
+impresión del programa FT-RH-012.
+
+Al editar registros anteriores, N/A y valores vacíos se presentan como No aplica,
+las evidencias de evaluación como Evaluación escrita / virtual y las cartas como
+Carta acreditación. Al guardar se conserva la opción normalizada seleccionada.
+
+VERIFICADO
+Selección total con búsqueda activa, puestos activos vacantes e inactivos,
+selección parcial, desmarcado total, opciones exactas, guardado y reapertura de
+asignaciones/evidencias. También se verificó la sincronización de cursos e
+instructores, fechas de certificación, cancelación y eliminación en ambos sentidos.
+La imagen incluida usa datos ficticios.

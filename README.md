@@ -13,10 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Formato del programa, asistencia y pendientes](descargas/SAMARA_PROGRAMA_FORMATO_ASISTENCIA.zip).
-Impresión FT-RH-012 con el diseño adjunto y población de puestos activos; CSV de personas pendientes; captura con foto o manual; sugerencias solo de instructores autorizados y planta obligatoria con aviso rojo. Las evidencias se editan desde el glosario. [Guía de actualización](SAMARA/PROGRAMA_FORMATO_ASISTENCIA.txt).
-
-[Ver diseño](descargas/PROGRAMA_MENSUAL.png) · [Ejemplo FT-RH-012](descargas/MUESTRA_FT-RH-012.pdf).
+Última actualización: [Todos los puestos y evidencias del curso](descargas/SAMARA_CURSOS_PUESTOS_EVIDENCIAS.zip).
+Selección de todos los puestos activos en un clic y evidencias con opciones fijas, con mayor separación en el formulario. [Guía de actualización](SAMARA/CURSOS_PUESTOS_EVIDENCIAS.txt) · [Ver diseño](descargas/CURSOS_PUESTOS_EVIDENCIAS.png).
 
 ## Ver el código
 
