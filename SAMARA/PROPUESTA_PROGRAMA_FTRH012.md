@@ -1,7 +1,7 @@
-# Programa mensual de cursos — implementado
+# Programa de cursos — implementado por periodos
 
-La propuesta anterior de sesiones con fecha y hora queda sustituida por la planeación mensual solicitada. El módulo permite elegir un curso del glosario, año y meses, y calcula el avance por curso/mes desde las listas de asistencia validadas.
+Selecciona un curso del glosario, año y meses disponibles para concluir su capacitación. Los meses forman un solo periodo: el avance se acumula sin duplicar personas y no se reinicia cada mes. La pantalla tiene una tarjeta por curso, agrupada por años expandibles.
 
-La población proviene del personal activo actual de SAMARA y la matriz: puesto, departamento y clasificación D/I. Se muestran capacitados, pendientes y asistencias por revisar, sin duplicar personas. Los cursos de comisión o brigada usan los integrantes seleccionados.
+La población proviene del personal activo actual de SAMARA y la matriz: puesto, departamento y clasificación D/I. Se muestran capacitados, pendientes y asistencias por revisar. Los cursos de comisión o brigada usan los integrantes seleccionados.
 
-Incluye detalle de personas y listas, permisos por perfil e impresión anual FT-RH-012 adaptada a meses, sin exigir fecha ni horario. Consulta [la guía](PROGRAMA_MENSUAL.txt) para conocer los criterios de conteo y actualización.
+La ventana es más amplia y usa el mismo cierre que los demás módulos. Incluye búsqueda por nombre o código con sugerencias, también en la captura de asistencia; detalle de personas y listas; permisos e impresión FT-RH-012 por año, con acumulados mensuales. No exige fecha ni horario. Consulta [la guía](PROGRAMA_MENSUAL.txt).

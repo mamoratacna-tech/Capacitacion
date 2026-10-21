@@ -2917,6 +2917,7 @@ function normalizePersonNames(key, value) {
     }
     function atPintar() {
       if (!AT.ed || !$('#att-hd')) return;
+      window.SamaraCoursePicker.bind($('#att-curso'),'att-course-search');
       const e = AT.ed,
         c = atC(e.cursoCodigo);
       $('#att-cinfo').innerHTML = c ? "<p class=\"att-hint\">Registra ante SIRCE: ".concat(atPill(c.sirce ? 'ok' : 'nt', c.sirce ? 'Sí' : 'No'), " · ").concat(atE(c.duracion), " h · ").concat(atE(c.area), "</p>") : '';
