@@ -1,0 +1,28 @@
+SAMARA UNIVERSITY — PANEL APROBADO SIN LA S
+
+INSTALACIÓN (SOLO DOS ARCHIVOS COMPLETOS)
+1. Descomprime el ZIP y abre tu proyecto EXISTENTE en Google Apps Script.
+2. Reemplaza COMPLETOS Index.html y Estilos.html con los de ACTUALIZAR.
+   No pegues fragmentos y no crees archivos nuevos.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación.
+
+DISEÑO
+Se elimina el recuadro con la letra S del encabezado del panel.
+El nombre Samara University y Gestión de capacitación quedan arriba.
+Se aplica el fondo vertical tenue Samara University de la propuesta aprobada,
+con fondo negro, letras blancas, divisiones grises y opción activa gris.
+El fondo es decorativo: no bloquea clics ni se repite en lectores de pantalla.
+Se conservan el contador real, el perfil al pie y los permisos de cada usuario.
+En móvil el encabezado se adapta y el menú puede cerrarse con la x o Escape.
+Las marcas de los documentos y otros módulos no se modifican.
+
+Conserva tus demás archivos, datos, usuarios, contraseñas y propiedades
+DB_ID, SIRCE_ID y claves. No se requieren permisos nuevos ni otra base.
+
+VERIFICACIÓN
+Pruebas de navegador del panel completo, todos los accesos, contador,
+permisos, cierre de sesión y móvil de 320/390 px sin desbordamiento horizontal.
+Se verificó que navegar no cambie los registros y que el fondo no bloquee botones.
+MUESTRA_PANEL.png usa datos ficticios de prueba; la aplicación usa tus datos.
+Esta entrega requiere publicar la nueva versión en tu cuenta de Google.

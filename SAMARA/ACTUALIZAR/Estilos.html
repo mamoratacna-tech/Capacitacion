@@ -713,3 +713,11 @@ button.att-footer-delete.samara-action{flex:0 0 auto!important;width:auto!import
 #sidebar .brand>div:last-of-type{min-width:0}#sidebar .brand strong{letter-spacing:0;white-space:nowrap}#sidebar .brand span{font-size:10px}.breadcrumb .breadcrumb-app{padding:0;color:inherit}
 @media(max-width:760px){.breadcrumb .breadcrumb-app,.breadcrumb .breadcrumb-separator{display:none}}
 </style>
+
+<style>
+/* Propuesta aprobada: nombre como fondo, sin monograma en el panel. */
+#sidebar{isolation:isolate}#sidebar>.brand,#sidebar>.nav,#sidebar>.sidebar-bottom{position:relative;z-index:1}
+#sidebar .sidebar-watermark{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;user-select:none}#sidebar .sidebar-watermark>span{position:absolute;right:-15px;bottom:-18px;writing-mode:vertical-rl;transform:rotate(180deg);font:800 clamp(64px,12vh,140px)/1 "DM Sans",Arial,sans-serif;font-size:clamp(64px,12dvh,140px);letter-spacing:-3px;white-space:nowrap;color:rgba(255,255,255,.065);pointer-events:none;user-select:none}
+#sidebar .brand{min-height:64px}#sidebar .brand strong{font-size:20px}#sidebar .brand span{font-size:11px}
+@media(max-width:760px){#sidebar .brand strong{font-size:18px}#sidebar .brand span{font-size:10px}}
+</style>

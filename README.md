@@ -13,9 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Nombre Samara University](descargas/SAMARA_UNIVERSITY_NOMBRE.zip).
-Acceso, panel, títulos, mensajes y encabezados generados con el nombre de la
-aplicación. [Instrucciones](SAMARA/SAMARA_UNIVERSITY_NOMBRE.txt).
+Última actualización: [Panel sin la S y fondo del nombre](descargas/SAMARA_UNIVERSITY_PANEL_SIN_S.zip).
+Diseño aprobado en blanco, negro y gris, con Samara University como fondo
+vertical sutil. [Instrucciones](SAMARA/PANEL_SIN_S.txt).
+
+Nombre de la aplicación: [archivos](descargas/SAMARA_UNIVERSITY_NOMBRE.zip) e
+[instrucciones](SAMARA/SAMARA_UNIVERSITY_NOMBRE.txt).
 
 Panel lateral: [archivos](descargas/SAMARA_PANEL_LATERAL_NEGRO.zip) e
 [instrucciones](SAMARA/PANEL_LATERAL_NEGRO.txt).
