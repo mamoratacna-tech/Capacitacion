@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Recepción DC-3, listados, SIRCE y evidencias](descargas/SAMARA_RECEPCION_LISTADOS_SIRCE_EVIDENCIAS.zip).
-El FT-RH-011 imprime el número de empleado; los listados se adaptan sin barra horizontal; SIRCE permite corregir documento e institución desde su ventana; el glosario y la impresión del programa comparten las evidencias. [Guía de actualización](SAMARA/RECEPCION_LISTADOS_SIRCE_EVIDENCIAS.txt).
+Última actualización: [Empleados activos e inactivos](descargas/SAMARA_EMPLEADOS_ACTIVOS_INACTIVOS.zip).
+Secciones de activos e inactivos por empresa, cantidad total de personal activo y lista con datos agrupados sin barras internas ni desplazamiento horizontal. [Guía de actualización](SAMARA/EMPLEADOS_ACTIVOS_INACTIVOS.txt) · [Ver diseño](descargas/EMPLEADOS_ACTIVOS_INACTIVOS.png).
 
 ## Ver el código
 

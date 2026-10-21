@@ -766,19 +766,26 @@ function normalizePersonNames(key, value) {
     }
     function employeeCompany(employee) {return norm(employee.company || employee.empresa || employee.entity || 'SAMARA')==='tacna'?'TACNA':'SAMARA';}
     function employeeRows(rows) {
-      return rows.map(e=>'<tr><td>'+escapeHtml(e.no)+'</td><td>'+escapeHtml(e.curp)+'</td><td>'+escapeHtml(String(e.names||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.paternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(String(e.maternal||'').toLocaleUpperCase('es-MX'))+'</td><td>'+escapeHtml(employeeCatalogLabel('studies',e.studies))+'</td><td>'+escapeHtml(employeeCatalogLabel('proofDocType',e.proofDocType))+'</td><td>'+escapeHtml(employeeCatalogLabel('institutionType',e.institutionType))+'</td><td>'+escapeHtml(e.position)+'</td><td>'+escapeHtml(e.department||'')+'</td><td>'+(employeeIsActive(e)?'Activo':'Inactivo')+'</td><td><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="12" class="empty-state">No hay empleados para esta búsqueda.</td></tr>';
+      const field=(label,value)=>'<div class="employee-line"><small>'+label+':</small> <span>'+escapeHtml(value||'—')+'</span></div>';
+      return rows.map(e=>'<tr><td data-label="No. empleado">'+escapeHtml(e.no)+'</td><td data-label="Empleado"><b>'+escapeHtml(fullEmployeeName(e).toLocaleUpperCase('es-MX'))+'</b>'+field('CURP',e.curp)+'</td><td data-label="Puesto y departamento"><b>'+escapeHtml(e.position)+'</b>'+field('Departamento',e.department)+field('Clasificación',e.classification)+'</td><td data-label="Datos SIRCE">'+field('Estudios',employeeCatalogLabel('studies',e.studies))+field('Documento',employeeCatalogLabel('proofDocType',e.proofDocType))+field('Institución',employeeCatalogLabel('institutionType',e.institutionType))+'</td><td data-label="Acciones"><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'" aria-label="Eliminar empleado">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="5" class="empty-state">No hay empleados en esta sección para la búsqueda actual.</td></tr>';
     }
     function renderPeople() {
       if(!$('#view-people').classList.contains('active'))return;
       $('#import-active-employees').hidden=activeEmployeeCompany!=='SAMARA';
       $('#employee-samara-pane').hidden=activeEmployeeCompany!=='SAMARA';$('#employee-tacna-pane').hidden=activeEmployeeCompany!=='TACNA';
       $$('[data-employee-company]').forEach(button=>{const active=button.dataset.employeeCompany===activeEmployeeCompany;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
-      const query=norm($('#people-search')?.value),status=$('#employee-status-filter').value;
-      const filtered=employees.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,e.department,employeeCompany(e)].join(' ')).includes(query)&&(status==='Todos'||(employeeIsActive(e)?'Activo':'Inactivo')===status));
-      $('#people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='SAMARA'));
-      $('#tacna-people-table').innerHTML=employeeRows(filtered.filter(e=>employeeCompany(e)==='TACNA'));
-      $('#employee-count').textContent=employees.filter(e=>employeeCompany(e)==='SAMARA').length+' empleados SAMARA';
-      $('#tacna-employee-count').textContent=employees.filter(e=>employeeCompany(e)==='TACNA').length+' empleados TACNA';
+      const query=norm($('#people-search')?.value);
+      for(const company of ['SAMARA','TACNA']){
+        const all=employees.filter(e=>employeeCompany(e)===company),filtered=all.filter(e=>norm([e.no,e.curp,fullEmployeeName(e),e.position,e.department,company].join(' ')).includes(query)),prefix=company==='SAMARA'?'':'tacna-';
+        for(const active of [true,false]){
+          const total=all.filter(e=>employeeIsActive(e)===active).length,rows=filtered.filter(e=>employeeIsActive(e)===active),section=prefix+(active?'active':'inactive')+'-employees',body=active?(company==='SAMARA'?'people-table':'tacna-people-table'):prefix+'inactive-people-table';
+          $('#'+body).innerHTML=employeeRows(rows);$('#'+section+'-count').textContent=query?rows.length+' de '+total+' empleados':total+' empleados';
+          if(query&&rows.length)$('#'+section).open=true;
+          if(company===activeEmployeeCompany){$('#employee-'+(active?'active':'inactive')+'-total').textContent=total;$('#employee-'+(active?'active':'inactive')+'-company').textContent='Personal '+(active?'activo':'inactivo')+' · '+company;}
+        }
+        $('#'+(company==='SAMARA'?'employee-count':'tacna-employee-count')).textContent=all.length+' empleados '+company+(query?' · '+filtered.length+' coinciden con la búsqueda':'');
+      }
+      window.SamaraAccess?.apply($('#view-people'));
     }
     async function persistCollections(updates) {
       for(const key of Object.keys(updates))if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key)&&JSON.stringify(normalizePersonNames(key,updates[key]))!==JSON.stringify(cloud.cache[key]))throw Error('No tienes permiso de edición en un módulo vinculado. Solicita que revisen tu perfil.');
@@ -1667,7 +1674,6 @@ function normalizePersonNames(key, value) {
       employeeForm.elements.department.value=names.find(name=>norm(name)===norm(selected))||(names.length===1?names[0]:'');
     }
     $('#employee-position').addEventListener('change',()=>fillEmployeeDepartmentOptions());
-    $('#employee-status-filter').addEventListener('change',renderPeople);
     function openEmployeeEditor(curp = '') {
       editingEmployeeCurp = curp;
       const employee = employees.find(item => norm(item.curp) === norm(curp));
@@ -2292,6 +2298,7 @@ function normalizePersonNames(key, value) {
       if (remove) deleteMatrixPosition(remove.dataset.deleteMatrixPosition);
     });
     $$('[data-employee-company]').forEach(button=>button.addEventListener('click',()=>{activeEmployeeCompany=button.dataset.employeeCompany;renderPeople();}));
+    $$('[data-employee-state]').forEach(button=>button.addEventListener('click',()=>{const prefix=activeEmployeeCompany==='SAMARA'?'':'tacna-';for(const state of ['active','inactive'])$('#'+prefix+state+'-employees').open=state===button.dataset.employeeState;}));
     $('#add-employee').addEventListener('click', () => openEmployeeEditor());
     $('#view-people').addEventListener('click', event => {
       const button = event.target.closest('[data-edit-employee]');

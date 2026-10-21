@@ -1,0 +1,33 @@
+SAMARA — EMPLEADOS ACTIVOS E INACTIVOS
+
+ACTUALIZAR
+Sustituye App.html, Index.html y Estilos.html por los archivos completos de
+ACTUALIZAR de este ZIP. Guarda y publica una NUEVA VERSIÓN de tu implementación.
+Conserva tus hojas, catálogos, propiedades, usuarios y los demás archivos actuales.
+
+USO
+1. Abre Personal y selecciona Empleados SAMARA o Empleados TACNA.
+2. Arriba verás la cantidad total de personal activo e inactivo de esa empresa.
+3. Pulsa Ver activos o Ver inactivos para abrir directamente esa sección.
+   También puedes abrir y cerrar cada sección desde su encabezado.
+4. El buscador funciona sobre ambas secciones. Las secciones con coincidencias
+   se abren para mostrar los resultados. El total activo de arriba corresponde
+   al padrón completo de la empresa, no solo al resultado de la búsqueda.
+5. La lista agrupa los datos en cinco columnas: número de empleado, nombre/ CURP,
+   puesto/departamento/clasificación, escolaridad/documento/institución y acciones.
+   Se siguen mostrando los datos completos y los botones de editar y eliminar.
+6. Se quitó la barra interna vertical y el desplazamiento horizontal. El padrón
+   crece con la página; usa el recorrido normal de la página para consultar todos
+   los registros. En pantallas pequeñas los renglones se acomodan como tarjetas.
+
+La separación y los contadores se calculan desde el estado existente de cada
+empleado. Esta actualización de diseño no cambia empleados a activos o bajas.
+La carga de activos de SAMARA conserva su revisión previa de cambios y no
+modifica el padrón TACNA.
+
+VERIFICADO
+Separación de activos/inactivos, cantidades por empresa independientes de la
+búsqueda, accesos directos, búsqueda en inactivos, edición de un empleado inactivo,
+conservación de campos y registros, ausencia de barras internas y de desbordamiento
+horizontal en 1440/1024/390 px, y regresión de la carga y actualización del padrón.
+La imagen incluida utiliza datos ficticios.
