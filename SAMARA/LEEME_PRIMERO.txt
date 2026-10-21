@@ -2,6 +2,8 @@ SAMARA — RESTAURAR LA ACTUALIZACIÓN CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
+RESUMEN INTEGRADO: consulta RESUMEN_INTEGRADO.txt. Crea el nuevo HTML Resumen.
+
 DISEÑO DE EMPLEADOS: consulta EMPLEADOS_DISENO_APROBADO.txt.
 
 NUEVO: Programa de cursos mensual, sin fecha ni horario, con avance desde
@@ -28,7 +30,7 @@ La hoja original Listados se conserva y su histórico se incorpora una vez
 sin duplicar IDs. No borres tus hojas de Google ni crees una base nueva.
 
 Los catálogos y plantillas ya existentes siguen siendo la fuente de referencia.
-El resumen visual conserva indicadores de demostración del diseño original.
+El Resumen calcula indicadores reales de personal SAMARA y del programa anual.
 La conexión real a tu cuenta y la lectura con Gemini requieren probarse allí.
 Las pruebas locales no equivalen a una publicación en Google.
 

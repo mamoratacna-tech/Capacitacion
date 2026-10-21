@@ -143,6 +143,7 @@ window.SamaraProgram=(()=>{
   $('program-detail-body').addEventListener('click',async event=>{const button=event.target.closest('[data-program-pending]');if(!button)return;const plan=plans.find(p=>p.id===button.dataset.programPending);if(!plan)return;button.disabled=true;try{await window.descargarArchivo(new Blob([csvText(pendingRows(api.context(),plan))],{type:'text/csv;charset=utf-8;'}),'PENDIENTES-'+plan.courseCode+'-'+plan.year+'.csv');}catch(error){api.toast('No se pudo descargar: '+error.message);}finally{button.disabled=false;}});
   $('program-print').addEventListener('click',()=>{const rows=selected();if(!rows.length)return api.toast('No hay cursos programados para imprimir.');api.print(printHtml(rows));});
  }
- return {init,render,population,coverage,printPopulation,periodDates,pendingRows,csvText,courseEvidence};
+ function focus(options={}){if(!api)return;Object.keys(years).forEach(year=>years[year]=false);if(options.year)years[options.year]=true;$('program-search').value=options.courseCode||'';$('program-month').value=options.courseCode?'':options.month||'';render();if(options.year)$('program-list').querySelector('[data-program-year="'+Number(options.year)+'"]')?.scrollIntoView({block:'start'});}
+ return {init,render,focus,population,coverage,printPopulation,periodDates,pendingRows,csvText,courseEvidence};
 })();
 </script>

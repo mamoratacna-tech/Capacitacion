@@ -499,9 +499,7 @@ function normalizePersonNames(key, value) {
     function fullInstructorName(item) {
       return String(item.type === 'Interno' ? item.employeeName || '' : item.externalName || '').toLocaleUpperCase('es-MX');
     }
-    function renderSessions() {
-      $('#sessions-table').innerHTML = courses.slice(0, 4).map(c => "<tr><td><div class=\"course-cell\"><span class=\"course-symbol\">".concat(c.symbol || '▤', "</span><div><div class=\"course-title\">").concat(escapeHtml(c.name), "</div><div class=\"course-sub\">").concat(escapeHtml(c.code), " · ").concat(escapeHtml(c.duration), " h</div></div></div></td><td><div class=\"date-main\">").concat(escapeHtml(c.date), "</div><div class=\"date-sub\">").concat(escapeHtml(c.time), "</div></td><td>").concat(escapeHtml(c.plant), "</td><td><span class=\"person-count\">Según matriz</span></td><td><div class=\"owner-cell\"><span class=\"mini-avatar\">").concat(initials(c.owner), "</span>").concat(escapeHtml(c.owner || 'Por asignar'), "</div></td><td><span class=\"status-pill ").concat(pillClass(c.status), "\">").concat(escapeHtml(c.status), "</span></td><td><button class=\"row-more\" data-edit-course=\"").concat(escapeHtml(c.code), "\" aria-label=\"Editar curso\">✎</button></td></tr>")).join('');
-    }
+    function renderSessions() {window.SamaraDashboard?.render();}
     function compareCourseCodes(a, b) {
       return String(a.code || '').trim().toUpperCase().localeCompare(String(b.code || '').trim().toUpperCase(), 'es', {
         numeric: true,
@@ -551,7 +549,6 @@ function normalizePersonNames(key, value) {
       const filtered = filteredGlossaryCourses();
       $('#course-grid').innerHTML = filtered.length ? "<div class=\"course-list-heading\"><span>Código / Curso</span><span>Instructor</span><span>Estado / SIRCE</span><span>Acciones</span></div>" + filtered.map(course => "<article class=\"course-list-row\"><div class=\"course-list-name\"><small>".concat(escapeHtml(course.code), "</small><h3>").concat(escapeHtml(course.name), "</h3><span>").concat(escapeHtml(course.duration), " h · ").concat(escapeHtml(course.modality || 'Por definir'), "</span></div><div class=\"course-list-instructor\">").concat(escapeHtml(course.instructor || 'Por asignar'), "</div><div class=\"course-list-status\"><span class=\"tag ").concat(course.activeStatus === 'Inactivo' ? 'soft' : 'green', "\">").concat(escapeHtml(course.activeStatus || 'Activo'), "</span><small>").concat(course.sirce === 'Sí' ? 'SIRCE' : 'Sin SIRCE', "</small></div><div class=\"course-list-actions\"><button type=\"button\" class=\"course-action edit\" data-edit-course=\"").concat(escapeHtml(course.code), "\" aria-label=\"Editar ").concat(escapeHtml(course.code), "\" title=\"Editar curso\">✎</button><button type=\"button\" class=\"course-action delete\" data-delete-course=\"").concat(escapeHtml(course.code), "\" aria-label=\"Eliminar ").concat(escapeHtml(course.code), "\" title=\"Eliminar curso\">×</button></div></article>")).join('') : '<article class="panel empty-state">No encontramos cursos con esos filtros.</article>';
       $('#course-count').textContent = courses.length;
-      $('#active-course-value').textContent = courses.length;
     }
     function syncCourseCatalog() {
       courses = loadStore('samara.courses.v2', courses);
@@ -1285,6 +1282,7 @@ function normalizePersonNames(key, value) {
       if(name==='users'&&window.SamaraAccess?.user?.role!=='admin'){toast('Solo la administradora puede gestionar usuarios.');return;}
       if(name==='users')window.SamaraAccess?.loadUsers();
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
+      if(name==='dashboard')window.SamaraDashboard.render();
       if(name==='program')window.SamaraProgram.render();
       if(name==='people')renderPeople();
       if(name==='positions')renderPositions();
@@ -2276,17 +2274,12 @@ function normalizePersonNames(key, value) {
     $('#matrix-sirce').addEventListener('change', renderMatrix);
     $('#people-search').addEventListener('input', renderPeople);
     $('#position-search').addEventListener('input', renderPositions);
-    $('#new-course').addEventListener('click', () => openCourseEditor());
     $('#new-course-2').addEventListener('click', () => openCourseEditor());
     $('#course-grid').addEventListener('click', event => {
       const edit = event.target.closest('[data-edit-course]'),
         remove = event.target.closest('[data-delete-course]');
       if (edit) openCourseEditor(edit.dataset.editCourse);
       if (remove) deleteCourse(remove.dataset.deleteCourse);
-    });
-    $('#sessions-table').addEventListener('click', event => {
-      const button = event.target.closest('[data-edit-course]');
-      if (button) openCourseEditor(button.dataset.editCourse);
     });
     $('#matrix-table').addEventListener('click', event => {
       const button = event.target.closest('[data-edit-matrix]'),
@@ -2396,16 +2389,6 @@ function normalizePersonNames(key, value) {
       const button = event.target.closest('[data-edit-position]');
       if (button) openPositionEditor(button.dataset.editPosition);
     });
-    $('#plant-filter').addEventListener('change', event => {
-      const plant = event.target.value;
-      $('#plant-label').textContent = plant === 'Todas' ? 'Todas las plantas' : plant;
-      toast(plant === 'Todas' ? 'Mostrando ambas plantas.' : "Filtro aplicado: ".concat(plant, "."));
-    });
-    $$('.segmented button').forEach(button => button.addEventListener('click', () => {
-      $$('.segmented button').forEach(item => item.classList.toggle('selected', item === button));
-      toast("Vista de ".concat(button.dataset.chart === 'estado' ? 'estado' : 'avance', " actualizada."));
-    }));
-    bindExport('#export-btn', 'resumen-capacitacion.csv', ['Indicador', 'Valor'], () => [['Empleados en padrón', employees.length], ['Cursos en catálogo', courses.length], ['Puestos internos', positions.length], ['Matriz de puestos', matrixPositions.length]]);
     function glossaryPrintHtml(filtered) {
       const headers = ['No', 'Código', 'Nombre del curso', 'Duración', 'Instructor', 'Modalidad', 'Clasificación Instructor', 'Validez Oficial', 'Tipo de curso o clasificación', 'Frecuencia', 'Objetivo al que va dirigido según la DC2', 'No. EC (si aplica)', 'Revisión', 'Área temática del curso (DC3)', 'SIRCE'];
       const widths = [1.5, 6, 19, 3.5, 11, 4.5, 4.5, 4, 5.5, 6, 12, 4.5, 3, 10.5, 4.5];
@@ -2847,7 +2830,7 @@ function normalizePersonNames(key, value) {
     const atPill = (cl, t) => "<span class=\"status-pill att-".concat(cl, "\">").concat(atE(t), "</span>");
     function atFiltrados() {
       const q = atNorm(AT.q);
-      return attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).filter(x => (AT.sirce === 'Todos' || (AT.sirce === 'Sí' ? atSirce(x) : !atSirce(x))) && (AT.estado === 'Todos' || x.estado === AT.estado) && (!AT.desde || String(x.fecha) >= AT.desde) && (!AT.hasta || String(x.fecha) <= AT.hasta) && (!q || atNorm([x.cursoNombre, x.cursoCodigo, x.listaCurso, x.encabezado?.instructor, x.origen].join(' ')).includes(q)));
+      return attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).filter(x => (!AT.scopeSamara||window.SamaraDashboard.belongsToSamara(x,employees)) && (AT.sirce === 'Todos' || (AT.sirce === 'Sí' ? atSirce(x) : !atSirce(x))) && (AT.estado === 'Todos' || (AT.estado==='Por revisar'?x.estado!=='Validada':x.estado === AT.estado)) && (!AT.desde || String(x.fecha) >= AT.desde) && (!AT.hasta || String(x.fecha) <= AT.hasta) && (!q || atNorm([x.cursoNombre, x.cursoCodigo, x.listaCurso, x.encabezado?.instructor, x.origen].join(' ')).includes(q)));
     }
     function atEdDe(s) {
       return {
@@ -2923,7 +2906,8 @@ function normalizePersonNames(key, value) {
       }
       const all = attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
         l = atFiltrados();
-      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button type=\"button\" class=\"button outline\" data-sirce-export-listados>↧ Exportar listados de asistencia</button><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Carga el personal en el módulo Empleados para validar a los asistentes.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button><button type=\"button\" class=\"button outline\" data-sirce-export-zip>↧ Exportar listados de cursos para SIRCE</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? atGroupedListRows(l) : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
+      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button type=\"button\" class=\"button outline\" data-sirce-export-listados>↧ Exportar listados de asistencia</button><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Carga el personal en el módulo Empleados para validar a los asistentes.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada', 'Por revisar'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button><button type=\"button\" class=\"button outline\" data-sirce-export-zip>↧ Exportar listados de cursos para SIRCE</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? atGroupedListRows(l) : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
+      if(AT.scopeSamara)root.querySelector('.catalog-toolbar').insertAdjacentHTML('beforebegin','<div class="notice-box compact"><b>Vista de Resumen: personal SAMARA</b><p>Los filtros muestran los listados del periodo con personal SAMARA o asistentes pendientes de identificar. Usa Ver todos para quitar esta vista.</p></div>');
       const headings=[...root.querySelectorAll('thead th')].map(th=>th.textContent);root.querySelectorAll('tbody tr:not(.att-year-heading)').forEach(row=>[...row.children].forEach((cell,index)=>cell.dataset.label=headings[index]||''));
     }
     function atVistaEditor() {
@@ -3831,7 +3815,7 @@ function normalizePersonNames(key, value) {
       importar: (d, el) => atImportar(el),
       year: (d,el) => {AT.years[d.year]=el.getAttribute('aria-expanded')!=='true';renderAttendance();},
       vertodos: () => {
-        AT.years={};
+        AT.years={};AT.scopeSamara=false;
         AT.q = '';
         AT.sirce = 'Todos';
         AT.estado = 'Todos';
@@ -4029,6 +4013,16 @@ function normalizePersonNames(key, value) {
       atPintar();
     });
     window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
+    window.SamaraDashboard.init({context:()=>({courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)}),validateList:ssResult,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),navigate:(module,options={})=>{
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can(module)){toast('No tienes acceso a este módulo.');return;}
+      if(module==='people'){activeEmployeeCompany='SAMARA';$('#people-search').value=options.search||'';}
+      if(module==='courses')$('#course-search').value=options.courseCode||'';
+      if(module==='attendance'&&!AT.ed){AT.scopeSamara=true;AT.q='';AT.sirce='Todos';AT.estado=options.review?'Por revisar':'Todos';AT.desde=options.start||'';AT.hasta=options.end||'';}
+      showView(module);
+      if(module==='program')window.SamaraProgram.focus(options);
+      if(module==='attendance'&&options.listId&&!AT.ed){ssOpen(options.listId);if(options.fixPeople){const list=attendance.find(row=>row.id===options.listId);if(list){ssPersonFixes(ssResult(list));$('#sirce-result').textContent='Completa los datos del expediente antes de descargar.';}}}
+    }});
+    window.SamaraDashboard.render();
     renderAttendance();
     if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
     else if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');

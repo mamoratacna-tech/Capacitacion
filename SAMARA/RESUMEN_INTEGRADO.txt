@@ -1,0 +1,61 @@
+SAMARA — RESUMEN INTEGRADO
+
+INSTALACIÓN (archivos completos, no fragmentos)
+1. Abre tu proyecto EXISTENTE de Google Apps Script.
+2. Reemplaza COMPLETOS App.html, Index.html, Programa.html, Code.gs y
+   UsuariosServidor.gs con los cinco archivos de ACTUALIZAR de este ZIP.
+3. Crea un archivo de tipo HTML llamado Resumen (sin escribir .html)
+   y pega el contenido completo de ACTUALIZAR/Resumen.html.
+   Si ya existe, reemplaza su contenido.
+4. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación e inicia sesión.
+
+Conserva tus otros archivos, catálogos, usuarios, contraseñas, hojas y
+propiedades DB_ID, SIRCE_ID y claves. No crees una base de datos nueva.
+
+QUÉ MUESTRA
+- Personal activo de SAMARA, sin incluir personal TACNA.
+- Porcentaje total anual: capacitaciones persona-curso validadas divididas
+  entre las requeridas por el programa anual, ponderado por población.
+  Una persona cuenta una vez por curso y periodo, aunque repita asistencia.
+  Solo cuentan listas validadas, con asistente validado y firma.
+  La población objetivo es el personal activo ACTUAL según puesto,
+  departamento, clasificación D/I y aplicaciones de la matriz; los cursos
+  de comisión/brigada usan la población configurada en el programa.
+  No es un promedio simple de porcentajes ni un histórico de plantilla.
+- Cursos programados, pendientes en periodo y vencidos con gente pendiente.
+  Un curso vence al terminar el último mes que seleccionaste para concluirlo.
+  Sin población confirmada se pide revisar: no se inventa un avance de 100%.
+- Listados por revisar, claves SIRCE pendientes y datos personales incompletos.
+- Cursos e instructores autorizados del catálogo actual.
+- Nombramientos CMCAP vigentes, por vencer en 30 días y vencidos; estado del
+  registro del representante legal, sin asignarle una vigencia inventada.
+
+FILTROS Y FECHA DE CORTE
+El año define el programa anual. El mes filtra la tabla y las asistencias.
+El porcentaje sigue siendo anual: el denominador incluye el programa anual
+completo y el numerador acumula sus asistencias hasta la fecha de corte.
+Para un mes pasado, el corte es su último día; para el mes actual o futuro,
+se usa como máximo el día actual en America/Tijuana. No cuenta asistencia
+con fecha posterior al corte. Se muestra explícitamente esta fecha.
+Todos los meses muestra los cursos del año; pendientes incluye también
+los futuros que todavía tienen población por capacitar.
+Sin requerimientos configurados, el porcentaje aparece como —.
+
+Los enlaces llevan al módulo correspondiente. Los listados abiertos desde
+Resumen excluyen los que solo tienen asistentes TACNA; Ver todos quita esta
+vista. Listas mixtas o con asistentes aún sin identificar se conservan para
+revisión. Sin clave SIRCE y con datos incompletos pueden coincidir.
+Las correcciones personales requieren permiso para editar Personal y una
+captura explícita; consultar el Resumen no guarda cambios.
+
+Los permisos de Resumen permiten leer sus referencias para calcular cifras,
+pero no conceden entrada ni edición de los otros módulos. Se respetan los
+permisos individuales de Usuarios y la validación del servidor.
+Los iconos del menú usan la misma familia de SVG, sin librerías adicionales.
+
+VERIFICACIÓN
+99 pruebas automáticas de lógica y pruebas de navegador: métricas, permisos,
+programa, empleados, enlaces filtrados y diseño sin desbordamiento móvil.
+La muestra de imagen usa datos ficticios de prueba; la aplicación calcula
+los datos de tu base. La publicación y conexión reales se hacen en tu cuenta.

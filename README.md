@@ -13,8 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Diseño aprobado de Empleados](descargas/SAMARA_EMPLEADOS_DISENO_APROBADO.zip).
-Columnas originales, activos arriba e inactivos abajo, contador activo pequeño junto al título y dos leyendas sobre las cargas, sin barra horizontal. [Instrucciones](SAMARA/EMPLEADOS_DISENO_APROBADO.txt).
+Última actualización: [Resumen integrado e iconos del menú](descargas/SAMARA_RESUMEN_INTEGRADO.zip).
+Avance anual ponderado, personal activo SAMARA, cursos pendientes y vencidos,
+listas por revisar y accesos según permisos. [Instrucciones](SAMARA/RESUMEN_INTEGRADO.txt).
+
+Diseño de Empleados: [archivos](descargas/SAMARA_EMPLEADOS_DISENO_APROBADO.zip) e
+[instrucciones](SAMARA/EMPLEADOS_DISENO_APROBADO.txt).
 
 ## Ver el código
 
@@ -41,4 +45,4 @@ Se probaron localmente CMCAP, recuperación del histórico sin duplicados,
 filtros, captura manual, guardado y recarga con Google simulado, generación del
 PDF de asistencia y cola de dos imágenes con lectura simulada. La conexión
 real con Google Sheets y Gemini debe comprobarse en la cuenta propietaria.
-Los indicadores estáticos del resumen conservan datos de demostración.
+El Resumen utiliza datos reales; se verificó con 99 pruebas de lógica y pruebas de navegador de métricas, permisos, programa y personal.
