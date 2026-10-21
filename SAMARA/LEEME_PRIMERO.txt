@@ -2,6 +2,8 @@ SAMARA — RESTAURAR LA ACTUALIZACIÓN CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
+REPORTES INTEGRADOS: consulta REPORTES_INTEGRADOS.txt. Crea el nuevo HTML Reportes.
+
 RESUMEN INTEGRADO: consulta RESUMEN_INTEGRADO.txt. Crea el nuevo HTML Resumen.
 
 DISEÑO DE EMPLEADOS: consulta EMPLEADOS_DISENO_APROBADO.txt.

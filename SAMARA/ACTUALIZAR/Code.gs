@@ -12,7 +12,7 @@ function doGet(e){
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
 function include(nombre){
   if(!authRendering_)throw Error('Inicia sesión para abrir la aplicación.');
-  if(!['Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
+  if(!['Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
   return HtmlService.createTemplateFromFile(nombre).getRawContent();
 }
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.

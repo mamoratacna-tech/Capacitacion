@@ -1284,6 +1284,7 @@ function normalizePersonNames(key, value) {
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
       if(name==='dashboard')window.SamaraDashboard.render();
       if(name==='program')window.SamaraProgram.render();
+      if(name==='reports')window.SamaraReports.render(true);
       if(name==='people')renderPeople();
       if(name==='positions')renderPositions();
       if(name==='instructors')renderInstructors();
@@ -4022,6 +4023,7 @@ function normalizePersonNames(key, value) {
       if(module==='program')window.SamaraProgram.focus(options);
       if(module==='attendance'&&options.listId&&!AT.ed){ssOpen(options.listId);if(options.fixPeople){const list=attendance.find(row=>row.id===options.listId);if(list){ssPersonFixes(ssResult(list));$('#sirce-result').textContent='Completa los datos del expediente antes de descargar.';}}}
     }});
+    window.SamaraReports.init({context:()=>{const base={courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)};return {...base,instructorAuthorizations:atIns().flatMap(i=>{const record=instructors.find(r=>r.id===i.id);return courses.filter(c=>atAutorizado(i,c.code)).map(c=>{const authorization=(record.authorizedCourses||[]).find(row=>row.courseCode===c.code||atNorm(row.name)===atNorm(c.name));return {id:i.id,name:i.nombre,type:i.tipo,reference:i.tipo==='Interno'?(record.employeeNo||''):i.rfc,department:record.employeeDepartment||record.department||(i.tipo==='Externo'?'Proveedor externo':''),code:c.code,course:c.name,certificationDate:authorization?instructorCertificationDate(authorization,record):''};});})};},validateList:ssResult,can:()=>!window.SamaraAccess?.can||window.SamaraAccess.can('reports'),print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');}});
     window.SamaraDashboard.render();
     renderAttendance();
     if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}

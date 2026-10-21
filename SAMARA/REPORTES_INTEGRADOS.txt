@@ -1,0 +1,110 @@
+SAMARA — REPORTES INTEGRADOS
+
+INSTALAR EN TU PROYECTO EXISTENTE
+1. Descomprime el ZIP. Abre tu proyecto en Google Apps Script.
+2. Reemplaza COMPLETOS los archivos de ACTUALIZAR:
+   App.html, Index.html, Programa.html, Resumen.html,
+   Code.gs y UsuariosServidor.gs.
+3. Crea un archivo de tipo HTML llamado Reportes (sin escribir .html).
+   Pega el contenido completo de ACTUALIZAR/Reportes.html.
+   Si ya existe, reemplázalo. Si no tienes Resumen o Programa, créalos
+   también como HTML y usa los archivos incluidos.
+4. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga e inicia sesión.
+
+Conserva tus otros archivos, catálogos, hojas de Google, usuarios,
+contraseñas y propiedades DB_ID, SIRCE_ID y claves. No crees otra base.
+
+CÓMO USARLO
+Elige uno de los seis reportes. Ajusta año, mes y los filtros disponibles.
+La búsqueda acepta nombre, número de empleado o cualquier texto de la tabla.
+La pantalla muestra 25 filas por página con Anterior y Siguiente, sin barra
+horizontal. En pantalla pequeña cada fila se acomoda verticalmente.
+Los totales se recalculan con los filtros y la búsqueda.
+
+Exportar CSV descarga TODAS las filas filtradas, no solo la página visible.
+Tiene encabezados, acentos y protección de celdas que parecen fórmulas.
+Imprimir PDF abre la impresión del navegador: elige Guardar como PDF.
+Incluye todas las filas filtradas, título, filtros y fecha de corte, en A4
+horizontal con encabezados de tabla repetidos. No es un formato oficial
+nuevo: las listas, DC3 y recepción conservan sus formatos en Asistencia.
+La ficha técnica sigue disponible al pie de Reportes.
+
+LOS SEIS REPORTES
+1. AVANCE DE CAPACITACIÓN
+   Cursos programados y activos del año, meses, población objetivo,
+   capacitados, pendientes, porcentaje y estado: concluido, en periodo,
+   programado futuro, vencido o revisar población.
+   Usa exactamente el cálculo del Resumen y Programa: personal activo
+   SAMARA, puesto, departamento, clasificación D/I y matriz. Comisiones y
+   brigadas usan los integrantes configurados en su programación.
+   Cada persona se acredita una vez por curso y periodo, solo con lista
+   Validada, asistente validado y firma. El total se pondera por personas-
+   curso requeridas, no por promedio de porcentajes.
+   Todos los meses coincide con el avance anual de Resumen; al elegir mes,
+   Reportes calcula el total de los cursos cuyo periodo incluye ese mes.
+   En ambos casos acumula los meses del periodo hasta la fecha de corte.
+
+2. PERSONAL PENDIENTE DE CAPACITAR
+   Número, nombre, puesto, departamento, D/I, código, curso, periodo y
+   situación. Usa los cursos programados del año y su matriz. Solo activos
+   SAMARA. Una persona puede aparecer varias veces si debe varios cursos;
+   el contador de personas evita duplicarla. Asistencia por validar sigue
+   pendiente. Útil para compartir el CSV con responsables de capacitación.
+
+3. HISTORIAL POR EMPLEADO
+   Eventos validados con firma, fecha, horas e instructor, conservando las
+   repeticiones de un mismo curso en distintas listas. Permite consultar
+   activos, inactivos o todos los empleados SAMARA.
+   Muestra también requisitos pendientes: usa el periodo del programa.
+   Para cursos activos sin programación, compara la matriz con todo el
+   historial validado hasta el corte, sin exigir una repetición anual
+   no programada. No asigna pendientes a bajas.
+   Las filas pendientes no representan una capacitación realizada ni horas
+   impartidas. Las filas de eventos respetan el año y mes elegidos.
+   Con planta seleccionada solo muestra eventos: no se deduce una planta
+   de un empleado a partir de un dato de asistencia.
+
+4. CONTROL DE EVIDENCIAS Y SIRCE
+   Lista, fecha/planta, estado, asistentes SAMARA, elegibles para DC3,
+   clave SIRCE, incidencias de validación y formatos disponibles.
+   Disponible no significa emitido, entregado ni recibido con firma.
+   La clave pendiente y otras incidencias pueden coincidir.
+   Los conteos de personal respetan departamento/puesto; las incidencias
+   SIRCE corresponden a la lista completa para no ocultar impedimentos.
+   Se conservan borradores vacíos y asistentes sin identificar para revisión.
+   Las listas exclusivas de TACNA no se incluyen.
+
+5. INSTRUCTORES AUTORIZADOS
+   Nombre, tipo interno/externo, número/RFC, departamento, código, curso
+   y fecha de certificación específica. Usa las autorizaciones alineadas
+   entre Instructores y Glosario. El año/mes filtra la fecha de certificación;
+   las fechas pendientes de completar siempre se mantienen visibles.
+   La carta se imprime desde Instructores; hay que tener sus firmantes
+   CMCAP vigentes a la fecha de certificación.
+
+6. VIGENCIAS DE CMCAP
+   Integrante, cargo, inicio, vencimiento, días y estado al corte. Incluye
+   nombramientos anteriores y futuros. Por vencer significa hasta 30 días.
+   Muestra el representante legal registrado, sin inventarle un vencimiento.
+
+FECHA DE CORTE Y PERMISOS
+El corte es el último día del mes/año elegido, limitado al día actual en
+America/Tijuana. No acredita asistencias posteriores. Los filtros de planta
+solo aparecen donde hay datos reales de planta (Historial y Evidencias).
+Los departamentos consideran sus nombres actualizados y alias existentes.
+
+El permiso Reportes de Usuarios permite consultar estas referencias sin
+conceder edición ni acceso a los otros módulos. Se puede exportar con
+Solo consulta. No se guardan registros ni se envían notificaciones desde
+Reportes. Cada impresión usa lo consultado en ese momento; la población
+objetivo corresponde a la plantilla activa actual, no a una plantilla histórica.
+
+VERIFICACIÓN
+109 pruebas de lógica aprobadas y pruebas de navegador de Reportes,
+Resumen y permisos. Se probó la descarga de 96 pendientes sin limitarse a
+la página visible y un PDF multipágina con encabezados repetidos, además
+del diseño sin desbordamiento horizontal en escritorio y móvil.
+MUESTRA_REPORTES.png y MUESTRA_PENDIENTES.pdf usan datos ficticios de prueba.
+La aplicación calcula con tus registros. Esta entrega no publica por sí sola
+una nueva versión en tu cuenta de Google; realiza los pasos de instalación.
