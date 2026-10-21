@@ -27,8 +27,9 @@ USO
 7. El filtro de mes encuentra los cursos programados en ese mes, pero conserva
    su avance acumulado y todo su periodo. No reinicia el contador.
 8. Ver personas y listas muestra el seguimiento del periodo completo.
-9. Imprimir / PDF genera FT-RH-012 adaptado a planeación mensual, A4 horizontal,
-   separado por año. Cada celda muestra el acumulado hasta ese mes programado.
+9. Imprimir / PDF genera el FT-RH-012 adjunto, A4 horizontal, separado por año,
+   con meses marcados, población por puestos activos, evidencias, fechas, SIRCE
+   y comentarios. El avance acumulado se consulta en pantalla.
    El botón Imprimir año del encabezado imprime solo ese año. La impresión
    general incluye todos los años filtrados, aunque estén contraídos.
 10. En Usuarios, RH puede otorgar Programa de cursos: Sin acceso, Solo consulta
@@ -68,3 +69,8 @@ SAMARA, D/I, validación y firmas, años expandibles, impresión general y por a
 modal sin desplazamiento en escritorio y sin desbordamiento móvil, búsqueda
 por nombre/código/acentos y coincidencias cercanas, teclado, datos predeterminados,
 persistencia, permisos y eliminación sin afectar listas de asistencia.
+
+ACTUALIZACIÓN DE FORMATO Y ASISTENCIA
+Consulta PROGRAMA_FORMATO_ASISTENCIA.txt para el FT-RH-012, evidencia desde el
+glosario, CSV de pendientes, captura con foto/manual, instructores autorizados
+y planta obligatoria.

@@ -1,0 +1,70 @@
+SAMARA — FT-RH-012, CAPTURA DE ASISTENCIA Y CSV DE PENDIENTES
+
+INSTALACIÓN
+Los archivos de ACTUALIZAR están completos. Sustituye App.html, Index.html,
+Programa.html, Code.gs, Usuarios.html y UsuariosServidor.gs en tu proyecto
+existente. Si no existe Programa, créalo como archivo HTML llamado Programa.
+Guarda e implementa una NUEVA VERSIÓN. Conserva tus DatosIniciales, CatalogoSIRCE,
+hojas de datos, propiedades y configuración de usuarios actuales.
+
+1. FORMATO DEL PROGRAMA
+La impresión sigue el FT-RH-012 proporcionado: encabezado negro PROGRAMA ANUAL
+DE CAPACITACIÓN, formato/revisión, calendario y objetivo, código, los 12 meses
+verticales, población, evidencia de asistencia, evidencia de competencia,
+fecha de inicio, fecha fin, SIRCE y comentarios. Papel A4 horizontal; las hojas
+adicionales repiten encabezados y tienen numeración real de páginas.
+
+Los meses se marcan con palomita. El avance acumulado permanece en pantalla;
+la impresión usa las columnas del formato adjunto, sin sustituirlas por contadores.
+Las fechas se generan desde el primer día del primer mes seleccionado hasta
+el último día real del último mes; no se piden fechas ni horarios adicionales.
+
+La población impresa procede de los puestos activos asignados al curso, no
+solo de los empleados que ocupan esos puestos. Incluye puestos activos vacantes
+y omite los inactivos. Si aplica a todos los puestos activos, indica TODOS LOS
+PUESTOS. Los cursos de comisiones o brigadas indican su población específica.
+
+SIRCE y evidencias vienen del glosario. En editar/agregar curso ahora puedes
+capturar Evidencia de asistencia y Evidencia de competencia. Se conservan los
+datos de evidencia que ya existan en course.program. Si no se ha especificado
+competencia se muestra Por definir; no se inventa una evaluación.
+
+2. NUEVA LISTA
+La primera ventana tiene dos opciones explícitas:
+- Capturar con foto: habilita la carga de fotos o PDF y conserva la lectura
+  existente, los borradores y la revisión.
+- Capturar lista manual: abre directamente la captura sin archivo.
+
+Al seleccionar un curso, los datos predeterminados siguen viniendo del glosario.
+Las sugerencias de instructor solo incluyen personas/instituciones autorizadas
+para ese curso. Un externo sin cursos autorizados ya no se considera autorizado
+para cualquier curso. Las asignaciones explícitas del glosario y de instructores
+son válidas; para registros antiguos por nombre, debe coincidir el nombre exacto
+normalizado del curso, no un nombre parecido de otro curso.
+
+3. PLANTA OBLIGATORIA
+Planta * permite Planta 1 o Planta 2. Si falta, el campo y un mensaje aparecen
+en rojo y Guardar listado queda bloqueado. Al elegirla desaparece el error.
+La planta que el glosario tenga predeterminada se conserva como valor válido.
+El establecimiento SIRCE correspondiente se actualiza con la selección.
+Los borradores leídos de fotos pueden conservar datos incompletos para revisión;
+no se pueden confirmar desde el editor sin completar la planta.
+
+4. CSV DE PENDIENTES
+En Programa de cursos > Ver personas y listas está Exportar pendientes CSV.
+Incluye año, meses, código y nombre del curso, número y nombre del empleado,
+puesto, departamento, clasificación y seguimiento.
+
+La población sigue siendo el personal activo actual de SAMARA al que aplica el
+curso según la matriz. El archivo omite a quienes ya cuentan con asistencia
+validada en cualquier mes seleccionado del periodo, sin duplicar personas.
+Incluye por separado el estado Asistencia por revisar para distinguir esos casos
+de quienes no tienen evidencia de asistencia. Si no hay pendientes, descarga
+solo los encabezados. El archivo usa UTF-8 para conservar acentos y comillas.
+
+COMPROBACIONES
+89 pruebas unitarias, pruebas de navegador de programa/CSV/FT-RH-012, impresión
+multiplágina con 65 cursos sin pérdida de renglones, dos modos de captura,
+restricción de instructores, bloqueo de guardado sin planta, guardado con planta
+y regresión de lectura de fotos/PDF, predeterminados y confirmaciones de borrado.
+Los ejemplos incluidos usan datos ficticios.

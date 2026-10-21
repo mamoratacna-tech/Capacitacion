@@ -1498,6 +1498,8 @@ function normalizePersonNames(key, value) {
       courseForm.elements.emergencyBrigadesOnly.checked = Boolean(c?.emergencyBrigadesOnly);
       courseForm.elements.frequency.value = c?.frequency?.includes('anual') ? '1 vez anual' : c?.frequency?.includes('ingreso') ? '1era vez ingreso' : '';
       courseForm.elements.ec.value = c?.ec === 'Sí' ? 'Sí' : 'No';
+      courseForm.elements.attendanceEvidence.value=c?.attendanceEvidence||c?.program?.attendance||'Listado de asistencia';
+      courseForm.elements.competenceEvidence.value=c?.competenceEvidence||c?.program?.competence||'';
       renderCoursePositionChecklist([...selectedCoursePositions]);
       $('#course-position-search').value = '';
       $('#selected-position-count').textContent = "".concat(selectedCoursePositions.size, " seleccionados");
@@ -1595,6 +1597,8 @@ function normalizePersonNames(key, value) {
         objective: objectiveLabel(form.get('objectiveCode')),
         objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,
         applicablePositions,
+        attendanceEvidence: String(form.get('attendanceEvidence')||'').trim(),
+        competenceEvidence: String(form.get('competenceEvidence')||'').trim(),
         cmcapOnly: courseForm.elements.cmcapOnly.checked,
         safetyCommissionOnly: courseForm.elements.safetyCommissionOnly.checked,
         emergencyBrigadesOnly: courseForm.elements.emergencyBrigadesOnly.checked,
@@ -2622,10 +2626,9 @@ function normalizePersonNames(key, value) {
     })).filter(i => i.nombre).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     const atI = id => atIns().find(i => i.id === id);
     function atAutorizado(i, cod) {
-      if (!i) return false;
-      if (i.tipo === 'Externo' && !i.cursos.length && !i.nombres.length) return true;
-      const c = atC(cod);
-      return i.cursos.includes(cod) || (c ? i.nombres.some(n => atSim(n, c.nombre) >= 0.7 && atSim(c.nombre, n) >= 0.7) : false);
+      if (!i || !cod) return false;
+      const course=courses.find(row=>row.code===cod),c=atC(cod);
+      return i.cursos.includes(cod)||(course?.instructorIds||[course?.instructorId].filter(Boolean)).includes(i.id)||(c?i.nombres.some(name=>atNorm(name)===atNorm(c.nombre)):false);
     }
     function atBuscarIns(n) {
       if (!n) return null;
@@ -2677,7 +2680,7 @@ function normalizePersonNames(key, value) {
         i
       };
     }
-    const AT_H = [['duracion', 'Duración (horas)'], ['clasificacion', 'Clasificación del instructor'], ['registro', 'Registro STPS / Estándar'], ['rfc', 'RFC instructor / institución'], ['area', 'Área temática DC-3'], ['objetivo', 'Objetivo DC-2'], ['modalidad', 'Modalidad'], ['lugar', 'Lugar']];
+    const AT_H = [['duracion', 'Duración (horas)'], ['clasificacion', 'Clasificación del instructor'], ['registro', 'Registro STPS / Estándar'], ['rfc', 'RFC instructor / institución'], ['area', 'Área temática DC-3'], ['objetivo', 'Objetivo DC-2'], ['modalidad', 'Modalidad'], ['lugar', 'Planta *']];
     function atCatVal(k, c) {
       if (!c) return null;
       if (k === 'duracion') return String(parseFloat(c.duracion) || '');
@@ -2698,8 +2701,8 @@ function normalizePersonNames(key, value) {
       for(const key of ['duracion','clasificacion','area','objetivo','modalidad'])enc[key]=atCatVal(key,normalized)??'';
       if(enc.modalidad)enc.modalidad=AT_MODS.find(value=>atNorm(value)===atNorm(enc.modalidad).replace('en linea','online'))||enc.modalidad;
       const ids=course?.instructorIds||[course?.instructorId].filter(Boolean);
-      let linked=atIns().filter(item=>ids.includes(item.id));
-      if(!linked.length&&course?.instructor){linked=atIns().filter(item=>atNorm(item.nombre)===atNorm(course.instructor));}
+      let linked=atIns().filter(item=>ids.includes(item.id)&&atAutorizado(item,ed.cursoCodigo));
+      if(!linked.length)linked=atIns().filter(item=>atAutorizado(item,ed.cursoCodigo));
       if(linked.length===1){const instructor=linked[0];enc.instructorId=instructor.id;enc.instructor=instructor.nombre;enc.clasificacion=instructor.tipo||enc.clasificacion;enc.registro=instructor.registro||'';enc.rfc=instructor.tipo==='Interno'?'':instructor.rfc||'';}
       if(AT_LUG.includes(course?.plant))enc.lugar=course.plant;
       if(fillOnly){
@@ -2743,6 +2746,7 @@ function normalizePersonNames(key, value) {
       const e = AT.ed,
         b = [];
       if (!e.cursoCodigo) b.push('Elige el curso.');
+      if(!AT_LUG.includes(e.enc.lugar))b.push('Selecciona la planta (Planta 1 o Planta 2).');
       const s = atEstadoIns();
       if (s.t !== 'ok') b.push(s.msg);
       const nx = e.asistentes.filter(a => !AT_P[a.numero]).length;
@@ -2759,7 +2763,7 @@ function normalizePersonNames(key, value) {
     const atCb = (kind, i, val, ph) => "<div class=\"att-cb\"><input class=\"att-cbi\" data-cb=\"".concat(kind, "\" data-i=\"").concat(i, "\" value=\"").concat(atE(val), "\" placeholder=\"").concat(atE(ph), "\" autocomplete=\"off\" role=\"combobox\" aria-expanded=\"false\"><div class=\"att-cbl\" hidden role=\"listbox\"></div></div>");
     function atCbOps(kind, q) {
       q = q.trim();
-      if (kind === 'ins') return atIns().map(i => ({
+      if (kind === 'ins') return atIns().filter(i=>atAutorizado(i,AT.ed?.cursoCodigo)).map(i => ({
         i,
         s: q ? atSim(q, i.nombre) + (atNorm(i.nombre).includes(atNorm(q)) ? 0.5 : 0) : 1
       })).filter(x => x.s > 0.2).sort((a, b) => b.s - a.s).slice(0, 8).map(x => ({
@@ -2798,11 +2802,12 @@ function normalizePersonNames(key, value) {
       atCbCerrar();
       if (k === 'ins') {
         const ins = atI(v);
+        if(!atAutorizado(ins,e.cursoCodigo)){toast('Selecciona un instructor autorizado para este curso.');return;}
         e.enc.instructorId = v;
         e.enc.instructor = ins.nombre;
         if (ins.tipo) e.enc.clasificacion = ins.tipo;
-        if (ins.rfc) e.enc.rfc = ins.rfc;
-        if (ins.registro) e.enc.registro = ins.registro;
+        e.enc.rfc = ins.tipo==='Interno'?'':ins.rfc||'';
+        e.enc.registro = ins.registro||'';
         delete e.encOk.clasificacion;
         atPintar();
         return;
@@ -2931,6 +2936,7 @@ function normalizePersonNames(key, value) {
         const pill = m === null ? '' : m ? atPill('ok', 'Coincide') : e.encOk[k] ? atPill('nt', 'Se deja la lista') : atPill('wa', 'Diferente');
         return "<div class=\"att-hrow\"><label>".concat(l, " ").concat(pill).concat(libre ? "<input data-h=\"".concat(k, "\" value=\"").concat(atE(v), "\">") : "<select data-h=\"".concat(k, "\">").concat(atOpciones(k, v), "</select>"), "</label>").concat(k==='objetivo'&&AT_OBJ[Number(v)-1]?'<small class="objective-full-label">'+atE(AT_OBJ[Number(v)-1])+'</small>':'').concat(m === false && !e.encOk[k] ? "<div class=\"att-hint\">Curso: <b>".concat(atE(atCatTexto(k, cv)), "</b> <button class=\"button outline att-sm\" data-att=\"usarcat\" data-k=\"").concat(k, "\">Usar el del curso</button> <button class=\"button outline att-sm\" data-att=\"dejar\" data-k=\"").concat(k, "\">Dejar lista</button></div>") : '', "</div>");
       }).join('');
+      const plant=$('#att-hd [data-h="lugar"]');if(plant){const missing=!AT_LUG.includes(e.enc.lugar);plant.setAttribute('aria-required','true');plant.setAttribute('aria-invalid',String(missing));if(missing){plant.classList.add('att-plant-required');plant.insertAdjacentHTML('afterend','<small class="att-err" role="alert">Selecciona la planta para poder guardar el listado.</small>');}}
       $('#att-rw').innerHTML = e.asistentes.length ? e.asistentes.map((a, i) => {
         const [cl, t] = atEst(a),
           p = AT_P[a.numero],
@@ -2964,7 +2970,7 @@ function normalizePersonNames(key, value) {
       if (!d.open) d.showModal();
     }
     function atNuevaDialog() {
-      atDialog("<div class=\"att-dlg\"><div class=\"dialog-head\"><div><div class=\"eyebrow\">FT-RH-010</div><h2>Nueva lista de asistencia</h2></div><button type=\"button\" class=\"close-dialog\" data-att=\"cerrar\" aria-label=\"Cerrar\">×</button></div>\n  <label>Fotos o PDF de las listas firmadas<input type=\"file\" id=\"att-foto\" multiple accept=\"image/jpeg,image/png,image/webp,image/*,application/pdf,.pdf\"></label><p class=\"att-hint\">Puedes elegir varias a la vez. Cada foto o cada hoja del PDF se lee como una lista y queda como borrador para que la revises. Los archivos no se guardan.</p><div id=\"att-pv\"></div>\n  <div class=\"dialog-actions\"><button type=\"button\" class=\"button outline\" data-att=\"manual\">Capturar sin foto</button></div></div>");
+      atDialog("<div class=\"att-dlg\"><div class=\"dialog-head\"><div><div class=\"eyebrow\">FT-RH-010</div><h2>Nueva lista de asistencia</h2></div><button type=\"button\" class=\"close-dialog\" data-att=\"cerrar\" aria-label=\"Cerrar\">×</button></div>\n  <div class=\"att-capture-choices\"><button type=\"button\" class=\"button primary\" data-att=\"foto\">Capturar con foto</button><button type=\"button\" class=\"button outline\" data-att=\"manual\">Capturar lista manual</button></div><div id=\"att-photo-panel\" hidden><label>Fotos o PDF de las listas firmadas<input type=\"file\" id=\"att-foto\" multiple accept=\"image/jpeg,image/png,image/webp,image/*,application/pdf,.pdf\"></label><p class=\"att-hint\">Puedes elegir varias a la vez. Cada foto o cada hoja del PDF se lee como una lista y queda como borrador para que la revises. Los archivos no se guardan.</p><div id=\"att-pv\"></div>\n  </div></div>");
     }
     /* alta en Personal con el formulario del módulo Personal */
     function atPartirNombre(t) {
@@ -3790,6 +3796,7 @@ function normalizePersonNames(key, value) {
     /* eventos */
     const AT_A = {
       nueva: () => atNuevaDialog(),
+      foto: () => {$('#att-photo-panel').hidden=false;$('#att-foto').focus();},
       cerrar: () => $('#att-dialog').close(),
       manual: () => {
         $('#att-dialog').close();
@@ -3999,7 +4006,7 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
-    window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');}});
+    window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
     renderAttendance();
     if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
     else if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');

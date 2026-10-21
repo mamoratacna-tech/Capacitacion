@@ -13,10 +13,10 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Programa por periodos y búsqueda de cursos](descargas/SAMARA_PROGRAMA_PERIODOS_BUSCADOR.zip).
-Los meses seleccionados forman un solo periodo para concluir la capacitación, con avance acumulado sin duplicar personas. Incluye años expandibles, ventana más amplia, cierre uniforme y búsqueda por nombre o código en programación y captura de asistencia. [Guía y criterios de conteo](SAMARA/PROGRAMA_MENSUAL.txt).
+Última actualización: [Formato del programa, asistencia y pendientes](descargas/SAMARA_PROGRAMA_FORMATO_ASISTENCIA.zip).
+Impresión FT-RH-012 con el diseño adjunto y población de puestos activos; CSV de personas pendientes; captura con foto o manual; sugerencias solo de instructores autorizados y planta obligatoria con aviso rojo. Las evidencias se editan desde el glosario. [Guía de actualización](SAMARA/PROGRAMA_FORMATO_ASISTENCIA.txt).
 
-[Ver diseño](descargas/PROGRAMA_MENSUAL.png) · [Ver ventana de programación](descargas/PROGRAMA_VENTANA.png) · [Ejemplo de impresión](descargas/MUESTRA_FT-RH-012.pdf).
+[Ver diseño](descargas/PROGRAMA_MENSUAL.png) · [Ejemplo FT-RH-012](descargas/MUESTRA_FT-RH-012.pdf).
 
 ## Ver el código
 
