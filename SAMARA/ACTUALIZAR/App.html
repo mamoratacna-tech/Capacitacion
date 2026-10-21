@@ -4,7 +4,7 @@
   try {
     const appListeners=new AbortController();
     function appOn(target,event,listener,options={}){target.addEventListener(event,listener,{...(typeof options==='boolean'?{capture:options}:options),signal:appListeners.signal});}
-    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>appListeners.abort();
+    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>{appListeners.abort();window.SamaraNotifications?.dispose();};
     // Shared Google Sheets persistence. The Site UI calls these synchronous wrappers.
     const cloud = {
       cache: {},
@@ -86,6 +86,7 @@
         } finally {
           cloud.saving = false;
           cloud.inFlight = null;
+          window.SamaraNotifications?.schedule();
         }
       })();
       return cloud.inFlight;
@@ -119,6 +120,7 @@ function normalizePersonNames(key, value) {
       cloudLabel('Cambios pendientes…');
       clearTimeout(cloud.timer);
       cloud.timer = setTimeout(flushCloud, 100);
+      window.SamaraNotifications?.schedule();
     }
     function migrateLegacy(data) {
       if (!data) return;
@@ -1282,6 +1284,7 @@ function normalizePersonNames(key, value) {
       if(name==='users'&&window.SamaraAccess?.user?.role!=='admin'){toast('Solo la administradora puede gestionar usuarios.');return;}
       if(name==='users')window.SamaraAccess?.loadUsers();
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
+      window.SamaraNotifications?.schedule();
       if(name==='dashboard')window.SamaraDashboard.render();
       if(name==='program')window.SamaraProgram.render();
       if(name==='reports')window.SamaraReports.render(true);
@@ -4020,10 +4023,14 @@ function normalizePersonNames(key, value) {
       if(module==='courses')$('#course-search').value=options.courseCode||'';
       if(module==='attendance'&&!AT.ed){AT.scopeSamara=true;AT.q='';AT.sirce='Todos';AT.estado=options.review?'Por revisar':'Todos';AT.desde=options.start||'';AT.hasta=options.end||'';}
       showView(module);
+      if(module==='attendance'&&options.listId&&AT.ed)toast('Tienes una captura abierta. Guárdala o cancélala antes de abrir otro listado.');
       if(module==='program')window.SamaraProgram.focus(options);
-      if(module==='attendance'&&options.listId&&!AT.ed){ssOpen(options.listId);if(options.fixPeople){const list=attendance.find(row=>row.id===options.listId);if(list){ssPersonFixes(ssResult(list));$('#sirce-result').textContent='Completa los datos del expediente antes de descargar.';}}}
+      if(module==='cmcap'&&options.name){const row=[...document.querySelectorAll('#view-cmcap tbody tr')].find(r=>r.textContent.includes(options.name)&&(!options.startDate||r.textContent.includes(options.startDate)));if(row){row.scrollIntoView({block:'center'});row.animate([{background:'#e7f8f2'},{background:'transparent'}],{duration:2200});}}
+      if(module==='attendance'&&options.listId&&options.review&&!AT.ed){const list=attendance.find(row=>row.id===options.listId);if(list&&(!window.SamaraAccess?.can||window.SamaraAccess.can('attendance','edit')))AT_A.abrir({id:list.id});else if(list)ssOpen(list.id);}
+      if(module==='attendance'&&options.listId&&!options.review&&!AT.ed){ssOpen(options.listId);if(options.fixPeople){const list=attendance.find(row=>row.id===options.listId);if(list){ssPersonFixes(ssResult(list));$('#sirce-result').textContent='Completa los datos del expediente antes de descargar.';}}}
     }});
     window.SamaraReports.init({context:()=>{const base={courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)};return {...base,instructorAuthorizations:atIns().flatMap(i=>{const record=instructors.find(r=>r.id===i.id);return courses.filter(c=>atAutorizado(i,c.code)).map(c=>{const authorization=(record.authorizedCourses||[]).find(row=>row.courseCode===c.code||atNorm(row.name)===atNorm(c.name));return {id:i.id,name:i.nombre,type:i.tipo,reference:i.tipo==='Interno'?(record.employeeNo||''):i.rfc,department:record.employeeDepartment||record.department||(i.tipo==='Externo'?'Proveedor externo':''),code:c.code,course:c.name,certificationDate:authorization?instructorCertificationDate(authorization,record):''};});})};},validateList:ssResult,can:()=>!window.SamaraAccess?.can||window.SamaraAccess.can('reports'),print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');}});
+    window.SamaraNotifications.init({readState:bootstrap.notificationReads||{},context:window.SamaraDashboard.context,today:window.SamaraDashboard.today,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),validateList:ssResult,navigate:window.SamaraDashboard.navigate,save:(records,activeIds)=>googleCall('api_notificationRead',records,activeIds)});
     window.SamaraDashboard.render();
     renderAttendance();
     if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}

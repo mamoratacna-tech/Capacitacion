@@ -12,7 +12,7 @@ function doGet(e){
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
 function include(nombre){
   if(!authRendering_)throw Error('Inicia sesión para abrir la aplicación.');
-  if(!['Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
+  if(!['Notificaciones','Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
   return HtmlService.createTemplateFromFile(nombre).getRawContent();
 }
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.
@@ -64,7 +64,7 @@ function appRead_(sheet){
 }
 function api_loadAppState(){const actor=authRequire_(arguments[arguments.length-1]);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
-  try{const ss=database_(),result=appRead_(appSheet_(ss));if(result.revision===0)result.legacy=readAll_(ss);return authFilterState_(result,actor);}
+  try{const ss=database_(),result=appRead_(appSheet_(ss));if(result.revision===0)result.legacy=readAll_(ss);return {...authFilterState_(result,actor),notificationReads:notificationReads_(actor)};}
   finally{lock.releaseLock();}
 }
 function api_saveAppState(updates,expectedRevision){const actor=authRequire_(arguments[arguments.length-1]);

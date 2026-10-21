@@ -13,10 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Reportes integrados](descargas/SAMARA_REPORTES_INTEGRADOS.zip).
-Seis consultas con filtros, totales reales, CSV completo e impresión PDF:
-avance, pendientes, historial, evidencias/SIRCE, instructores y CMCAP.
-[Instrucciones](SAMARA/REPORTES_INTEGRADOS.txt).
+Última actualización: [Campana de notificaciones](descargas/SAMARA_NOTIFICACIONES_USUARIOS.zip).
+Avisos por prioridad, lectura personal, resolución automática y enlaces a los
+registros, con permisos por usuario. [Instrucciones](SAMARA/NOTIFICACIONES_USUARIOS.txt).
+
+Reportes: [archivos](descargas/SAMARA_REPORTES_INTEGRADOS.zip) e
+[instrucciones](SAMARA/REPORTES_INTEGRADOS.txt).
 
 Resumen: [archivos](descargas/SAMARA_RESUMEN_INTEGRADO.zip) e
 [instrucciones](SAMARA/RESUMEN_INTEGRADO.txt).
@@ -49,4 +51,4 @@ Se probaron localmente CMCAP, recuperación del histórico sin duplicados,
 filtros, captura manual, guardado y recarga con Google simulado, generación del
 PDF de asistencia y cola de dos imágenes con lectura simulada. La conexión
 real con Google Sheets y Gemini debe comprobarse en la cuenta propietaria.
-El Resumen utiliza datos reales; se verificó con 109 pruebas de lógica y pruebas de navegador de métricas, reportes, exportaciones, permisos, programa y personal.
+El Resumen utiliza datos reales; se verificó con 120 pruebas de lógica y pruebas de navegador de métricas, reportes, exportaciones, notificaciones, permisos, programa y personal.

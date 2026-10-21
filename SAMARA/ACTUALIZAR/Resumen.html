@@ -71,6 +71,6 @@ window.SamaraDashboard=(()=>{
   $('dashboard-content').addEventListener('click',event=>{const b=event.target.closest('[data-dash-action]');if(!b||b.disabled)return;const entry=actions[Number(b.dataset.dashAction)];if(entry&&api.can(entry.module))api.navigate(entry.module,entry.options);});
   document.querySelectorAll('.nav-item[data-view]').forEach(button=>{const span=button.querySelector('.nav-icon');if(span)span.innerHTML=icon(button.dataset.view);});
  }
- return {init,render,compute,icon,today,belongsToSamara};
+ return {init,render,compute,icon,today,belongsToSamara,context:()=>api.context(),navigate:(module,options)=>api.navigate(module,options)};
 })();
 </script>

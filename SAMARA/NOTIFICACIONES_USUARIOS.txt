@@ -1,0 +1,90 @@
+SAMARA — NOTIFICACIONES POR USUARIO
+
+INSTALAR EN TU PROYECTO EXISTENTE
+1. Descomprime el ZIP y abre tu proyecto de Google Apps Script.
+2. Reemplaza COMPLETOS los archivos incluidos en ACTUALIZAR:
+   App.html, Index.html, Programa.html, Resumen.html, Reportes.html,
+   Code.gs y UsuariosServidor.gs.
+3. Crea un archivo de tipo HTML llamado Notificaciones (sin escribir .html)
+   y pega el contenido completo de ACTUALIZAR/Notificaciones.html.
+   Si ya existe, reemplázalo. Crea también Programa, Resumen o Reportes
+   como HTML si todavía no los tienes; se incluyen completos.
+4. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga e inicia sesión.
+
+Conserva tus hojas, catálogos, usuarios, contraseñas y propiedades existentes
+(DB_ID, SIRCE_ID y claves). No crees una base nueva ni vuelvas a configurar
+los usuarios iniciales. No se requieren permisos de Google adicionales.
+
+CAMPANA Y CONTADOR
+Se sustituye el texto fijo Todas las plantas y el icono anterior por una
+campana con el número de avisos activos pendientes de leer. El contador
+agrupa registros, no cuenta personas sin capacitar. Si supera 99 muestra 99+.
+No usa cifras de demostración ni añade otra llamada al iniciar sesión.
+
+Al abrirla aparecen Pendientes y Leídas, con avisos en orden de prioridad:
+- ROJO: curso programado vencido con personal pendiente, o nombramiento
+  CMCAP vencido que aún requiere atención.
+- ÁMBAR: curso cuyo último mes programado es el actual y aún tiene personal
+  pendiente; nombramiento CMCAP que vence en los próximos 30 días.
+- AZUL: listados pendientes de validar, claves o datos SIRCE por completar,
+  curso programado sin instructor autorizado o población por configurar.
+
+Un aviso por curso/año reúne vencimiento, falta de instructor y población.
+Un aviso por listado reúne revisión, falta de clave y validaciones SIRCE.
+Los avisos de curso consideran programas del año actual y anteriores.
+No se cuentan asistencias futuras. El personal objetivo es SAMARA activo
+según la matriz actual, puesto, departamento y clasificación D/I; los cursos
+especiales usan los integrantes seleccionados en el Programa.
+Los listados exclusivos de TACNA quedan fuera; los mixtos o con asistentes
+sin identificar se conservan para revisar. Solo se pide clave y validaciones
+SIRCE en cursos que están marcados para SIRCE.
+
+REVISAR
+- Curso vencido o por concluir: abre Programa en el curso y año exactos.
+- Curso sin instructor: abre el curso en el glosario, si tienes acceso.
+- Listado por validar: abre la captura de esa lista si puedes editar; con
+  Solo consulta abre sus datos SIRCE sin habilitar edición.
+- Datos SIRCE: abre el listado correspondiente y, si corresponde, la sección
+  para corregir datos de Personal, respetando el permiso de edición.
+- CMCAP: abre el módulo y resalta el registro correspondiente.
+Si tienes una captura de asistencia abierta, se conserva y se pide guardarla
+ o cancelarla antes de abrir otra lista.
+
+LEÍDAS Y RESUELTAS
+Marcar leída guarda esa lectura únicamente para tu usuario de SAMARA,
+incluso al volver a iniciar sesión. RH y Coordinador no se marcan avisos
+entre sí. Marcar pendiente permite devolverlo a la pestaña Pendientes.
+La lectura no altera listas, cursos, capacitaciones ni revisiones de datos.
+Si falla el guardado de lectura, el aviso sigue sin leer y se muestra un
+mensaje para poder volver a intentarlo.
+
+Marcar leída no resuelve el pendiente. Al corregir su causa, el aviso deja
+de aparecer en ambas pestañas. Leídas contiene solo avisos todavía activos;
+no es un archivo histórico de avisos resueltos.
+Si cambia el estado o la población pendiente, vuelve a aparecer sin leer.
+La cuenta regresiva de días de CMCAP no lo vuelve a poner sin leer cada día;
+sí lo hace pasar de próximo a vencer a vencido.
+Una renovación vigente del mismo integrante y cargo retira el aviso del
+nombramiento anterior; para cargos únicos también se reconoce el reemplazo
+por otra persona. Los registros históricos se conservan en CMCAP.
+
+ACTUALIZACIÓN Y PERMISOS
+La campana se recalcula con los datos cargados al entrar, abrirla, navegar,
+guardar cambios o pulsar Actualizar avisos. No hace consultas periódicas
+al servidor. Para ver datos capturados por otra persona, recarga la app
+una vez guardados tus propios cambios, igual que en los demás módulos.
+La fecha actual usa America/Tijuana, sin depender de los filtros del Resumen.
+Cada usuario ve solo avisos que puede abrir. Solo consulta permite guardar
+su estado de lectura; no concede edición de registros ni acceso a módulos.
+Las lecturas se almacenan separadas de las colecciones de capacitación,
+se depuran al guardar y se eliminan cuando se elimina el usuario.
+
+VERIFICACIÓN
+120 pruebas de lógica aprobadas y pruebas de navegador de notificaciones,
+Resumen, Reportes y permisos. Se comprobó lectura persistente, separación
+por usuario, errores de guardado, accesos exactos, renovación, teclado,
+cierre con Escape y diseño sin desbordamiento horizontal en móvil.
+MUESTRA_NOTIFICACIONES.png usa datos ficticios de prueba; los avisos de tu
+aplicación se calculan con tus datos. Esta entrega requiere que publiques
+la nueva versión en tu cuenta de Google con los pasos anteriores.
