@@ -1,0 +1,49 @@
+SAMARA UNIVERSITY — ACTUALIZACIÓN DEL NOMBRE DE LA APLICACIÓN
+
+INSTALACIÓN
+1. Descomprime el ZIP y abre tu proyecto EXISTENTE en Google Apps Script.
+2. Reemplaza COMPLETOS estos ocho archivos con los de ACTUALIZAR:
+   Acceso.html, App.html, Code.gs, Estilos.html, Index.html,
+   Listados.html, Programa.html y Reportes.html.
+   Si falta un HTML, créalo con + > HTML y su nombre sin .html.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación e inicia sesión.
+
+Conserva los demás archivos, usuarios, contraseñas, hojas y propiedades
+DB_ID, SIRCE_ID y claves. No crees otra base ni repitas la configuración.
+
+DÓNDE CAMBIÓ EL NOMBRE
+- Acceso y título de la pestaña: Acceso | Samara University.
+- Aplicación y pestaña principal: Samara University.
+- Panel lateral: Samara University · Gestión de capacitación.
+- Pantalla de carga, ruta superior, confirmaciones y acceso de Usuarios.
+- Vista de Listados de asistencia y enlace de regreso a la aplicación.
+- Encabezados generados de ficha técnica, glosario, matriz, programa y reportes.
+- Pie de los documentos generados y archivos de respaldo/reportes con marca.
+- Nombre de nuevas bases, únicamente si se crea un proyecto sin DB_ID.
+El nombre del panel se ajusta para caber también en pantalla pequeña.
+En móvil se muestra el módulo en la ruta superior; el nombre completo sigue
+visible en el panel y en el título de la pestaña.
+
+DATOS QUE CONSERVAN SU SIGNIFICADO
+SAMARA sigue siendo la empresa del personal y de los cursos. Se conservan
+TACNA, los departamentos, las razones sociales, los RFC, los establecimientos,
+las claves y los códigos como RH-SAMARA001. Samara University es el nombre
+de la aplicación, no un cambio de razón social ni de registros de empresa.
+Las plantillas PDF originales mantienen sus logotipos y datos institucionales.
+Los identificadores internos samara.*, nombres de funciones y propiedades
+se conservan para seguir leyendo tus datos y sesiones existentes.
+
+NOMBRE EN EL EDITOR Y EN DRIVE
+El código actualiza el nombre que ve quien entra a la aplicación.
+Si también deseas cambiar el nombre administrativo del proyecto, haz clic
+en su nombre en la parte superior del editor y escribe Samara University.
+La hoja de datos existente se puede renombrar desde Google Drive; conserva
+su archivo e ID. Esta actualización no crea otra hoja ni mueve tus datos.
+
+VERIFICACIÓN
+120 pruebas de lógica aprobadas y pruebas de navegador de acceso, cierre
+de sesión, permisos, panel, vista móvil y reportes. Se comprobó el nombre
+en el PDF multipágina y que la navegación no modifica datos ni códigos.
+Las imágenes del ZIP son muestras con datos ficticios de prueba.
+Publica la nueva versión en tu cuenta de Google mediante los pasos anteriores.

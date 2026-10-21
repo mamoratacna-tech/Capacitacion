@@ -22,7 +22,7 @@
         const dialog = document.createElement('dialog');
         dialog.className = 'app-confirm';
         dialog.setAttribute('aria-labelledby','app-confirm-title');
-        dialog.innerHTML = '<div class="record-editor"><div class="dialog-head"><div><div class="eyebrow">SAMARA</div><h2 id="app-confirm-title">Confirmar acción</h2></div><button type="button" class="close-dialog" aria-label="Cerrar">×</button></div><p class="confirm-message"></p><div class="dialog-actions"><button type="button" class="button outline" data-answer="cancel">Cancelar</button><button type="button" class="button primary" data-answer="accept">Aceptar</button></div></div>';
+        dialog.innerHTML = '<div class="record-editor"><div class="dialog-head"><div><div class="eyebrow">Samara University</div><h2 id="app-confirm-title">Confirmar acción</h2></div><button type="button" class="close-dialog" aria-label="Cerrar">×</button></div><p class="confirm-message"></p><div class="dialog-actions"><button type="button" class="button outline" data-answer="cancel">Cancelar</button><button type="button" class="button primary" data-answer="accept">Aceptar</button></div></div>';
         dialog.querySelector('.confirm-message').textContent = message;
         dialog.addEventListener('click',event => {
           const button = event.target.closest('button');
@@ -266,7 +266,7 @@ function normalizePersonNames(key, value) {
           type: 'application/json'
         }));
       link.href = url;
-      link.download = 'SAMARA-cambios-pendientes.json';
+      link.download = 'Samara University-cambios-pendientes.json';
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
@@ -2127,7 +2127,7 @@ function normalizePersonNames(key, value) {
       setTimeout(() => window.print(), 180);
     }
     function createPrintDocument(title, html) {
-      $('#print-stage').innerHTML = "<article class=\"print-sheet\"><header class=\"print-brand\"><div class=\"print-mark\">S</div><div><b>SAMARA</b><small>MAM DE LA FRONTERA</small></div><span>".concat(escapeHtml(title), "</span></header>").concat(html, "<footer class=\"print-foot\">Documento generado desde el prototipo de Entrenamiento SAMARA · Revisar antes de emitir</footer></article>");
+      $('#print-stage').innerHTML = "<article class=\"print-sheet\"><header class=\"print-brand\"><div class=\"print-mark\">S</div><div><b>Samara University</b><small>MAM DE LA FRONTERA</small></div><span>".concat(escapeHtml(title), "</span></header>").concat(html, "<footer class=\"print-foot\">Documento generado desde Samara University · Revisar antes de emitir</footer></article>");
       reportDialog.close();
       printPreparedDocument(false);
     }
@@ -2421,7 +2421,7 @@ function normalizePersonNames(key, value) {
       if (current.length) pages.push(current);
       const total = pages.length,
         scope = [$('#course-type').selectedOptions[0].textContent, $('#course-status').selectedOptions[0].textContent].join(' · ');
-      return pages.map((entries, page) => "<article class=\"glossary-sheet\"><header class=\"glossary-heading\"><div class=\"glossary-brand\"><span>Samara</span></div><h1>GLOSARIO DE CURSOS</h1><div class=\"glossary-meta\"><b>Formato: FT-RH-008</b><span>Revisión A</span><span>Página ".concat(page + 1, " de ").concat(total, "</span></div></header><div class=\"glossary-scope\"><span>").concat(escapeHtml(scope)).concat($('#course-search').value ? " · Búsqueda: ".concat(escapeHtml($('#course-search').value)) : '', "</span><span>").concat(filtered.length, " cursos en el glosario</span></div><table class=\"glossary-table\"><colgroup>").concat(widths.map(width => "<col style=\"width:".concat(width, "%\">")).join(''), "</colgroup><thead><tr>").concat(headers.map(header => "<th>".concat(escapeHtml(header), "</th>")).join(''), "</tr></thead><tbody>").concat(entries.map(({
+      return pages.map((entries, page) => "<article class=\"glossary-sheet\"><header class=\"glossary-heading\"><div class=\"glossary-brand\"><span>Samara University</span></div><h1>GLOSARIO DE CURSOS</h1><div class=\"glossary-meta\"><b>Formato: FT-RH-008</b><span>Revisión A</span><span>Página ".concat(page + 1, " de ").concat(total, "</span></div></header><div class=\"glossary-scope\"><span>").concat(escapeHtml(scope)).concat($('#course-search').value ? " · Búsqueda: ".concat(escapeHtml($('#course-search').value)) : '', "</span><span>").concat(filtered.length, " cursos en el glosario</span></div><table class=\"glossary-table\"><colgroup>").concat(widths.map(width => "<col style=\"width:".concat(width, "%\">")).join(''), "</colgroup><thead><tr>").concat(headers.map(header => "<th>".concat(escapeHtml(header), "</th>")).join(''), "</tr></thead><tbody>").concat(entries.map(({
         course,
         index
       }) => {
@@ -2486,7 +2486,7 @@ function normalizePersonNames(key, value) {
         columns: columns.slice(column, column + 24)
       });
       const scope = [$('#matrix-status').selectedOptions[0].textContent, $('#matrix-sirce').selectedOptions[0].textContent, $('#matrix-search').value, $('#matrix-department-filter').value, $('#matrix-course-search').value].filter(Boolean).join(' · ');
-      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · ✓ Aplica · ◆ Integrantes de comisión o brigada · — No aplica</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
+      const matrixPages = pages.map((page, index) => "<article class=\"matrix-cross-sheet\"><header class=\"matrix-reference-heading\"><span>Samara University</span><h1>MATRIZ DE CURSOS</h1><div><span>Formato: FT-RH-009</span><span>Revisión A</span><span>Página ".concat(index + 1, " de ").concat(pages.length, "</span></div></header><p class=\"matrix-objective\"><b>Objetivo:</b> Establecer la aplicación de entrenamientos o cursos por puesto o categoría y departamento o proceso, con el objetivo de documentar mínimo 2 cursos a cada trabajador a lo largo del periodo anual calendario de enero a diciembre, enfocando los 5 objetivos de la DC-2 por establecimiento.</p><div class=\"matrix-print-scope\">").concat(escapeHtml(scope), " · ✓ Aplica · ◆ Integrantes de comisión o brigada · — No aplica</div>").concat(crossMatrixTable(page.rows, page.columns), "<footer class=\"matrix-print-footer\">Recursos Humanos · FT-RH-009 · Página ").concat(index + 1, " de ").concat(pages.length, "</footer></article>")).join('');
       return matrixPages + matrixCourseAppendix(columns);
     }
     $('#matrix-print').addEventListener('click', () => {
@@ -3327,7 +3327,7 @@ function normalizePersonNames(key, value) {
     function ssBulkLists(){return attendance.map(list=>({...list,sirceExport:ssCourseExportRecord(list)}));}
     function ssExportListados(lists=atFiltrados()){
       if(!lists.length){toast('No hay listados para exportar con estos filtros.');return;}
-      exportCsv('SAMARA - Cursos para clave de curso.csv',[['LISTADOS DE CURSOS PARA REGISTRO EN SIRCE',...Array(9).fill('')],Array(10).fill(''),SirceListados.courseHeaders,...lists.map(ssCourseExportRecord)]);
+      exportCsv('Samara University - Cursos para clave de curso.csv',[['LISTADOS DE CURSOS PARA REGISTRO EN SIRCE',...Array(9).fill('')],Array(10).fill(''),SirceListados.courseHeaders,...lists.map(ssCourseExportRecord)]);
     }
     async function ssCsvText(file){
       const bytes=await file.arrayBuffer();let text;

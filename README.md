@@ -1,4 +1,4 @@
-# SAMARA · Capacitación con Google Sheets
+# Samara University · Gestión de capacitación con Google Sheets
 
 Aplicación para gestionar cursos, personal, instructores, CMCAP, asistencia y reportes.
 Esta entrega conserva las funciones de los últimos archivos recibidos y restaura
@@ -13,9 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Panel lateral negro agrupado](descargas/SAMARA_PANEL_LATERAL_NEGRO.zip).
-Menú con las secciones e iconos de la referencia, cuenta maestra al pie,
-permisos y vista móvil. [Instrucciones](SAMARA/PANEL_LATERAL_NEGRO.txt).
+Última actualización: [Nombre Samara University](descargas/SAMARA_UNIVERSITY_NOMBRE.zip).
+Acceso, panel, títulos, mensajes y encabezados generados con el nombre de la
+aplicación. [Instrucciones](SAMARA/SAMARA_UNIVERSITY_NOMBRE.txt).
+
+Panel lateral: [archivos](descargas/SAMARA_PANEL_LATERAL_NEGRO.zip) e
+[instrucciones](SAMARA/PANEL_LATERAL_NEGRO.txt).
 
 Notificaciones: [archivos](descargas/SAMARA_NOTIFICACIONES_USUARIOS.zip) e
 [instrucciones](SAMARA/NOTIFICACIONES_USUARIOS.txt).

@@ -1,6 +1,8 @@
-SAMARA — RESTAURAR LA ACTUALIZACIÓN CON ARCHIVOS COMPLETOS
+SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
+
+NOMBRE DE LA APP: consulta SAMARA_UNIVERSITY_NOMBRE.txt (ocho archivos completos).
 
 PANEL LATERAL: consulta PANEL_LATERAL_NEGRO.txt (cinco archivos completos).
 
