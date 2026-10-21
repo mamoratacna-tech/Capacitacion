@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Empleados activos e inactivos](descargas/SAMARA_EMPLEADOS_ACTIVOS_INACTIVOS.zip).
-Secciones de activos e inactivos por empresa, cantidad total de personal activo y lista con datos agrupados sin barras internas ni desplazamiento horizontal. [Guía de actualización](SAMARA/EMPLEADOS_ACTIVOS_INACTIVOS.txt) · [Ver diseño](descargas/EMPLEADOS_ACTIVOS_INACTIVOS.png).
+Última actualización: [Diseño aprobado de Empleados](descargas/SAMARA_EMPLEADOS_DISENO_APROBADO.zip).
+Columnas originales, activos arriba e inactivos abajo, contador activo pequeño junto al título y dos leyendas sobre las cargas, sin barra horizontal. [Instrucciones](SAMARA/EMPLEADOS_DISENO_APROBADO.txt).
 
 ## Ver el código
 

@@ -1,0 +1,38 @@
+SAMARA — DISEÑO DE EMPLEADOS APROBADO
+
+ARCHIVOS COMPLETOS
+1. Abre tu proyecto existente en Google Apps Script.
+2. Sustituye el contenido completo de App, Index y Estilos con los tres archivos
+   correspondientes de ACTUALIZAR. Son archivos HTML.
+3. Guarda e implementa una NUEVA VERSIÓN de tu implementación existente.
+4. Recarga la aplicación.
+Puedes instalar esta entrega directamente sobre tu versión actual.
+Conserva los demás archivos, hojas, catálogos, usuarios y propiedades del proyecto.
+
+DISEÑO
+- Se mantienen las columnas originales: número, CURP, nombres, apellido paterno,
+  apellido materno, estudios, documento probatorio, tipo de institución, puesto,
+  departamento y acciones.
+- Personal activo se muestra arriba y Personal inactivo abajo, ambos visibles
+  al mismo tiempo, siguiendo la distribución de CMCAP.
+- El total activo aparece como referencia pequeña junto al título Empleados.
+  Corresponde a la empresa seleccionada y no disminuye al usar el buscador.
+- Se conservan Empleados SAMARA y Empleados TACNA.
+- Las tablas ajustan sus anchos y permiten envolver textos. No tienen barra
+  horizontal ni un recuadro con desplazamiento vertical interno. El padrón se
+  recorre con la página. En pantallas pequeñas los renglones se adaptan para
+  seguir mostrando sus datos completos y acciones.
+- Los botones de editar y eliminar están visibles en cada renglón.
+
+AL PIE DE LAS TABLAS
+Cargar empleados: importa o actualiza activos y bajas; no cambia el estado de
+quienes no aparecen en el archivo.
+Cargar empleados activos: actualiza la lista completa de activos de SAMARA y,
+tras revisar los cambios, marca como bajas a los ausentes. No modifica a TACNA.
+
+COMPROBACIONES
+Columnas originales, secciones simultáneas, cantidad activa independiente del
+buscador, edición desde inactivos, separación por empresa, dos leyendas y vista
+sin barras internas o desbordamiento horizontal en 1536/1024/390 px.
+También se verificó la carga de SAMARA con revisión previa y conservación de TACNA.
+La imagen incluida usa datos de ejemplo.
