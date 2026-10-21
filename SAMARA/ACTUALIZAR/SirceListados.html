@@ -4,7 +4,7 @@ window.SAMARA_SIRCE_DATA={"catalogs":{"agents":[{"code":"1","name":"Interno"},{"
 'use strict';
 const D=window.SAMARA_SIRCE_DATA,C=D.catalogs;
 const norm=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-function code(kind,value){const text=String(value??'').trim(),rows=C[kind]||[];const exact=rows.find(row=>row.code===text);if(exact)return exact.code;if(kind==='modalities'){const alias={ONLINE:'2',ELEARNING:'2',VIRTUAL:'2',DISTANCIA:'2',ADISTANCIA:'2',PRESENCIALENLINEA:'3',PRESENCIALONLINE:'3',HIBRIDA:'3'}[norm(text)];if(alias&&rows.some(row=>row.code===alias))return alias;}const prefix=text.match(/^\d+/)?.[0];if(prefix&&rows.some(row=>row.code===prefix)&&/^\d+\s*[·.\-]/.test(text))return prefix;return rows.find(row=>norm(row.name)===norm(text))?.code||'';}
+function code(kind,value){const text=String(value??'').trim(),rows=C[kind]||[];const exact=rows.find(row=>row.code===text);if(exact)return exact.code;if(kind==='modalities'){const alias={ONLINE:'2',ELEARNING:'2',VIRTUAL:'2',DISTANCIA:'2',ADISTANCIA:'2',PRESENCIALENLINEA:'3',PRESENCIALONLINE:'3',HIBRIDA:'3'}[norm(text)];if(alias&&rows.some(row=>row.code===alias))return alias;}const prefix=text.match(/^\d+/)?.[0];if(prefix&&rows.some(row=>row.code===prefix)&&/^\d+\s*[·•.:–—\-]/.test(text))return prefix;return rows.find(row=>norm(row.name)===norm(text))?.code||'';}
 function areaCode(value){
  const text=String(value||'').trim(),direct=code('areas',text);if(direct)return direct;
  const stps=text.match(/^(\d{4})(?:\D|$)/)?.[1],byNumber=stps?C.areas.filter(row=>row.name.match(/^(\d{4})/)?.[1]===stps):[];
@@ -16,7 +16,7 @@ function date(value){const text=String(value||'');return /^\d{4}-\d{2}-\d{2}$/.t
 function dmy(value){if(!date(value))throw Error('Selecciona fechas válidas para SIRCE.');return value.slice(8,10)+'-'+value.slice(5,7)+'-'+value.slice(2,4);}
 function establishment(list){const place=norm(list.encabezado?.lugar||list.enc?.lugar);if(place==='PLANTA2')return '862974';if(place==='PLANTA1')return '862341';const value=String(list.sirceDatos?.establecimiento||'');return ['862341','862974'].includes(value)?value:'862341';}
 function rows(list,people,positions,course,instructor){
- const m=list.sirceDatos||{},issues=[],output=[],key=String(m.claveCurso||'').trim();
+ const m=list.sirceDatos||{},issues=[],personIssues=[],output=[],key=String(m.claveCurso||'').trim();
  if(!key)issues.push('Falta la CLAVE CURSO asignada por SIRCE a este listado.');
  if(!date(m.inicio)||!date(m.fin)||m.fin<m.inicio)issues.push('Revisa las fechas de inicio y término.');
  for(const [field,kind,label] of [['estado','states','estado'],['area','areas','área temática'],['modalidad','modalities','modalidad'],['objetivo','objectives','objetivo']])if(!code(kind,m[field]))issues.push('Selecciona '+label+' del catálogo adjunto.');
@@ -35,11 +35,12 @@ function rows(list,people,positions,course,instructor){
   if(!e.names||!e.paternal)issues.push(tag+'faltan nombre o primer apellido.');
   const position=positions.find(p=>norm(p.job)===norm(e.position));
   const occupation=code('occupations',position?.sirceCode)||code('occupations',position?.sirceOccupation);
-  const studies=code('studies',e.studies),document=code('documents',e.proofDocType),institution=code('institutions',e.institutionType);
+  const studies=code('studies',e.studies),document=code('documents',e.proofDocType||e.docProbatorio||e._legacy?.docProbatorio),institution=code('institutions',e.institutionType||e.tipoInstitucion||e._legacy?.tipoInstitucion);
+   if(!document||!institution)personIssues.push({no:String(e.no),name:[e.names,e.paternal,e.maternal].filter(Boolean).join(' '),fields:[...(!document?['proofDocType']:[]),...(!institution?['institutionType']:[])]});
   for(const [label,value] of [['ocupación SIRCE',occupation],['escolaridad',studies],['documento probatorio',document],['institución',institution]])if(!value)issues.push(tag+'revisa '+label+' en Personal/Puestos SIRCE.');
   output.push([curp,String(e.names||'').toUpperCase(),String(e.paternal||'').toUpperCase(),String(e.maternal||'').toUpperCase(),m.estado,m.municipio,occupation,studies,document,institution,key,list.cursoNombre||course?.name||'',m.area,duration,date(m.inicio)?dmy(m.inicio):'',date(m.fin)?dmy(m.fin):'',agent,rfc,m.modalidad,m.objetivo,establishment(list)]);
  });
- return {headers:D.headers,rows:output,issues:[...new Set(issues)],excluded:(list.asistentes||[]).length-signed.length};
+ return {headers:D.headers,rows:output,issues:[...new Set(issues)],personIssues,excluded:(list.asistentes||[]).length-signed.length};
 }
 const courseHeaders=['Nombre del curso','Duración (hrs)','Area tematica del curso','Tipo de agente Capacitador','Objetivo de la capacitación','Modalidad de la capacitación','Fecha de inicio(DD-MM-AA)','Fecha de termino(DD-MM-AA)','Nombre del instructor / RFC','Clave del curso'];
 function importDate(value){

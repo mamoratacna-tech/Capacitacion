@@ -1501,9 +1501,9 @@ function normalizePersonNames(key, value) {
       courseForm.elements.emergencyBrigadesOnly.checked = Boolean(c?.emergencyBrigadesOnly);
       courseForm.elements.frequency.value = c?.frequency?.includes('anual') ? '1 vez anual' : c?.frequency?.includes('ingreso') ? '1era vez ingreso' : '';
       courseForm.elements.ec.value = c?.ec === 'Sí' ? 'Sí' : 'No';
-      courseForm.elements.attendanceEvidence.value='Listado de asistencia';
-      const competence=norm(c?.competenceEvidence||c?.program?.competence||'');
-      courseForm.elements.competenceEvidence.value=competence.includes('carta')?'Carta acreditación':competence.includes('evaluacion')?'Evaluación escrita / virtual':'No aplica';
+      const evidence=window.SamaraProgram.courseEvidence(c||{});
+      courseForm.elements.attendanceEvidence.value=evidence.attendance;
+      courseForm.elements.competenceEvidence.value=evidence.competence;
       renderCoursePositionChecklist([...selectedCoursePositions]);
       $('#course-position-search').value = '';
       $('#selected-position-count').textContent = "".concat(selectedCoursePositions.size, " seleccionados");
@@ -2919,6 +2919,7 @@ function normalizePersonNames(key, value) {
       const all = attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
         l = atFiltrados();
       root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button type=\"button\" class=\"button outline\" data-sirce-export-listados>↧ Exportar listados de asistencia</button><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Carga el personal en el módulo Empleados para validar a los asistentes.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button><button type=\"button\" class=\"button outline\" data-sirce-export-zip>↧ Exportar listados de cursos para SIRCE</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? atGroupedListRows(l) : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
+      const headings=[...root.querySelectorAll('thead th')].map(th=>th.textContent);root.querySelectorAll('tbody tr:not(.att-year-heading)').forEach(row=>[...row.children].forEach((cell,index)=>cell.dataset.label=headings[index]||''));
     }
     function atVistaEditor() {
       const e = AT.ed;
@@ -3311,6 +3312,13 @@ function normalizePersonNames(key, value) {
       const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,encabezado:{...row.encabezado,objetivo:data.objetivo,lugar:data.establecimiento==='862974'?'Planta 2':'Planta 1'},actualizado:new Date().toISOString()}:row);
       await persistCollection('samara.attendance.v1',next);attendance=next;return next.find(row=>row.id===list.id);
     }
+    function ssPersonFixes(result){
+      const target=$('#sirce-result');if(!target)return;
+      $('#sirce-person-fixes')?.remove();
+      const peopleIssues=result.personIssues||[];if(!peopleIssues.length)return;
+      const can= !window.SamaraAccess?.can||window.SamaraAccess.can('people','edit');
+      target.insertAdjacentHTML('afterend','<div id="sirce-person-fixes"><h3>Completar datos de Personal</h3><p>Selecciona los datos reales del expediente. Se guardarán en Personal antes de volver a descargar.</p>'+peopleIssues.map(issue=>'<section data-sirce-person="'+atE(issue.no)+'"><b>'+atE(issue.no+' · '+issue.name)+'</b><div class="sirce-fields">'+issue.fields.map(field=>'<label>'+(field==='proofDocType'?'Documento probatorio':'Tipo de institución')+'<select data-sirce-person-field="'+field+'" '+(!can?'disabled':'')+'><option value="">Selecciona del expediente</option>'+SirceListados.catalogs[field==='proofDocType'?'documents':'institutions'].map(row=>'<option value="'+atE(row.code)+'">'+atE(row.code+' · '+row.name)+'</option>').join('')+'</select></label>').join('')+'</div></section>').join('')+(can?'<button type="button" class="button outline" data-sirce-action="fix-person">Guardar correcciones de Personal</button>':'<p>Solicita a RH o a un usuario con permiso de edición de Personal que complete estos datos.</p>')+'</div>');
+    }
     function ssResult(list){const course=courses.find(row=>row.code===list.cursoCodigo);return SirceListados.rows({...list,sirceDatos:ssDefaults(list)},employees,positions,course,ssInstructor(list));}
     function ssCourseExportRecord(list){
       const m=ssDefaults(list),course=courses.find(item=>item.code===list.cursoCodigo),h=list.encabezado||{},instructor=ssInstructor(list);
@@ -3400,6 +3408,11 @@ function normalizePersonNames(key, value) {
       if(action==='template'){ssExportListados();return;}
       button.disabled=true;
       try{
+        if(action==='fix-person'){
+          if(window.SamaraAccess?.can&&!window.SamaraAccess.can('people','edit'))throw Error('No tienes permiso para editar Personal.');
+          const next=structuredClone(employees);for(const section of $$('#sirce-person-fixes [data-sirce-person]')){const matches=next.filter(e=>String(e.no)===section.dataset.sircePerson);if(matches.length!==1)throw Error('Revisa el número de empleado en Personal.');for(const input of section.querySelectorAll('[data-sirce-person-field]')){const kind=input.dataset.sircePersonField==='proofDocType'?'documents':'institutions';if(!SirceListados.code(kind,input.value))throw Error('Selecciona los datos de todos los empleados indicados.');matches[0][input.dataset.sircePersonField]=input.value;}}
+          await persistCollection('samara.employees.v2',next);employees=next;atRefrescarPadron();$('#sirce-person-fixes').remove();$('#sirce-result').textContent='Datos de Personal corregidos. Pulsa Descargar Excel SIRCE de nuevo.';return;
+        }
         if(action==='apply'){
           if(!ssBulkPlan||ssBulkPlan.errors.length)return;
           const table=[['ID LISTADO','CLAVE CURSO'],...ssBulkPlan.changes.map(row=>[row.id,row.key])],fresh=SirceListados.bulkPlan(table,ssBulkLists());
@@ -3411,7 +3424,7 @@ function normalizePersonNames(key, value) {
         const root=button.closest('.sirce-dialog');if(!root)return;let list=attendance.find(row=>row.id===root.dataset.sirceListId);if(!list)return;
         list=await ssSave(list,root);renderAttendance();
         if(action==='save'){$('#sirce-result').textContent='Datos SIRCE guardados. Puedes completar la clave posteriormente.';return;}
-        const result=ssResult(list);if(result.issues.length)throw Error(result.issues.join('\n'));
+        const result=ssResult(list);if(result.issues.length){ssPersonFixes(result);throw Error(result.issues.join('\n'));}
         const note=result.rows.length+' asistentes exportados'+(result.excluded?' · '+result.excluded+' sin firma excluidos':'')+'.';
         if(action==='xlsx'){const blob=await SirceListados.workbook(result);await window.descargarArchivo(blob,'SIRCE-'+list.sirceDatos.claveCurso+'.xlsx');}
         $('#sirce-result').textContent=note;
@@ -3536,7 +3549,7 @@ function normalizePersonNames(key, value) {
       try{
         if(!window.PDFLib)await window.samaraLoadPdfLibrary('generator');
         atRefrescarPadron();
-        const eligible=(list.asistentes||[]).filter(row=>row.estado==='ok'&&row.firmo).map(row=>({nombre:AT_P[row.numero]?.nombre||row.nombre||row.escrito||''})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+        const eligible=(list.asistentes||[]).filter(row=>row.estado==='ok'&&row.firmo).map(row=>({numero:String(row.numero||''),nombre:AT_P[row.numero]?.nombre||row.nombre||row.escrito||''})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
         const place=list.encabezado?.lugar||(SirceListados.establishment(list)==='862974'?'Planta 2':'Planta 1');
         const bytes=await pdfRecepcion(atB64(window.TPL_RECEPCION),{curso:list.cursoNombre,fecha:date,lugar:place,asistentes:eligible});
         await atEntregar(bytes,'FT-RH-011 '+(list.cursoCodigo||'')+' '+date);

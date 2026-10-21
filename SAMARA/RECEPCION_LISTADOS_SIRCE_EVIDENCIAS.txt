@@ -1,0 +1,54 @@
+SAMARA — RECEPCIÓN DC-3, LISTADOS, SIRCE Y EVIDENCIAS
+
+INSTALAR
+Sustituye los archivos completos de ACTUALIZAR en tu proyecto existente:
+App.html, Index.html, Programa.html, EstilosListados.html, PlantillasListados.html
+y SirceListados.html. Guarda y publica una NUEVA VERSIÓN de la implementación.
+Conserva tus hojas, usuarios, catálogos, propiedades y demás archivos.
+
+RECEPCIÓN DE DC-3
+La columna No. del FT-RH-011 contiene el número real del empleado, no un número
+de renglón. Se conserva al ordenar por nombre y al pasar a otra página.
+
+LISTADOS SIN DESPLAZAMIENTO HORIZONTAL
+Los filtros y botones se distribuyen en varias líneas cuando hace falta. Las
+columnas ajustan su ancho, los textos se envuelven y los botones de impresión
+se acomodan dentro de su celda. En pantallas pequeñas se muestran tarjetas con
+las etiquetas de cada dato. No se ocultan campos para eliminar la barra.
+
+ERROR DE SIRCE DEL EJEMPLO
+El mensaje indica que el empleado 67092 no tiene un documento probatorio o tipo
+de institución reconocido por el catálogo. No equivale a un fallo del generador.
+Se reconocen también campos de registros antiguos y etiquetas con separadores
+como punto, guion, dos puntos o viñeta, cuando contienen una clave válida.
+
+Si faltan datos, la misma ventana SIRCE permite elegir los del expediente:
+1. Intenta Descargar Excel SIRCE.
+2. En Completar datos de Personal, selecciona documento y tipo de institución
+   reales para cada empleado indicado.
+3. Pulsa Guardar correcciones de Personal.
+4. Vuelve a pulsar Descargar Excel SIRCE.
+
+La corrección requiere permiso de edición de Personal. Los usuarios sin ese
+permiso verán la indicación de pedir a RH que complete los datos. No se asignan
+valores por defecto ni se generan archivos con datos obligatorios ausentes.
+Esta actualización no completa el expediente real del empleado 67092 por sí sola:
+debes seleccionar los valores que correspondan a su documentación.
+
+EVIDENCIAS DEL PROGRAMA
+Editar curso e imprimir FT-RH-012 comparten la misma lectura del glosario:
+- Evidencia de asistencia: Listado de asistencia.
+- Competencia: No aplica, Evaluación escrita / virtual o Carta acreditación.
+
+La selección guardada en el curso tiene prioridad sobre valores históricos de
+programación. Los valores antiguos se presentan de la misma manera en ambas
+pantallas; por ejemplo, N/A/vacío corresponde a No aplica. Ya no se muestra
+Por definir en la impresión cuando el editor del glosario muestra No aplica.
+No se copian evidencias independientes en cada programación.
+
+VERIFICACIÓN
+92 pruebas unitarias, PDF real de recepción con números de empleado en varias
+páginas, formulario/glosario/impresión de evidencias, vista de listados en
+1440/1024/390 px sin desbordamiento horizontal, corrección explícita de los dos
+datos de Personal y generación de un Excel SIRCE real después de corregirlos.
+Las muestras incluidas usan datos ficticios.

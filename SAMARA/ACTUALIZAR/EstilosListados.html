@@ -53,6 +53,14 @@
 
 #employee-form input[name=names],#employee-form input[name=paternal],#employee-form input[name=maternal],#employee-form input[name=curp]{text-transform:uppercase}
 #employee-form .att-leido{margin:0 0 14px}
+
+#view-attendance .catalog-toolbar{flex-wrap:wrap;min-width:0}#view-attendance .catalog-toolbar>.button{white-space:normal;height:auto;min-height:34px;max-width:100%;text-align:center;padding:8px 12px}
+#view-attendance .table-wrap{overflow:visible}#view-attendance .table-wrap>table{table-layout:fixed;min-width:0;width:100%;white-space:normal}#view-attendance .table-wrap th,#view-attendance .table-wrap td{white-space:normal;overflow-wrap:anywhere;padding:10px 6px;font-size:10px}
+#view-attendance .table-wrap th{font-size:9px;letter-spacing:.25px;overflow-wrap:anywhere}#view-attendance td:last-child .button{margin:3px 1px!important}
+#view-attendance .table-wrap th:nth-child(1){width:20%}#view-attendance .table-wrap th:nth-child(2){width:9%}#view-attendance .table-wrap th:nth-child(3){width:15%}#view-attendance .table-wrap th:nth-child(4){width:7%}#view-attendance .table-wrap th:nth-child(5){width:5%}#view-attendance .table-wrap th:nth-child(6){width:15%}#view-attendance .table-wrap th:nth-child(7){width:22%}#view-attendance .table-wrap th:nth-child(8){width:7%}
+#view-attendance .att-nowrap .button{margin:3px 2px!important;max-width:100%;white-space:normal;height:auto!important;min-height:28px;line-height:1.3}#view-attendance .table-footer{flex-wrap:wrap}#view-attendance .status-pill{white-space:normal;max-width:100%;height:auto;line-height:1.4}
+#sirce-person-fixes{margin:18px 0;padding:15px;background:#fff8ee;border:1px solid #e2ca9f;border-radius:8px}#sirce-person-fixes section{margin:14px 0}#sirce-person-fixes select{min-width:0;width:100%}
+@media(max-width:900px){#view-attendance .table-wrap table,#view-attendance .table-wrap tbody{display:block}#view-attendance .table-wrap thead{display:none}#view-attendance .table-wrap tr:not(.att-year-heading){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:12px;gap:8px;border-bottom:1px solid #dce4ea}#view-attendance .table-wrap td{display:block;min-width:0;width:auto;border:0;padding:4px}#view-attendance .table-wrap tr:not(.att-year-heading) td:before{content:attr(data-label);display:block;font-size:8px;color:#7d8f9d;margin-bottom:4px}#view-attendance .table-wrap td:first-child,#view-attendance .table-wrap td:nth-child(7),#view-attendance .table-wrap td:nth-child(8){grid-column:1/-1}#view-attendance .table-wrap .att-year-heading{display:block}#view-attendance .att-actions{max-width:100%}#view-attendance .att-actions .button{height:auto;min-height:36px;white-space:normal}}
 </style>
 <script>
 (function(){

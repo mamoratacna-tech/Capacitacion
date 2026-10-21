@@ -47,7 +47,7 @@ async function pdfRecepcion(tplBytes,data){
   W(page,475,90,539,106);T(page,font,'Página '+(index+1)+' de '+pages,507,101,7,{center:true});
   boxText(page,bold,data.curso,189,150,347,21,9,7);T(page,font,data.fecha,190,219,10);
   if(data.lugar==='Planta 1')T(page,bold,'X',192,182.2,5,{center:true});if(data.lugar==='Planta 2')T(page,bold,'X',192,197,5,{center:true});
-  rows.slice(index*17,index*17+17).forEach((row,local)=>{T(page,font,String(index*17+local+1),99.5,edges[local]+15,9,{center:true});boxText(page,font,row.nombre,132,edges[local]+2,247,edges[local+1]-edges[local]-4,9,7);});
+  rows.slice(index*17,index*17+17).forEach((row,local)=>{boxText(page,font,String(row.numero||''),81,edges[local]+3,37,edges[local+1]-edges[local]-6,9,6);boxText(page,font,row.nombre,132,edges[local]+2,247,edges[local+1]-edges[local]-4,9,7);});
  }
  return out.save();
 }

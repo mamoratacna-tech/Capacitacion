@@ -13,8 +13,8 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Todos los puestos y evidencias del curso](descargas/SAMARA_CURSOS_PUESTOS_EVIDENCIAS.zip).
-Selección de todos los puestos activos en un clic y evidencias con opciones fijas, con mayor separación en el formulario. [Guía de actualización](SAMARA/CURSOS_PUESTOS_EVIDENCIAS.txt) · [Ver diseño](descargas/CURSOS_PUESTOS_EVIDENCIAS.png).
+Última actualización: [Recepción DC-3, listados, SIRCE y evidencias](descargas/SAMARA_RECEPCION_LISTADOS_SIRCE_EVIDENCIAS.zip).
+El FT-RH-011 imprime el número de empleado; los listados se adaptan sin barra horizontal; SIRCE permite corregir documento e institución desde su ventana; el glosario y la impresión del programa comparten las evidencias. [Guía de actualización](SAMARA/RECEPCION_LISTADOS_SIRCE_EVIDENCIAS.txt).
 
 ## Ver el código
 
