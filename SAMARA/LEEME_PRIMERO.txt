@@ -2,6 +2,8 @@ SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
+LECTURA Y CUOTA: consulta LECTURA_CUOTA_GEMINI.txt (App, Code y EstilosListados).
+
 PANEL SIN LA S: consulta PANEL_SIN_S.txt (solo Index.html y Estilos.html).
 
 NOMBRE DE LA APP: consulta SAMARA_UNIVERSITY_NOMBRE.txt (ocho archivos completos).

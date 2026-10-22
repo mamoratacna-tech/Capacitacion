@@ -1,0 +1,73 @@
+SAMARA UNIVERSITY — CUOTA DE GEMINI Y CARGAS DE ASISTENCIA
+
+QUÉ INDICA EL ERROR DE TU CAPTURA
+Gemini respondió 429: se agotó la cuota gratuita disponible del proyecto.
+En la captura aparece un límite de 20 solicitudes y una espera cercana a
+12 horas en ese momento. Cada página del PDF requiere una lectura; un PDF
+de seis hojas normalmente utiliza seis solicitudes, no una. Las lecturas
+de otras cargas y usuarios del mismo proyecto también usan esa cuota.
+El plazo y el límite los establece Google. La aplicación no puede ampliarlos.
+
+PARA RECUPERAR LA LECTURA AUTOMÁTICA
+Opción A: esperar el plazo indicado por Gemini y volver a comprobar.
+Opción B: revisar/ampliar la cuota y facturación del proyecto de Gemini:
+1. Abre Google AI Studio con la cuenta que administra la clave de la app:
+   https://aistudio.google.com/usage
+2. Selecciona el proyecto al que pertenece GEMINI_API_KEY de las propiedades
+   de tu proyecto de Apps Script. Revisa uso y límites del modelo configurado
+   en GEMINI_MODEL (si usa un alias, revisa también el modelo que informa Google).
+3. Si necesitas más capacidad, configura la facturación y revisa los límites
+   disponibles para ese proyecto en Google. Esta entrega no cambia tu plan,
+   clave, modelo ni cuotas, y no activa facturación por sí misma.
+4. Después de esperar o actualizar la cuota, usa Verificar disponibilidad
+   y reanudar. Se prueba una hoja; si vuelve 429, las demás no se envían.
+La fecha mostrada es el reintento indicado por el servicio, no una garantía.
+
+INSTALAR LA MEJORA DE LA APLICACIÓN
+1. Descomprime el ZIP y abre tu proyecto EXISTENTE de Google Apps Script.
+2. Reemplaza COMPLETOS estos tres archivos con los de ACTUALIZAR:
+   App.html
+   Code.gs
+   EstilosListados.html
+   No pegues fragmentos y no crees archivos nuevos.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación.
+Conserva los demás archivos, hojas, usuarios, contraseñas y propiedades,
+incluidas DB_ID, SIRCE_ID, GEMINI_API_KEY y GEMINI_MODEL.
+
+QUÉ CAMBIA
+- El error 429 se explica en español, separado de saturación 503.
+- Se respeta la espera enviada en RetryInfo, Retry-After o el texto del error.
+  Si no hay plazo, se dice que el servicio no lo indicó; no se inventa una hora.
+- Al primer límite se pausa el lote. Se conservan nombres y archivos de las
+  hojas pendientes en memoria de esa ventana y se guardan las ya leídas.
+- No hay reintentos automáticos ante 429, ni se envía el resto del PDF.
+- Verificar disponibilidad y reanudar prueba la primera hoja pendiente.
+  Si funciona, continúa con las demás. Si falla, se detiene otra vez.
+- Reintentar en una fila comprueba únicamente esa hoja.
+- Los errores temporales 500/502/503/504 conservan hasta tres intentos por
+  imagen; si se agotan, también se pausa el resto del lote.
+- La lista distingue borradores leídos, hojas en espera y capturas manuales.
+- Capturar manual abre esa hoja con su nombre de origen. Al guardarla, queda
+  resuelta en la cola y no se envía a Gemini al reanudar. Cancelar la captura
+  no la marca como completada ni borra el archivo pendiente.
+- Los permisos de edición de Asistencia siguen siendo necesarios para leer
+  o capturar. No se crean cursos ni instructores por reanudar una lectura.
+
+ARCHIVOS PENDIENTES
+Los archivos no se almacenan en Google ni de forma permanente en el navegador.
+Se conservan únicamente en esa ventana mientras sigas en la misma sesión.
+Recargar, cerrar sesión, quitar la cola o comenzar otra carga los retira.
+Si necesitas volver a entrar tras una espera larga, vuelve a subir solo las
+hojas pendientes; consulta los listados guardados para no repetir los ya hechos.
+Las listas que sí se guardaron en Google permanecen disponibles.
+Si quieres trabajar ahora sin Gemini, puedes usar Capturar manual.
+
+VERIFICACIÓN
+126 pruebas de lógica y pruebas de navegador: PDF simulado de seis hojas,
+pausa después del primer error, verificación explícita de una hoja, archivos
+conservados, captura manual de una hoja y reanudación sin duplicados dentro
+de la cola. Se comprobaron foto/PDF autenticados, sesión ausente, permisos,
+valores predeterminados y reintentos 503.
+La imagen de muestra usa datos ficticios. La cuota y lectura reales de tu
+proyecto deben comprobarse en Google una vez que tenga capacidad disponible.

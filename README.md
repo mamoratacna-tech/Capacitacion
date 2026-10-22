@@ -13,9 +13,13 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Panel sin la S y fondo del nombre](descargas/SAMARA_UNIVERSITY_PANEL_SIN_S.zip).
-Diseño aprobado en blanco, negro y gris, con Samara University como fondo
-vertical sutil. [Instrucciones](SAMARA/PANEL_SIN_S.txt).
+Última actualización: [Control de cuota en lectura de asistencia](descargas/SAMARA_LECTURA_CUOTA_GEMINI.zip).
+Pausa ante 429, conserva hojas pendientes, verifica una hoja antes de reanudar
+y permite captura manual. La cuota se administra en Google AI Studio.
+[Instrucciones](SAMARA/LECTURA_CUOTA_GEMINI.txt).
+
+Panel sin la S: [archivos](descargas/SAMARA_UNIVERSITY_PANEL_SIN_S.zip) e
+[instrucciones](SAMARA/PANEL_SIN_S.txt).
 
 Nombre de la aplicación: [archivos](descargas/SAMARA_UNIVERSITY_NOMBRE.zip) e
 [instrucciones](SAMARA/SAMARA_UNIVERSITY_NOMBRE.txt).
@@ -60,4 +64,4 @@ Se probaron localmente CMCAP, recuperación del histórico sin duplicados,
 filtros, captura manual, guardado y recarga con Google simulado, generación del
 PDF de asistencia y cola de dos imágenes con lectura simulada. La conexión
 real con Google Sheets y Gemini debe comprobarse en la cuenta propietaria.
-El Resumen utiliza datos reales; se verificó con 120 pruebas de lógica y pruebas de navegador de métricas, reportes, exportaciones, notificaciones, permisos, programa y personal.
+El Resumen utiliza datos reales; se verificó con 126 pruebas de lógica y pruebas de navegador de métricas, reportes, exportaciones, notificaciones, permisos, programa y personal.

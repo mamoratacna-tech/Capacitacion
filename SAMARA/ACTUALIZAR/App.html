@@ -2562,7 +2562,8 @@ function normalizePersonNames(key, value) {
       ed: null,
       cola: [],
       years: {},
-      reading: false
+      reading: false,
+      readPause:null
     };
     const AT_OBJ = ['1','2','3','4','5'].map(code=>code+' · '+objectiveLabel(code));
     const AT_MODS = ['Presencial', 'Online', 'Mixta', 'E-learning'],
@@ -2885,11 +2886,14 @@ function normalizePersonNames(key, value) {
       }
     }
     function atColaHTML() {
-      if (!AT.cola.length) return '';
-      const fin = AT.cola.filter(x => x.estado === 'listo' || x.estado === 'error').length,
-        act = fin < AT.cola.length;
-      return "<article class=\"panel att-cola\"><div class=\"att-colah\"><b>".concat(act ? "Leyendo listas… ".concat(fin, " de ").concat(AT.cola.length) : "Lectura terminada: ".concat(AT.cola.filter(x => x.estado === 'listo').length, " de ").concat(AT.cola.length, " listas quedaron como borrador"), "</b>").concat(act ? '' : '<button class="button outline att-sm" data-att="limpiarcola">Ocultar</button>', "</div>\n  <ul>").concat(AT.cola.map((x,index) => "<li><span class=\"att-ico\">".concat(x.estado === 'listo' ? '⚠' : x.estado === 'error' ? '✕' : x.estado === 'leyendo' ? '⟳' : '·', "</span><span class=\"att-cn\">").concat(atE(x.nombre), "</span><span class=\"att-cs ").concat(x.estado, "\">").concat(x.estado === 'listo' ? "Borrador listo · ".concat(x.pend, " por revisar") : x.estado === 'error' ? atE(x.msg) : x.estado === 'leyendo' ? atE(x.msg||'Leyendo…') : 'En espera', "</span>").concat(x.estado === 'listo' ? "<button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"".concat(x.id, "\">Revisar</button>") : x.estado==='error'&&x.blob?'<button type="button" class="button outline att-sm" data-att="reintentarlectura" data-i="'+index+'">Reintentar</button>':'', "</li>")).join(''), "</ul></article>");
+      if(!AT.cola.length)return '';
+      const ready=AT.cola.filter(x=>x.estado==='listo').length,paused=AT.cola.filter(x=>x.estado==='pausado').length,failed=AT.cola.filter(x=>x.estado==='error').length,busy=AT.reading||AT.cola.some(x=>x.estado==='leyendo');
+      const title=busy?'Leyendo listas… '+(ready+failed)+' de '+AT.cola.length:paused?'Lectura pausada: '+ready+' de '+AT.cola.length+' listas procesadas':'Lectura terminada: '+ready+' de '+AT.cola.length+' listas procesadas';
+      const pause=AT.readPause,when=pause?.retryAt?new Intl.DateTimeFormat('es-MX',{timeZone:'America/Tijuana',dateStyle:'short',timeStyle:'short'}).format(new Date(pause.retryAt)):'';
+      const notice=paused?'<div class="att-reading-pause" role="status"><b>'+atE(pause?.kind==='temporal'?'Servicio de lectura ocupado':pause?'Límite de lectura de Gemini':'Hay hojas en espera')+'</b><p>'+atE(pause?.message||'Reanuda las hojas que siguen pendientes cuando quieras continuar.')+'</p>'+(pause?.kind==='quota'?'<p>Puedes esperar el plazo indicado o solicitar a RH que revise la cuota y la facturación del proyecto en Google AI Studio.</p>':'')+(when?'<p>Reintento indicado: '+atE(when)+' (hora de Tijuana). La disponibilidad depende de Gemini.</p>':pause?'<p>El servicio no indicó una hora de recuperación.</p>':'')+'<p>No se enviaron las hojas restantes. Cada página del PDF requiere una lectura. Las hojas pendientes se conservan solo en esta ventana. Si recargas o vuelves a iniciar sesión, tendrás que cargar de nuevo las pendientes.</p><div class="att-actions"><button type="button" class="button outline" data-att="reanudarlectura" '+(busy?'disabled':'')+'>Verificar disponibilidad y reanudar</button></div><p>Se comprobará una sola hoja. Si aún no hay cuota, las demás seguirán en espera. También puedes capturar manualmente cada hoja desde su fila.</p></div>':'';
+      return '<article class="panel att-cola"><div class="att-colah"><b>'+atE(title)+'</b>'+(!busy?'<button type="button" class="button outline att-sm" data-att="limpiarcola">'+(paused?'Quitar cola':'Ocultar')+'</button>':'')+'</div>'+notice+'<ul>'+AT.cola.map((x,index)=>'<li><span class="att-ico">'+(x.estado==='listo'?(x.manual?'✓':'⚠'):x.estado==='error'?'✕':x.estado==='leyendo'?'⟳':'·')+'</span><span class="att-cn">'+atE(x.nombre)+'</span><span class="att-cs '+atE(x.estado)+'">'+atE(x.estado==='listo'?(x.manual?'Listado guardado':'Borrador listo')+' · '+x.pend+' por revisar':x.estado==='error'?x.msg:x.estado==='leyendo'?x.msg||'Leyendo…':x.estado==='pausado'?'En espera · sin lectura completada':'En espera')+'</span><span class="att-reading-actions">'+(x.estado==='listo'?'<button type="button" class="button outline att-sm" data-att="abrir" data-id="'+atE(x.id)+'">Revisar</button>':['error','pausado'].includes(x.estado)&&x.blob?'<button type="button" class="button outline att-sm" data-att="reintentarlectura" data-i="'+index+'" '+(busy?'disabled':'')+'>Reintentar</button><button type="button" class="button outline att-sm" data-att="manuallectura" data-i="'+index+'" '+(busy?'disabled':'')+'>Capturar manual</button>':'')+'</span></li>').join('')+'</ul></article>';
     }
+
     function atAttendanceRow(s){
         const v = (s.asistentes || []).filter(a => a.estado === 'ok').length;
         return "<tr><td><b>".concat(atE(s.cursoNombre || (s.listaCurso ? '“' + s.listaCurso + '” (sin vincular)' : 'Curso sin vincular')), "</b><br><small class=\"att-sub\">").concat(atE(s.cursoCodigo || ''), "</small><br><small class=\"att-sub\">Clave SIRCE: ").concat(atE(s.sirceDatos?.claveCurso || 'Pendiente'), "</small></td><td>").concat(atFmt(s.fecha), "<br><small class=\"att-sub\">").concat(atE(s.encabezado?.lugar || ''), "</small></td><td>").concat(atE(s.encabezado?.instructor || '—'), "</td><td>").concat((s.asistentes || []).length, "<br><small class=\"att-sub\">").concat(v, " validados</small></td><td>").concat(atPill(atSirce(s) ? 'ok' : 'nt', atSirce(s) ? 'Sí' : 'No'), "</td><td>").concat(s.estado === 'Borrador' ? atPill('wa', '⚠ Borrador · ' + atConteo(s) + ' por revisar') + (s.origen ? "<br><small class=\"att-sub\">".concat(atE(s.origen), "</small>") : '') : atPill(s.estado === 'Validada' ? 'ok' : 'wa', s.estado), "</td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"pdflista\" data-id=\"").concat(s.id, "\">Lista</button> <button class=\"button outline att-sm\" data-att=\"pdfdc3\" data-id=\"").concat(s.id, "\">DC-3</button> <button type=\"button\" class=\"button outline att-sm\" data-att=\"recepcion\" data-id=\"").concat(s.id, "\">Recepción DC-3</button> <button class=\"button outline att-sm\" data-sirce-open=\"").concat(atE(s.id), "\">SIRCE</button></td><td class=\"att-nowrap\"><button class=\"button outline att-sm\" data-att=\"abrir\" data-id=\"").concat(s.id, "\" title=\"Editar\" aria-label=\"Editar\">✎</button> <button class=\"button outline att-sm att-del\" data-att=\"borrar\" data-id=\"").concat(s.id, "\" title=\"Eliminar\" aria-label=\"Eliminar\">🗑</button></td></tr>");
@@ -3168,7 +3172,8 @@ function normalizePersonNames(key, value) {
       AT.reading=false;
       await atProcesarCola(items);
     }
-    async function atProcesarCola(items){
+    async function atProcesarCola(items,verify=false){
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit')){toast('Tu perfil no permite leer ni capturar listas.');return;}
       if(AT.reading)return;AT.reading=true;
       try{
       for (const it of items) {
@@ -3176,7 +3181,7 @@ function normalizePersonNames(key, value) {
         it.estado = 'leyendo';it.msg='';
         renderAttendance();
         try {
-          const r = await window.leerListaFT(it.blob, atPrompt(),message=>{it.msg=message;if(!AT.ed)renderAttendance();}),
+          const r = await window.leerListaFT(it.blob, atPrompt(),message=>{it.msg=message;if(!AT.ed)renderAttendance();},{verify}),
             ed = atDesdeLectura(r),
             c = atC(ed.cursoCodigo);
           const rec = {
@@ -3203,18 +3208,21 @@ function normalizePersonNames(key, value) {
           };
           attendance = [rec, ...attendance];
           saveStore('samara.attendance.v1', attendance);
+          AT.readPause=null;verify=false;
           it.estado = 'listo';
           it.id = rec.id;
           it.pend = atConteo(rec);
         } catch (e) {
+          if(e.pause){AT.readPause=e.pause;it.estado='pausado';for(const waiting of items)if(waiting.estado==='pendiente')waiting.estado='pausado';break;}
           it.estado = 'error';
           it.msg = e && e.code === 'formato' ? 'Formato HEIC: usa JPG o PNG.' : 'No se pudo leer: ' + String(e && (e.message || e.code) || e);
+          if(verify){for(const waiting of items)if(waiting.estado==='pendiente')waiting.estado='pausado';break;}
         }
         if(it.estado==='listo')it.blob = null;
         if (!AT.ed) renderAttendance();
       }
-      toast(items.some(item=>item.estado==='error')?'Quedaron archivos sin leer. Puedes reintentarlos desde la lista.':'Lectura terminada. Revisa cada borrador marcado con ⚠.');
-      }finally{AT.reading=false;}
+      toast(items.some(item=>item.estado==='pausado')?'Lectura pausada. Las hojas pendientes siguen en esta ventana.':items.some(item=>item.estado==='error')?'Quedaron archivos sin leer. Puedes reintentarlos desde la lista.':'Lectura terminada. Revisa cada borrador marcado con ⚠.');
+      }finally{AT.reading=false;if(!AT.ed)renderAttendance();}
     }
     function atDesdeLectura(r) {
       r = r || {};
@@ -3481,6 +3489,7 @@ function normalizePersonNames(key, value) {
         const next = [doc, ...attendance.filter(x => x.id !== doc.id)];
         await persistCollection('samara.attendance.v1', next);
         attendance = next;
+        if(Number.isInteger(e.queueIndex)&&AT.cola[e.queueIndex]){const item=AT.cola[e.queueIndex];item.estado='listo';item.manual=true;item.id=doc.id;item.pend=atConteo(doc);item.blob=null;}
         AT.ed = null;
         renderAttendance();
         toast(w ? 'Listado guardado como “Por validar”.' : 'Listado guardado.');
@@ -3831,7 +3840,9 @@ function normalizePersonNames(key, value) {
         AT.hasta = '';
         renderAttendance();
       },
-      reintentarlectura: d => {const item=AT.cola[Number(d.i)];if(!item||item.estado!=='error'||!item.blob||AT.reading)return;item.estado='pendiente';return atProcesarCola([item]);},
+      reintentarlectura: d => {const item=AT.cola[Number(d.i)];if(!item||!['error','pausado'].includes(item.estado)||!item.blob||AT.reading)return;item.estado='pendiente';return atProcesarCola([item],true);},
+      reanudarlectura:()=>{if(AT.reading)return;const pending=AT.cola.filter(item=>['pausado','pendiente'].includes(item.estado)&&item.blob);pending.forEach(item=>item.estado='pendiente');return atProcesarCola(pending,true);},
+      manuallectura:d=>{if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return toast('Tu perfil no permite capturar listas.');const index=Number(d.i),item=AT.cola[index];if(!item||!item.blob||AT.reading)return;atAbrir({leida:false,cursoCodigo:'',fecha:atHoy(),origen:item.nombre,queueIndex:index});},
       limpiarcola: () => {
         AT.cola = [];
         renderAttendance();

@@ -82,7 +82,20 @@
   const run=(fn,...a)=>new Promise((ok,ko)=>google.script.run.withSuccessHandler(ok).withFailureHandler(ko)[fn](...a,sessionStorage.getItem('samara.session')||''));
   window.descargarArchivo=async(blob,nombre)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
   window.leerHojaSIRCE=rango=>run('api_leerHojaSIRCE',rango);
-  window.leerListaFT=async(file,prompt,onProgress)=>{const max=3500000;let bmp=null;
+  let readingPause=null;
+  function limitError(pause){const error=Error(pause.message);error.code=pause.kind==='temporal'?'temporal':'limite';error.pause=pause;return error;}
+  function normalizeReadingError(error){
+    const message=String(error&&error.message||error),mark=message.indexOf('LECTURA_LIMITE:');
+    if(mark>=0){try{return limitError(JSON.parse(message.slice(mark+'LECTURA_LIMITE:'.length)));}catch(parseError){}}
+    if(/Gemini respondió 429\b|RESOURCE_EXHAUSTED/i.test(message)){
+      const wait=message.match(/retry (?:in|after)\s+([\d.hms\s]+)/i),parts=wait?[...wait[1].matchAll(/(\d+(?:\.\d+)?)\s*([hms])/gi)]:[],seconds=parts.reduce((sum,m)=>sum+Number(m[1])*({h:3600,m:60,s:1}[m[2].toLowerCase()]),0),daily=/per.?day|daily/i.test(message)||seconds>=3600;
+      return limitError({kind:daily?'quota':'rate',retryAt:seconds?Date.now()+Math.ceil(seconds*1000):0,message:daily?'Se agotó la cuota de lectura disponible del proyecto en Gemini.':'Gemini alcanzó su límite de solicitudes de lectura. Se pausó la carga para no seguir enviando hojas.'});
+    }
+    return error;
+  }
+  window.samaraReadingStatus={getPause:()=>readingPause};
+  window.leerListaFT=async(file,prompt,onProgress,options={})=>{const max=3500000;let bmp=null;
+    if(readingPause&&!options.verify&&(!readingPause.retryAt||readingPause.retryAt>Date.now()))throw limitError(readingPause);
     try{bmp=await createImageBitmap(file)}catch(e){bmp=await new Promise(r=>{const im=new Image();const url=URL.createObjectURL(file);im.onload=()=>{URL.revokeObjectURL(url);r(im)};im.onerror=()=>{URL.revokeObjectURL(url);r(null)};im.src=url})}
     let img=file;if(!bmp||!bmp.width){if(!(/^image\/(jpeg|png|webp)$/.test(file.type)&&file.size<=max))throw{code:'formato'}}
     else{const sc=Math.min(1,2200/Math.max(bmp.width,bmp.height)),cv=document.createElement('canvas');cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
@@ -91,11 +104,12 @@
     if(!img)throw Error('No se pudo preparar la imagen.');
     const b64=await new Promise((ok,ko)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=ko;fr.readAsDataURL(img)});
     for(let attempt=1;attempt<=3;attempt++){
-      try{return await run('api_leerListaFT',b64,img.type||'image/jpeg',prompt);}
+      try{const result=await run('api_leerListaFT',b64,img.type||'image/jpeg',prompt);readingPause=null;return result;}
       catch(error){
+        error=normalizeReadingError(error);if(error.pause){readingPause=error.pause;throw error;}
         const message=String(error&&error.message||error),temporary=/Gemini respondió (500|502|503|504)\b/.test(message);
         if(!temporary)throw error;
-        if(attempt===3){const exhausted=Error('El servicio de lectura está saturado temporalmente. Puedes pulsar Reintentar sin volver a subir el archivo.');exhausted.code='temporal';throw exhausted;}
+        if(attempt===3){const exhausted=Error('El servicio de lectura está saturado temporalmente. Puedes pulsar Reintentar sin volver a subir el archivo.');exhausted.code='temporal';readingPause={kind:'temporal',retryAt:Date.now()+60000,message:exhausted.message};exhausted.pause=readingPause;throw exhausted;}
         if(onProgress)onProgress('Servicio de lectura ocupado. Reintentando ('+(attempt+1)+' de 3)…');
         await new Promise(resolve=>setTimeout(resolve,attempt===1?1500:3500));
       }
@@ -104,3 +118,7 @@
 })();
 
 </script>
+
+<style>
+.att-reading-pause{background:#fff7ed;border:1px solid #edd4b1;border-radius:8px;padding:14px;margin:12px 0;color:#735232;font-size:11px;line-height:1.7}.att-reading-pause p{margin:5px 0}.att-reading-pause .att-actions{margin-top:10px;flex-wrap:wrap}.att-cola li{flex-wrap:wrap}.att-cola .att-cn{flex:1 1 180px;white-space:normal;overflow-wrap:anywhere}.att-cola .att-cs{flex:1 1 230px;overflow-wrap:anywhere}.att-cola .att-cs.pausado{color:#a57135}.att-cola .att-reading-actions{display:flex;gap:6px;flex-wrap:wrap}.att-cola .att-colah{flex-wrap:wrap}
+</style>
