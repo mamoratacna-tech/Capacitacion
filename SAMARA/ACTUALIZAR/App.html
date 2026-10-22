@@ -2949,11 +2949,24 @@ function normalizePersonNames(key, value) {
           cs = p ? [] : atCandidatos(a);
         return "<div class=\"att-arow\"><div class=\"att-l1\"><span class=\"att-num\">".concat(p ? a.numero : a.numero || '—', "</span><div class=\"att-flex\">").concat(atCb('emp', i, p ? p.nombre : a.escrito || '', 'Escribe nombre o número…'), "</div><label class=\"att-chk\"><input type=\"checkbox\" data-firma=\"").concat(i, "\" ").concat(a.firmo ? 'checked' : '', ">Firmó</label>").concat(atPill(p ? cl : 'no', t), "<button class=\"button outline att-sm att-del\" data-att=\"quitar\" data-i=\"").concat(i, "\" aria-label=\"Quitar renglón\">✕</button></div>\n    <div class=\"att-l2\">").concat(p ? atE(p.puesto) : 'Sin registro en Personal').concat(a.escrito && (!p || atNorm(a.escrito) !== atNorm(p.nombre)) ? " · Escrito: “".concat(atE(a.escrito), "”") : '', "</div>\n    ").concat(p && cl === 'wa' ? "<div class=\"att-l2\"><button class=\"button outline att-sm\" data-att=\"confirmar\" data-i=\"".concat(i, "\">Sí es ").concat(atE((p.nombre.split(',')[1] || p.nombre).trim().split(' ')[0]), "</button></div>") : '', "\n    ").concat(!p ? "<div class=\"att-l2\">".concat(cs.map(x => "<button class=\"button outline att-sm\" data-att=\"sugerencia\" data-i=\"".concat(i, "\" data-n=\"").concat(x.numero, "\">").concat(atE(x.nombre), " (").concat(x.numero, ")</button>")).join(' '), " <button class=\"button outline att-sm\" data-att=\"altaemp\" data-i=\"").concat(i, "\">＋ Dar de alta</button></div>") : '', "</div>");
       }).join('') : '<p class="att-hint">Sin asistentes todavía.</p>';
+      atPintarEstado();
+    }
+    function atPintarEstado() {
+      const e=AT.ed;
+      if(!e||!$('#att-save'))return;
       const b = atBloqueos(),
         w = atAvisos();
       if(e.objectiveNeedsReview)b.push('Revisa el objetivo anterior y elige uno del catálogo adjunto.');
       $('#att-save').disabled = b.length > 0;
       $('#att-msg').innerHTML = b.length ? "<span class=\"att-err\"><b>Para guardar falta:</b> ".concat(b.map(atE).join(' '), "</span>") : w ? "<span class=\"att-warn\">".concat(w, " punto").concat(w > 1 ? 's' : '', " por revisar. Puedes guardar; quedará como “Por validar”.</span>") : '<span class="att-okt">Todo validado.</span>';
+    }
+    function atActualizarFecha(input) {
+      if(!AT.ed)return;
+      const previous=AT.ed.fecha,root=$('#att-root');
+      AT.ed.fecha=input.value;
+      root.querySelectorAll('[data-sirce-field="inicio"],[data-sirce-field="fin"]').forEach(field=>{if(!field.value||field.value===previous)field.value=input.value;});
+      AT.ed.sirceDatos=ssRead(root);
+      atPintarEstado();
     }
     function atAbrir(ed) {
       AT.ed = Object.assign({
@@ -3823,7 +3836,7 @@ function normalizePersonNames(key, value) {
     });
     appOn(document,'input', ev => {
       const t = ev.target;
-      if (t.classList?.contains('att-cbi')) atCbAbrir(t);else if (t.id === 'att-search') {
+      if(t.id==='att-fecha')atActualizarFecha(t);else if (t.classList?.contains('att-cbi')) atCbAbrir(t);else if (t.id === 'att-search') {
         AT.q = t.value;
         const pos = t.selectionStart;
         renderAttendance();
@@ -3873,8 +3886,7 @@ function normalizePersonNames(key, value) {
         atPintar();
         $('#att-sirce-fields').innerHTML=ssFields(AT.ed);
       } else if (t.id === 'att-fecha') {
-        const previous=AT.ed.fecha;AT.ed.fecha=t.value;
-        const root=$('#att-root');root.querySelectorAll('[data-sirce-field="inicio"],[data-sirce-field="fin"]').forEach(input=>{if(!input.value||input.value===previous)input.value=t.value;});AT.ed.sirceDatos=ssRead(root);
+        atActualizarFecha(t);
       }else if (t.dataset.h) {
         AT.ed.enc[t.dataset.h] = t.value;
         if(t.dataset.h==='objetivo'){AT.ed.objectiveNeedsReview=false;const select=$('#att-sirce-fields [data-sirce-field="objetivo"]');select.value=t.value;ssRefreshFields($('#att-root'),select);AT.ed.sirceDatos=ssRead($('#att-root'));}

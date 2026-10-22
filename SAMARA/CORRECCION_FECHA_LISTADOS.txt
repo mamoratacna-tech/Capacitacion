@@ -1,0 +1,30 @@
+SAMARA UNIVERSITY — CORRECCIÓN DEL GUARDADO POR FECHA
+
+La fecha estaba bien capturada. El formulario no actualizaba el aviso ni el
+estado de Guardar listado al cambiarla, y mantenía el bloqueo anterior.
+
+INSTALACIÓN (UN SOLO ARCHIVO)
+1. Abre tu proyecto existente en script.google.com.
+2. Abre el archivo HTML App y sustituye TODO su contenido por ACTUALIZAR/App.html.
+   Es el archivo completo; no lo pegues al final ni crees otro App.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar.
+4. Recarga la aplicación publicada. Abre tu borrador, completa la fecha
+   de ejecución y guarda el listado.
+
+No necesitas volver a subir el PDF ni borrar el borrador. Esta corrección
+se aplica sobre la actualización de lectura local de PDF, sin Gemini.
+No cambies Code, LecturaPDF, permisos, catálogos, hojas ni propiedades.
+
+CAMBIO
+La fecha actualiza inmediatamente la validación y el botón Guardar, tanto al
+escribir como al elegirla con el calendario. Si se borra, vuelve a pedirla.
+Se mantienen las fechas SIRCE ligadas a la fecha de ejecución; si capturaste
+un rango distinto de inicio y término, se respeta ese rango.
+
+COMPROBADO
+Se reprodujo el fallo con un borrador PDF sin fecha. Tras la corrección se
+capturó 20/10/2026, se habilitó Guardar y se guardó como 2026-10-20 sin duplicar
+el listado. Se comprobó la recarga, fecha vacía bloqueada, firmas sin cambios
+y conservación de un rango SIRCE capturado por separado.
+Estas pruebas fueron locales; publica la nueva versión en tu proyecto.

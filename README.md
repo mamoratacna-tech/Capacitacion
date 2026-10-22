@@ -13,7 +13,11 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Lectura local de PDF, sin Gemini](descargas/SAMARA_PDF_LOCAL_SIN_GEMINI.zip).
+Última corrección: [Guardar listados después de capturar la fecha](descargas/SAMARA_CORRECCION_FECHA_LISTADOS.zip).
+Si ya instalaste la lectura local, sustituye solo App.html y publica una nueva versión.
+[Instrucciones](SAMARA/CORRECCION_FECHA_LISTADOS.txt).
+
+Lectura local: [Lectura local de PDF, sin Gemini](descargas/SAMARA_PDF_LOCAL_SIN_GEMINI.zip).
 Admite solo PDF: extrae texto o utiliza OCR local para escaneos. Cada página queda
 como borrador; escritura manuscrita y firmas requieren revisión manual.
 [Instrucciones](SAMARA/LECTURA_PDF_LOCAL.txt).
