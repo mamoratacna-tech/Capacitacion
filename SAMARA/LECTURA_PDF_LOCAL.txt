@@ -1,0 +1,55 @@
+SAMARA UNIVERSITY — LISTADOS SOLO PDF, SIN GEMINI
+
+Esta actualización sustituye la lectura con Gemini. No necesita clave de IA,
+cuota de Gemini ni activar facturación. Permite PDF con texto y PDF escaneado.
+No permite subir JPG, PNG, HEIC ni fotos renombradas como PDF.
+
+ACTUALIZAR EL PROYECTO EXISTENTE
+1. Abre tu proyecto en script.google.com.
+2. Sustituye completos estos seis archivos con los de ACTUALIZAR:
+   App.html, Code.gs, EstilosListados.html, Index.html, Usuarios.html y Listados.html.
+   Code.gs es secuencia de comandos; los demás son archivos HTML.
+3. Crea UN archivo HTML nuevo con + > HTML, llamado LecturaPDF (sin .html).
+   Pega el contenido completo de ACTUALIZAR/LecturaPDF.html. Si ya existe,
+   sustituye su contenido. Index y Code deben actualizarse juntos para incluirlo.
+4. Conserva UsuariosServidor, catálogos, plantillas y demás archivos actuales.
+   No borres hojas, registros ni propiedades DB_ID, SIRCE_ID o autenticación.
+   Las propiedades GEMINI_API_KEY/GEMINI_MODEL anteriores quedan sin uso;
+   no hace falta tocarlas. No se requieren permisos nuevos en appsscript.json.
+5. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación publicada.
+
+USO
+- Listados de asistencia > Nueva lista > Cargar PDF.
+- Puedes elegir varios PDF. Cada página se procesa una sola vez por carga,
+  de forma secuencial, y queda como borrador para revisar.
+- Si tiene texto, se intenta extraer directamente. Para un escaneo se utiliza
+  PDF.js + Tesseract en español dentro del navegador, sin enviar el documento
+  a un servicio de lectura. La primera vez descarga las herramientas y el idioma;
+  sí necesita conexión para esa descarga. El OCR consume recursos del equipo
+  y puede tardar, especialmente con documentos largos o teléfonos.
+- Los datos extraídos se guardan como borradores en la base de la aplicación,
+  igual que las capturas manuales. El PDF original no se guarda ni se envía
+  a Gemini. El texto detectado se conserva con el borrador para revisión.
+- Revisa curso, fecha, planta, instructor y asistentes. Nombre y puesto se
+  vinculan con Personal. Los predeterminados del curso siguen viniendo del glosario.
+- La letra manuscrita puede reconocerse mal o no reconocerse. Esta lectura
+  local no sustituye una revisión humana. Las firmas SIEMPRE quedan sin confirmar:
+  verifica el documento y marca Firmó manualmente antes de validar.
+- Si no se reconoce una fecha única válida, queda vacía; no se pone la fecha de hoy.
+- Los números de empleado desconocidos quedan pendientes de vincular con Personal.
+- Una página fallida permite Reintentar página o Capturar manual. Las páginas
+  ya procesadas no se repiten al reintentar. Si vuelves a cargar el archivo como
+  una carga nueva, será una carga distinta: revisa antes los borradores existentes.
+- La cola y el PDF abierto duran mientras la aplicación está abierta. Los borradores
+  guardados permanecen. Tras recargar o cerrar sesión debes seleccionar de nuevo
+  el PDF para continuar las páginas que todavía no quedaron como borrador.
+- La vista antigua Listados conserva la captura manual y dirige a la aplicación
+  principal para cargar PDF. Sus antiguos endpoints de lectura ya no llaman a IA.
+
+COMPROBADO LOCALMENTE
+Extracción de un PDF real con texto y lectura de un PDF real escaneado con
+Tesseract en español; sin envío del documento al proveedor. Rechazo de imágenes,
+firmas sin confirmar, sesión y permisos, borradores, reintento por página sin
+repetir las completadas, filtros por año y captura manual. Estas pruebas no
+publican el proyecto ni comprueban la conexión a tu cuenta real de Google.

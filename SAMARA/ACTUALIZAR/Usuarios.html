@@ -14,7 +14,7 @@
  access.canStore=key=>access.can(collectionModules[key],'edit');
  access.writeModule=button=>{
   if(!button)return null;
-  const att=button.dataset.att;if(att==='altaemp')return 'people';if(['altains','editins'].includes(att)||button.id==='course-register-instructor')return 'instructors';if(['nueva','manual','guardar','borrar','borrarlista','descartarlista','abrir','reintentarlectura','altaemp','altains','editins'].includes(att)||button.matches('[data-sirce-bulk],[data-sirce-action="save"],[data-sirce-action="apply"]'))return 'attendance';
+  const att=button.dataset.att;if(att==='altaemp')return 'people';if(['altains','editins'].includes(att)||button.id==='course-register-instructor')return 'instructors';if(['nueva','pdf','manual','manuallectura','guardar','borrar','borrarlista','descartarlista','abrir','reintentarlectura','altaemp','altains','editins'].includes(att)||button.matches('[data-sirce-bulk],[data-sirce-action="save"],[data-sirce-action="apply"]'))return 'attendance';
   const dialogs={'program-dialog':'program','course-dialog':'courses','department-dialog':'courses','instructor-dialog':'instructors','employee-dialog':'people','employee-import-dialog':'people','position-dialog':'matrix','matrix-dialog':'matrix','matrix-department-dialog':'matrix','cmcap-add-dialog':'cmcap','legal-dialog':'cmcap','user-editor':'users'},module=button.closest('.view')?.id.replace('view-','')||dialogs[button.closest('dialog')?.id];
   if(!module)return null;
   const write=button.matches('.samara-action,[type="submit"]')||/^(new-|add-|import-|course-add-|course-register-|employee-import-apply)/.test(button.id)||[...button.attributes].some(item=>/^data-.*(?:add|edit|delete|remove)(?:-|$)/.test(item.name));return write?module:null;

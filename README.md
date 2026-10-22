@@ -13,10 +13,10 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última actualización: [Control de cuota en lectura de asistencia](descargas/SAMARA_LECTURA_CUOTA_GEMINI.zip).
-Pausa ante 429, conserva hojas pendientes, verifica una hoja antes de reanudar
-y permite captura manual. La cuota se administra en Google AI Studio.
-[Instrucciones](SAMARA/LECTURA_CUOTA_GEMINI.txt).
+Última actualización: [Lectura local de PDF, sin Gemini](descargas/SAMARA_PDF_LOCAL_SIN_GEMINI.zip).
+Admite solo PDF: extrae texto o utiliza OCR local para escaneos. Cada página queda
+como borrador; escritura manuscrita y firmas requieren revisión manual.
+[Instrucciones](SAMARA/LECTURA_PDF_LOCAL.txt).
 
 Panel sin la S: [archivos](descargas/SAMARA_UNIVERSITY_PANEL_SIN_S.zip) e
 [instrucciones](SAMARA/PANEL_SIN_S.txt).
@@ -60,8 +60,8 @@ Nueva versión → Implementar**. Abre de nuevo la aplicación.
 
 ## Estado de verificación
 
-Se probaron localmente CMCAP, recuperación del histórico sin duplicados,
-filtros, captura manual, guardado y recarga con Google simulado, generación del
-PDF de asistencia y cola de dos imágenes con lectura simulada. La conexión
-real con Google Sheets y Gemini debe comprobarse en la cuenta propietaria.
-El Resumen utiliza datos reales; se verificó con 126 pruebas de lógica y pruebas de navegador de métricas, reportes, exportaciones, notificaciones, permisos, programa y personal.
+Se probaron localmente permisos y sesión, captura manual, filtros por año, borradores,
+reintento por página y lectura real de PDF con texto y PDF escaneado con Tesseract
+en español dentro del navegador. No se envía el documento a un servicio de lectura.
+Las herramientas se descargan bajo demanda. La conexión real con Google Sheets
+y la publicación deben comprobarse en la cuenta propietaria.

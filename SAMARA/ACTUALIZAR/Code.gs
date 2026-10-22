@@ -12,7 +12,7 @@ function doGet(e){
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
 function include(nombre){
   if(!authRendering_)throw Error('Inicia sesión para abrir la aplicación.');
-  if(!['Notificaciones','Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
+  if(!['LecturaPDF','Notificaciones','Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
   return HtmlService.createTemplateFromFile(nombre).getRawContent();
 }
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.
@@ -173,37 +173,8 @@ function listados_alta(o){authModule_(arguments[arguments.length-1],'people',tru
   }finally{lock.releaseLock();}
   return alLeer_();
 }
-// Describe límites del proveedor sin confundir cuota agotada con saturación 503.
-function readingLimit_(body,headers,now){
-  let data={};try{data=JSON.parse(body);}catch(error){}
-  const message=String(data.error?.message||body||''),details=data.error?.details||[];
-  let seconds=0,limit='',model='',daily=false;
-  for(const detail of details){if(detail.retryDelay)seconds=Math.max(seconds,parseFloat(detail.retryDelay)||0);for(const v of detail.violations||[]){daily=daily||/per.?day|daily/i.test(String(v.quotaId||'')+' '+String(v.quotaMetric||''));limit=String(v.quotaValue||limit);model=v.quotaDimensions?.model||model;}}
-  if(!seconds){const wait=message.match(/retry (?:in|after)\s+([\d.hms\s]+)/i);if(wait){const parts=[...wait[1].matchAll(/(\d+(?:\.\d+)?)\s*([hms])/gi)];seconds=parts.reduce((sum,m)=>sum+Number(m[1])*({h:3600,m:60,s:1}[m[2].toLowerCase()]),0);}}
-  if(!seconds)for(const key of Object.keys(headers||{})){if(key.toLowerCase()==='retry-after'){const value=String(headers[key]);seconds=/^\d+(\.\d+)?$/.test(value)?Number(value):Math.max(0,(Date.parse(value)-now)/1000);}}
-  if(!limit)limit=message.match(/limit:\s*(\d+)/i)?.[1]||'';
-  daily=daily||/per.?day|daily/i.test(message)||seconds>=3600;
-  return {kind:daily?'quota':'rate',retryAt:seconds>0?now+Math.ceil(seconds*1000):0,limit,model,message:daily?'Se agotó la cuota de lectura disponible del proyecto en Gemini.':'Gemini alcanzó su límite de solicitudes de lectura. Se pausó la carga para no seguir enviando hojas.'};
-}
-// Lee la foto de la lista con Gemini. La foto no se guarda en ningún lado.
-function listados_leerFoto(base64,mime,instrucciones){authModule_(arguments[arguments.length-1],'attendance',true);
-  const props=PropertiesService.getScriptProperties();
-  const clave=props.getProperty('GEMINI_API_KEY');
-  if(!clave)throw Error('Falta GEMINI_API_KEY en Propiedades del script');
-  const modelo=props.getProperty('GEMINI_MODEL')||'gemini-flash-latest';
-  const r=UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(modelo)+':generateContent',{
-    method:'post',contentType:'application/json',muteHttpExceptions:true,headers:{'x-goog-api-key':clave},
-    payload:JSON.stringify({contents:[{role:'user',parts:[{text:instrucciones},{inline_data:{mime_type:mime||'image/jpeg',data:base64}}]}],generationConfig:{temperature:0,responseMimeType:'application/json'}})
-  });
-  const code=r.getResponseCode(),body=r.getContentText();
-  if(code===429)throw Error('LECTURA_LIMITE:'+JSON.stringify(readingLimit_(body,typeof r.getAllHeaders==='function'?r.getAllHeaders():{},Date.now())));
-  if(code!==200){let m=body;try{m=JSON.parse(body).error.message;}catch(e){}throw Error('Gemini respondió '+code+': '+m);}
-  const data=JSON.parse(body);
-  const txt=(((data.candidates||[])[0]||{}).content||{}).parts?data.candidates[0].content.parts.map(p=>p.text||'').join(''):'';
-  if(!txt)throw Error('Gemini no devolvió datos');
-  return JSON.parse(txt.replace(/```json|```/g,'').trim());
-}
-
+// Compatibilidad: el lector anterior ya no recibe imágenes ni llama servicios externos.
+function listados_leerFoto(){authModule_(arguments[arguments.length-1],'attendance',true);throw Error('La lectura ahora es local y solo admite PDF. Actualiza la aplicación y usa Cargar PDF.');}
 
 // Compatibilidad con el módulo de asistencia integrado.
 // Las funciones listados_* y sus hojas originales se conservan.
@@ -215,9 +186,7 @@ function api_leerHojaSIRCE(rango){authModule_(arguments[arguments.length-1],'peo
   if(!hoja)throw Error('No existe la pestaña '+partes[0]+' en la hoja SIRCE');
   return hoja.getRange(partes[1]).getValues().map(fila=>fila.map(lsTexto_));
 }
-function api_leerListaFT(base64,mime,instrucciones){authModule_(arguments[arguments.length-1],'attendance',true);
-  return listados_leerFoto(base64,mime,instrucciones,arguments[arguments.length-1]);
-}
+function api_leerListaFT(){authModule_(arguments[arguments.length-1],'attendance',true);throw Error('La lectura ahora es local y solo admite PDF. Actualiza la aplicación y usa Cargar PDF.');}
 
 
 // Firmas de DC-3 resueltas por la fecha del documento, desde la página Listados.

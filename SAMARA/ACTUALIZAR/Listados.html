@@ -264,13 +264,13 @@ function vListados(){const all=S.sesiones,l=all.filter(x=>S.filtro==='todos'||(S
   <div class="tw"><table class="t"><thead><tr><th>Curso</th><th>Fecha</th><th>Instructor</th><th>Asistentes</th><th>SIRCE</th><th>Estado</th><th>Imprimir</th><th>Acciones</th></tr></thead><tbody>
   ${l.length?l.map(s=>{const v=(s.asistentes||[]).filter(a=>a.estado==='ok').length;return `<tr><td><b>${esc(s.cursoNombre||'Curso sin vincular')}</b><br><span class="small">${esc(s.cursoCodigo||'')}</span></td><td style="white-space:nowrap">${fmt(s.fecha)}<br><span class="small">${esc(s.encabezado?.lugar||'')}</span></td><td>${esc(s.encabezado?.instructor||'—')}</td><td>${(s.asistentes||[]).length}<br><span class="small">${v} validados</span></td><td><span class="pill ${esSirce(s)?'ok':'nt'}">${esSirce(s)?'Sí':'No'}</span></td><td><span class="pill ${s.estado==='Validada'?'ok':'wa'}">${esc(s.estado)}</span></td><td style="white-space:nowrap"><button class="btn sm" data-act="pdflista" data-id="${s.id}">Lista</button> <button class="btn sm" data-act="pdfdc3" data-id="${s.id}">DC-3</button></td><td style="white-space:nowrap"><button class="btn sm ico" data-act="abrir" data-id="${s.id}" aria-label="Editar" title="Editar">✎</button> <button class="btn sm ico danger" data-act="borrarfila" data-k="sesiones" data-id="${s.id}" aria-label="Eliminar" title="Eliminar">🗑</button></td></tr>`}).join(''):`<tr><td colspan="8" class="vacio">${all.length?'No hay listados con este filtro.':'Aún no hay listados. Usa “+ Nueva lista”.'}</td></tr>`}
   </tbody></table><div class="tfoot"><span>${l.length} listado${l.length===1?'':'s'}</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></div>`}
-function vNueva(){const puede=true;
-  return `<h1>Nueva lista de asistencia</h1><p class="lead">Sube la foto de la lista FT-RH-010 firmada. Se usa solo para leer los datos y no se guarda.</p>
-  <div class="card"><div class="drop" id="dropzone">${puede?`<label class="lbl" for="foto" style="font-size:14px;color:var(--ink);margin-bottom:8px">Toca aquí para elegir la foto de la lista</label><input type="file" id="foto" accept="image/jpeg,image/png,image/webp,image/*" class="filein"><p class="small" style="margin:10px 0 0">Formato JPG o PNG. En computadora también puedes arrastrar la imagen aquí.</p>`:`<p style="margin:0">La lectura de fotos no está disponible en esta vista.</p>`}<div id="pv"></div></div></div>
-  <div class="card"><h2>Sin foto</h2><p class="small" style="margin:0 0 10px">Captura la lista a mano eligiendo curso, instructor y colaboradores.</p><button class="btn" data-act="manual">Capturar manualmente</button></div>`}
+function vNueva(){
+  return `<h1>Nueva lista de asistencia</h1><p class="lead">La carga de PDF está disponible en Listados de asistencia de Samara University.</p>
+  <div class="card"><a class="btn primary" href="${esc(APP_URL)}" target="_blank" rel="noopener">Abrir Samara University</a><p class="small">La lectura de archivos se realiza en el navegador y solo admite PDF.</p></div>
+  <div class="card"><h2>Captura manual</h2><p class="small">Elige curso, instructor y colaboradores.</p><button class="btn" data-act="manual">Capturar lista manual</button></div>`}
 function vEditar(){const e=S.ed;
   return `<div class="ttl" style="margin-bottom:8px"><h1 style="margin:0">${e.id?'Editar lista':'Revisar lista'}</h1><button class="btn sm ghost" data-act="tab" data-v="sesiones">Cancelar</button></div>
-  ${e.leida?`<p class="lead">Datos leídos de la foto. Revisa lo marcado antes de guardar.</p>`:'<p class="lead">Completa el encabezado y agrega a los asistentes.</p>'}
+  ${e.leida?`<p class="lead">Datos importados. Revisa lo marcado antes de guardar.</p>`:'<p class="lead">Completa el encabezado y agrega a los asistentes.</p>'}
   <div class="card"><h2>Curso</h2><label class="lbl" for="curso">Curso del glosario</label><select id="curso"><option value="">Elige un curso</option>${S.cursos.map(c=>`<option value="${esc(c.codigo)}" ${c.codigo===e.cursoCodigo?'selected':''}>${esc(c.codigo+' · '+c.nombre)}</option>`).join('')}</select>
   ${e.leida&&e.lista.curso?`<p class="hint">En la lista dice: “${esc(e.lista.curso)}”</p>`:''}<div id="cinfo"></div>
   <label style="display:block;margin-top:12px;max-width:260px"><span class="lbl">Fecha de ejecución</span><input type="date" id="fecha" value="${esc(e.fecha||'')}"></label></div>
@@ -307,36 +307,6 @@ function altaForm(i){const a=S.ed&&S.ed.asistentes[i]||{};
   <datalist id="dlp">${[...new Set(S.padronList.map(p=>p.puesto))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist><datalist id="dld">${[...new Set(S.padronList.map(p=>p.depto))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist></form>`,
   `<button class="btn" data-act="cerrar">Cancelar</button><button class="btn primary" data-act="guardaralta" data-i="${i??''}">Dar de alta</button>`)}
 
-/* ---------- lectura de la foto ---------- */
-async function reducir(file){const max=3500000;let bmp=null;
-  try{bmp=await createImageBitmap(file)}catch(e){bmp=await new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=URL.createObjectURL(file)})}
-  if(!bmp||!bmp.width){if(/^image\/(jpeg|png|webp)$/.test(file.type)&&file.size<=max)return file;throw{code:'formato'}}
-  const sc=Math.min(1,2200/Math.max(bmp.width,bmp.height));const cv=document.createElement('canvas');cv.width=Math.round(bmp.width*sc);cv.height=Math.round(bmp.height*sc);cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
-  let q=.85,blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',q));while(blob&&blob.size>max&&q>.4){q-=.15;blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',q))}return blob||file}
-function prompt(){return `Eres capturista de Recursos Humanos. La imagen es el formato FT-RH-010 "Listado de asistencia a cursos" de MAM DE LA FRONTERA S.A. DE C.V., llenado a mano.
-Extrae los datos exactamente como están escritos. Reglas:
-- Incluye TODOS los renglones que tengan nombre escrito, aunque no tengan número de empleado (en ese caso numero = "").
-- Números de empleado: normalmente 5 dígitos. Si un dígito no se lee, ponlo como "?".
-- firmo = true solo si hay firma o rúbrica en la columna Firma de ese renglón.
-- Ignora renglones totalmente vacíos.
-- Casillas: cuenta como marcada la que tenga X, palomita o relleno.
-- objetivo: número 1 a 5 según la casilla marcada en "Objetivos DC2" (1 Actualizar y perfeccionar, 2 Mejorar el nivel educativo, 3 Preparar para vacantes, 4 Prevenir riesgos de trabajo, 5 Incremento a la productividad); null si no hay.
-- fecha en formato AAAA-MM-DD. duracion: solo el número de horas.
-- codigoSugerido: el código del glosario que corresponde al curso escrito, o "" si ninguno corresponde.
-Glosario de cursos (código | nombre):
-${S.cursos.map(c=>c.codigo+' | '+c.nombre).join('\n')}
-Responde SOLO con JSON con esta forma exacta:
-{"curso":"","codigoSugerido":"","duracion":"","fecha":"","clasificacion":"Interno|Externo|","registro":"","instructor":"","rfc":"","area":"","lugar":"Planta 1|Planta 2|","objetivo":null,"modalidad":"Presencial|Online|Mixta|E-learning|","asistentes":[{"numero":"","nombre":"","firmo":true}]}`}
-async function leerFoto(file){const pv=$('#pv');
-  pv.innerHTML=`<img class="prev" alt="Vista previa" src="${URL.createObjectURL(file)}"><div style="margin-top:14px"><div class="spin"></div><p class="small" style="margin:0">Leyendo la lista…</p></div>`;
-  try{const img=await reducir(file);const b64=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(img)});const r=await api('listados_leerFoto',b64,img.type||'image/jpeg',prompt());pv.innerHTML='';abrirEditor(desdeLectura(r))}
-  catch(e){const em=errTxt(e);const m=e&&e.code==='formato'?'Esta foto está en formato HEIC y el navegador no la puede abrir. Cambia la cámara a JPG o sube una captura de pantalla de la foto.':e&&e.code==='not_granted'?'Permite que la página use Claude para leer la foto.':e&&e.code==='rate_limited'?'Se alcanzó el límite de lecturas por ahora. Intenta en unos minutos.':e&&e.code==='invalid_json'?'No se pudo interpretar la foto. Intenta con una foto más clara.':/GEMINI_API_KEY/.test(em)?'Falta configurar la clave de Gemini en el proyecto de Apps Script (GEMINI_API_KEY).':'No se pudo leer la foto: '+em;pv.innerHTML=`<p class="small" style="color:var(--bad);margin:12px 0 0">${esc(m)}</p>`}}
-function desdeLectura(r){r=r||{};let cod=r.codigoSugerido&&C(r.codigoSugerido)?r.codigoSugerido:'';
-  if(!cod&&r.curso){let b=null,bs=0;S.cursos.forEach(c=>{const s=sim(r.curso,c.nombre);if(s>bs){bs=s;b=c}});if(bs>=.5)cod=b.codigo}
-  const enc={duracion:String(parseFloat(r.duracion)||''),instructor:(r.instructor||'').trim(),instructorId:'',clasificacion:/extern/i.test(r.clasificacion)?'Externo':/intern/i.test(r.clasificacion)?'Interno':'',area:r.area||'',objetivo:r.objetivo>=1&&r.objetivo<=5?String(r.objetivo-1):'',modalidad:MODS.find(m=>norm(m)===norm(r.modalidad))||'',lugar:/2/.test(r.lugar||'')?'Planta 2':/1/.test(r.lugar||'')?'Planta 1':'',registro:r.registro||'',rfc:(r.rfc||'').toUpperCase()};
-  if(enc.area){const a=S.cursos.map(c=>c.area.trim()).find(x=>norm(x).slice(0,4)===norm(enc.area).slice(0,4));if(a)enc.area=a}
-  const ins=buscarIns(enc.instructor);if(ins){enc.instructorId=ins.id;enc.instructor=ins.nombre}
-  return{leida:true,lista:{curso:r.curso||''},cursoCodigo:cod,fecha:/^\d{4}-\d{2}-\d{2}$/.test(r.fecha||'')?r.fecha:hoy(),enc,encOk:{},asistentes:(r.asistentes||[]).filter(a=>a&&(a.numero||a.nombre)).map(a=>({numero:String(a.numero||'').replace(/\s/g,''),escrito:String(a.nombre||'').trim(),firmo:a.firmo!==false,ok:false}))}}
 function abrirEditor(ed){S.ed=Object.assign({enc:{},encOk:{},asistentes:[],lista:{}},ed);S.view='editar';render();window.scrollTo(0,0)}
 
 /* ---------- guardar ---------- */
@@ -399,10 +369,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('focusin',ev=>{if(ev.target.classList&&ev.target.classList.contains('cbi')){cbCerrar();cbAbrir(ev.target)}});
 document.addEventListener('input',ev=>{if(ev.target.classList&&ev.target.classList.contains('cbi'))cbAbrir(ev.target)});
 document.addEventListener('keydown',ev=>{const t=ev.target;if(!(t.classList&&t.classList.contains('cbi')))return;const box=t.nextElementSibling,ops=[...box.querySelectorAll('.cbo')];if(ev.key==='Escape'){cbCerrar();return}if(ev.key==='ArrowDown'&&ops.length){ev.preventDefault();ops[0].focus()}if(ev.key==='Enter'){ev.preventDefault();const first=box.querySelector('.cbo[data-v]');if(first&&!box.hidden)cbElegir(t,first.dataset.v)}});
-document.addEventListener('dragover',ev=>{if(ev.target.closest&&ev.target.closest('#dropzone'))ev.preventDefault()});
-document.addEventListener('drop',ev=>{const z=ev.target.closest&&ev.target.closest('#dropzone');if(!z)return;ev.preventDefault();const f=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];if(f&&/^image\//.test(f.type))leerFoto(f);else toast('Arrastra una imagen (JPG o PNG).')});
 document.addEventListener('change',ev=>{const t=ev.target;if(t.closest&&t.closest('#dlg'))return;
-  if(t.id==='foto'&&t.files&&t.files[0])leerFoto(t.files[0]);
   else if(t.id==='curso'){S.ed.cursoCodigo=t.value;S.ed.encOk={};pintarEditor()}
   else if(t.id==='fecha')S.ed.fecha=t.value;
   else if(t.dataset.h){S.ed.enc[t.dataset.h]=t.value;delete S.ed.encOk[t.dataset.h];pintarEditor()}

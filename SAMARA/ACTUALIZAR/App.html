@@ -4,7 +4,7 @@
   try {
     const appListeners=new AbortController();
     function appOn(target,event,listener,options={}){target.addEventListener(event,listener,{...(typeof options==='boolean'?{capture:options}:options),signal:appListeners.signal});}
-    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>{appListeners.abort();window.SamaraNotifications?.dispose();};
+    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>{appListeners.abort();window.SamaraNotifications?.dispose();window.SamaraPdfReader?.close();};
     // Shared Google Sheets persistence. The Site UI calls these synchronous wrappers.
     const cloud = {
       cache: {},
@@ -2562,8 +2562,7 @@ function normalizePersonNames(key, value) {
       ed: null,
       cola: [],
       years: {},
-      reading: false,
-      readPause:null
+      reading: false
     };
     const AT_OBJ = ['1','2','3','4','5'].map(code=>code+' · '+objectiveLabel(code));
     const AT_MODS = ['Presencial', 'Online', 'Mixta', 'E-learning'],
@@ -2747,6 +2746,7 @@ function normalizePersonNames(key, value) {
       const e = AT.ed,
         b = [];
       if (!e.cursoCodigo) b.push('Elige el curso.');
+      if(!Cmcap.valid(e.fecha))b.push('Captura una fecha de ejecución válida.');
       if(!AT_LUG.includes(e.enc.lugar))b.push('Selecciona la planta (Planta 1 o Planta 2).');
       const s = atEstadoIns();
       if (s.t !== 'ok') b.push(s.msg);
@@ -2845,7 +2845,8 @@ function normalizePersonNames(key, value) {
       return {
         id: s.id,
         objectiveNeedsReview:!!s.objectiveNeedsReview,
-        leida: s.leidaDeFoto,
+        leida: s.leidaDePDF||s.leidaDeFoto,
+        lecturaLocal:!!s.lecturaLocal,lecturaNotas:s.lecturaNotas||[],lecturaTexto:s.lecturaTexto||'',
         lista: {
           curso: s.listaCurso || ''
         },
@@ -2887,11 +2888,9 @@ function normalizePersonNames(key, value) {
     }
     function atColaHTML() {
       if(!AT.cola.length)return '';
-      const ready=AT.cola.filter(x=>x.estado==='listo').length,paused=AT.cola.filter(x=>x.estado==='pausado').length,failed=AT.cola.filter(x=>x.estado==='error').length,busy=AT.reading||AT.cola.some(x=>x.estado==='leyendo');
-      const title=busy?'Leyendo listas… '+(ready+failed)+' de '+AT.cola.length:paused?'Lectura pausada: '+ready+' de '+AT.cola.length+' listas procesadas':'Lectura terminada: '+ready+' de '+AT.cola.length+' listas procesadas';
-      const pause=AT.readPause,when=pause?.retryAt?new Intl.DateTimeFormat('es-MX',{timeZone:'America/Tijuana',dateStyle:'short',timeStyle:'short'}).format(new Date(pause.retryAt)):'';
-      const notice=paused?'<div class="att-reading-pause" role="status"><b>'+atE(pause?.kind==='temporal'?'Servicio de lectura ocupado':pause?'Límite de lectura de Gemini':'Hay hojas en espera')+'</b><p>'+atE(pause?.message||'Reanuda las hojas que siguen pendientes cuando quieras continuar.')+'</p>'+(pause?.kind==='quota'?'<p>Puedes esperar el plazo indicado o solicitar a RH que revise la cuota y la facturación del proyecto en Google AI Studio.</p>':'')+(when?'<p>Reintento indicado: '+atE(when)+' (hora de Tijuana). La disponibilidad depende de Gemini.</p>':pause?'<p>El servicio no indicó una hora de recuperación.</p>':'')+'<p>No se enviaron las hojas restantes. Cada página del PDF requiere una lectura. Las hojas pendientes se conservan solo en esta ventana. Si recargas o vuelves a iniciar sesión, tendrás que cargar de nuevo las pendientes.</p><div class="att-actions"><button type="button" class="button outline" data-att="reanudarlectura" '+(busy?'disabled':'')+'>Verificar disponibilidad y reanudar</button></div><p>Se comprobará una sola hoja. Si aún no hay cuota, las demás seguirán en espera. También puedes capturar manualmente cada hoja desde su fila.</p></div>':'';
-      return '<article class="panel att-cola"><div class="att-colah"><b>'+atE(title)+'</b>'+(!busy?'<button type="button" class="button outline att-sm" data-att="limpiarcola">'+(paused?'Quitar cola':'Ocultar')+'</button>':'')+'</div>'+notice+'<ul>'+AT.cola.map((x,index)=>'<li><span class="att-ico">'+(x.estado==='listo'?(x.manual?'✓':'⚠'):x.estado==='error'?'✕':x.estado==='leyendo'?'⟳':'·')+'</span><span class="att-cn">'+atE(x.nombre)+'</span><span class="att-cs '+atE(x.estado)+'">'+atE(x.estado==='listo'?(x.manual?'Listado guardado':'Borrador listo')+' · '+x.pend+' por revisar':x.estado==='error'?x.msg:x.estado==='leyendo'?x.msg||'Leyendo…':x.estado==='pausado'?'En espera · sin lectura completada':'En espera')+'</span><span class="att-reading-actions">'+(x.estado==='listo'?'<button type="button" class="button outline att-sm" data-att="abrir" data-id="'+atE(x.id)+'">Revisar</button>':['error','pausado'].includes(x.estado)&&x.blob?'<button type="button" class="button outline att-sm" data-att="reintentarlectura" data-i="'+index+'" '+(busy?'disabled':'')+'>Reintentar</button><button type="button" class="button outline att-sm" data-att="manuallectura" data-i="'+index+'" '+(busy?'disabled':'')+'>Capturar manual</button>':'')+'</span></li>').join('')+'</ul></article>';
+      const ready=AT.cola.filter(x=>x.estado==='listo').length,failed=AT.cola.filter(x=>x.estado==='error').length,busy=AT.reading;
+      const title=busy?'Leyendo PDF… '+(ready+failed)+' de '+AT.cola.length:'Lectura terminada: '+ready+' de '+AT.cola.length+' páginas procesadas';
+      return '<article class="panel att-cola"><div class="att-colah"><b>'+atE(title)+'</b>'+(!busy?'<button type="button" class="button outline att-sm" data-att="limpiarcola">Ocultar</button>':'')+'</div><p class="att-hint">Lectura local. Revisa nombres, números de empleado, fecha y firmas antes de validar. Los escaneos manuscritos pueden requerir captura manual.</p><ul>'+AT.cola.map((item,i)=>'<li><span class="att-ico">'+(item.estado==='listo'?'✓':item.estado==='error'?'✕':item.estado==='leyendo'?'…':'·')+'</span><span class="att-cn">'+atE(item.nombre)+'</span><span class="att-cs '+atE(item.estado)+'">'+atE(item.estado==='listo'?(item.manual?'Listado guardado':'Borrador para revisar'):item.estado==='error'?item.msg:item.msg||'En espera')+'</span><span class="att-reading-actions">'+(item.estado==='listo'?'<button type="button" class="button outline att-sm" data-att="abrir" data-id="'+atE(item.id)+'">Revisar</button>':item.estado==='error'?((item.source?'<button type="button" class="button outline att-sm" data-att="reintentarlectura" data-i="'+i+'" '+(busy?'disabled':'')+'>Reintentar página</button>':'')+'<button type="button" class="button outline att-sm" data-att="manuallectura" data-i="'+i+'" '+(busy?'disabled':'')+'>Capturar manual</button>'):'')+'</span></li>').join('')+'</ul></article>';
     }
 
     function atAttendanceRow(s){
@@ -2914,17 +2913,18 @@ function normalizePersonNames(key, value) {
       if (AT.ed) {
         root.innerHTML = atVistaEditor();
         atPintar();
+        if(AT.ed.lecturaLocal){const note=document.createElement('div');note.className='att-local-review';note.innerHTML='<b>Revisión del PDF</b><ul>'+(AT.ed.lecturaNotas||[]).map(t=>'<li>'+atE(t)+'</li>').join('')+'</ul><details><summary>Ver texto detectado</summary><pre>'+atE(AT.ed.lecturaTexto||'No se detectó texto legible.')+'</pre></details>';root.querySelector('.page-heading').after(note);}
         return;
       }
       const all = attendance.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))),
         l = atFiltrados();
-      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 con foto o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button type=\"button\" class=\"button outline\" data-sirce-export-listados>↧ Exportar listados de asistencia</button><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Carga el personal en el módulo Empleados para validar a los asistentes.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada', 'Por revisar'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button><button type=\"button\" class=\"button outline\" data-sirce-export-zip>↧ Exportar listados de cursos para SIRCE</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? atGroupedListRows(l) : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
+      root.innerHTML = "<div class=\"page-heading\"><div><div class=\"eyebrow\">LISTAS DE ASISTENCIA</div><h1>Listados de asistencia</h1><p>Registra el FT-RH-010 desde PDF o a mano, valídalo contra cursos, instructores y personal, e imprime listas y DC-3.</p></div><div class=\"att-actions\"><button type=\"button\" class=\"button outline\" data-sirce-export-listados>↧ Exportar listados de asistencia</button><button class=\"button outline\" data-sirce-bulk>⇧ Cargar claves SIRCE</button><button class=\"button primary\" data-att=\"nueva\"><span>＋</span> Nueva lista</button></div></div>\n  ".concat(AT_PL.length ? '' : "<div class=\"notice-box\"><b>Personal sin cargar</b><p>Para validar números de empleado necesitas el padrón. Carga el personal en el módulo Empleados para validar a los asistentes.</p></div>", "\n  <div class=\"toolbar catalog-toolbar\"><label class=\"searchbox\">⌕ <input id=\"att-search\" placeholder=\"Buscar curso o instructor…\" value=\"").concat(atE(AT.q), "\"></label><div class=\"plant-filter\"><span>SIRCE</span><select id=\"att-f-sirce\"><option value=\"Todos\">Todos los cursos</option><option value=\"Sí\" ").concat(AT.sirce === 'Sí' ? 'selected' : '', ">Solo SIRCE</option><option value=\"No\" ").concat(AT.sirce === 'No' ? 'selected' : '', ">Sin SIRCE</option></select></div><div class=\"plant-filter\"><span>Estado</span><select id=\"att-f-estado\"><option value=\"Todos\">Todos los estados</option>").concat(['Borrador', 'Por validar', 'Validada', 'Por revisar'].map(x => "<option ".concat(AT.estado === x ? 'selected' : '', ">").concat(x, "</option>")).join(''), "</select></div><div class=\"plant-filter\"><span>Desde</span><input type=\"date\" id=\"att-f-desde\" value=\"").concat(atE(AT.desde), "\" aria-label=\"Fecha desde\"></div><div class=\"plant-filter\"><span>Hasta</span><input type=\"date\" id=\"att-f-hasta\" value=\"").concat(atE(AT.hasta), "\" aria-label=\"Fecha hasta\"></div><button type=\"button\" class=\"button outline\" data-att=\"vertodos\">Ver todos</button><button type=\"button\" class=\"button outline\" data-sirce-export-zip>↧ Exportar listados de cursos para SIRCE</button></div>\n  ").concat(atColaHTML(), "\n  <article class=\"panel table-panel\"><div class=\"table-wrap\"><table><thead><tr><th>CURSO</th><th>FECHA</th><th>INSTRUCTOR</th><th>ASISTENTES</th><th>SIRCE</th><th>ESTADO</th><th>IMPRIMIR</th><th>ACCIONES</th></tr></thead><tbody>\n  ").concat(l.length ? atGroupedListRows(l) : "<tr><td colspan=\"8\" class=\"att-empty\">".concat(all.length ? 'No hay listados con estos filtros.' : 'Aún no hay listados. Usa “Nueva lista”.', "</td></tr>"), "\n  </tbody></table></div><div class=\"table-footer\"><span>").concat(l.length, " listado").concat(l.length === 1 ? '' : 's', "</span><span>Las DC-3 se generan solo para asistentes validados que firmaron.</span></div></article>");
       if(AT.scopeSamara)root.querySelector('.catalog-toolbar').insertAdjacentHTML('beforebegin','<div class="notice-box compact"><b>Vista de Resumen: personal SAMARA</b><p>Los filtros muestran los listados del periodo con personal SAMARA o asistentes pendientes de identificar. Usa Ver todos para quitar esta vista.</p></div>');
       const headings=[...root.querySelectorAll('thead th')].map(th=>th.textContent);root.querySelectorAll('tbody tr:not(.att-year-heading)').forEach(row=>[...row.children].forEach((cell,index)=>cell.dataset.label=headings[index]||''));
     }
     function atVistaEditor() {
       const e = AT.ed;
-      return "<div class=\"page-heading\"><div><div class=\"eyebrow\">FT-RH-010 · ".concat(e.leida ? 'LEÍDO DE FOTO' : 'CAPTURA MANUAL').concat(e.origen ? ' · ' + atE(e.origen) : '', "</div><h1>").concat(e.id ? 'Editar listado' : 'Revisar listado', "</h1><p>").concat(e.leida ? 'Revisa lo marcado antes de guardar.' : 'Completa el encabezado y agrega a los asistentes.', "</p></div></div>\n  <div class=\"att-grid\"><article class=\"panel\"><h3 class=\"att-h\">Curso</h3><label>Curso<select id=\"att-curso\"><option value=\"\">Elige un curso</option>").concat(atCursos().map(c => "<option value=\"".concat(atE(c.codigo), "\" ").concat(c.codigo === e.cursoCodigo ? 'selected' : '', ">").concat(atE(c.codigo + ' · ' + c.nombre), "</option>")).join(''), "</select></label>\n  ").concat(e.leida && e.lista.curso ? "<p class=\"att-hint\">En la lista dice: “".concat(atE(e.lista.curso), "”</p>") : '', "<div id=\"att-cinfo\"></div><label>Fecha de ejecución<input type=\"date\" id=\"att-fecha\" value=\"").concat(atE(e.fecha || ''), "\"></label></article>\n  <article class=\"panel\"><h3 class=\"att-h\">Instructor</h3><div id=\"att-ins\"></div></article></div>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Encabezado</h3><div class=\"att-hgrid\" id=\"att-hd\"></div></article>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Asistentes</h3><p class=\"att-hint\">El número de empleado manda: nombre y puesto se toman de Personal. Escribe nombre o número para buscar.</p><div id=\"att-rw\"></div><div class=\"att-add\"><label>Agregar colaborador").concat(atCb('emp', 'new', '', 'Escribe nombre o número…'), "</label></div></article>\n  <article class=\"panel att-mt\"><h3>Datos SIRCE</h3><div id=\"att-sirce-fields\">").concat(ssFields(e), "</div></article><div class=\"att-bar\"><div id=\"att-msg\"></div><div class=\"att-barbtns\">").concat('<button type="button" class="button outline" data-att="cancelar">Cancelar</button>'+(e.id ? '<button type="button" class="button outline att-footer-delete" data-att="borrarlista" aria-label="Eliminar listado">Eliminar</button>' : '<button type="button" class="button outline att-footer-delete" data-att="descartarlista">Eliminar</button>'), "<button class=\"button primary\" id=\"att-save\" data-att=\"guardar\">Guardar listado</button></div></div>");
+      return "<div class=\"page-heading\"><div><div class=\"eyebrow\">FT-RH-010 · ".concat(e.lecturaLocal ? 'LEÍDO DE PDF' : e.leida ? 'LECTURA IMPORTADA' : 'CAPTURA MANUAL').concat(e.origen ? ' · ' + atE(e.origen) : '', "</div><h1>").concat(e.id ? 'Editar listado' : 'Revisar listado', "</h1><p>").concat(e.leida ? 'Revisa lo marcado antes de guardar.' : 'Completa el encabezado y agrega a los asistentes.', "</p></div></div>\n  <div class=\"att-grid\"><article class=\"panel\"><h3 class=\"att-h\">Curso</h3><label>Curso<select id=\"att-curso\"><option value=\"\">Elige un curso</option>").concat(atCursos().map(c => "<option value=\"".concat(atE(c.codigo), "\" ").concat(c.codigo === e.cursoCodigo ? 'selected' : '', ">").concat(atE(c.codigo + ' · ' + c.nombre), "</option>")).join(''), "</select></label>\n  ").concat(e.leida && e.lista.curso ? "<p class=\"att-hint\">En la lista dice: “".concat(atE(e.lista.curso), "”</p>") : '', "<div id=\"att-cinfo\"></div><label>Fecha de ejecución<input type=\"date\" id=\"att-fecha\" value=\"").concat(atE(e.fecha || ''), "\"></label></article>\n  <article class=\"panel\"><h3 class=\"att-h\">Instructor</h3><div id=\"att-ins\"></div></article></div>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Encabezado</h3><div class=\"att-hgrid\" id=\"att-hd\"></div></article>\n  <article class=\"panel att-mt\"><h3 class=\"att-h\">Asistentes</h3><p class=\"att-hint\">El número de empleado manda: nombre y puesto se toman de Personal. Escribe nombre o número para buscar.</p><div id=\"att-rw\"></div><div class=\"att-add\"><label>Agregar colaborador").concat(atCb('emp', 'new', '', 'Escribe nombre o número…'), "</label></div></article>\n  <article class=\"panel att-mt\"><h3>Datos SIRCE</h3><div id=\"att-sirce-fields\">").concat(ssFields(e), "</div></article><div class=\"att-bar\"><div id=\"att-msg\"></div><div class=\"att-barbtns\">").concat('<button type="button" class="button outline" data-att="cancelar">Cancelar</button>'+(e.id ? '<button type="button" class="button outline att-footer-delete" data-att="borrarlista" aria-label="Eliminar listado">Eliminar</button>' : '<button type="button" class="button outline att-footer-delete" data-att="descartarlista">Eliminar</button>'), "<button class=\"button primary\" id=\"att-save\" data-att=\"guardar\">Guardar listado</button></div></div>");
     }
     function atPintar() {
       if (!AT.ed || !$('#att-hd')) return;
@@ -2976,7 +2976,7 @@ function normalizePersonNames(key, value) {
       if (!d.open) d.showModal();
     }
     function atNuevaDialog() {
-      atDialog("<div class=\"att-dlg\"><div class=\"dialog-head\"><div><div class=\"eyebrow\">FT-RH-010</div><h2>Nueva lista de asistencia</h2></div><button type=\"button\" class=\"close-dialog\" data-att=\"cerrar\" aria-label=\"Cerrar\">×</button></div>\n  <div class=\"att-capture-choices\"><button type=\"button\" class=\"button primary\" data-att=\"foto\">Capturar con foto</button><button type=\"button\" class=\"button outline\" data-att=\"manual\">Capturar lista manual</button></div><div id=\"att-photo-panel\" hidden><label>Fotos o PDF de las listas firmadas<input type=\"file\" id=\"att-foto\" multiple accept=\"image/jpeg,image/png,image/webp,image/*,application/pdf,.pdf\"></label><p class=\"att-hint\">Puedes elegir varias a la vez. Cada foto o cada hoja del PDF se lee como una lista y queda como borrador para que la revises. Los archivos no se guardan.</p><div id=\"att-pv\"></div>\n  </div></div>");
+      atDialog('<div class="att-dlg"><div class="dialog-head"><div><div class="eyebrow">FT-RH-010</div><h2>Nueva lista de asistencia</h2></div><button type="button" class="close-dialog" data-att="cerrar" aria-label="Cerrar">×</button></div><div class="att-capture-choices"><button type="button" class="button primary" data-att="pdf">Cargar PDF</button><button type="button" class="button outline" data-att="manual">Capturar lista manual</button></div><div id="att-pdf-panel" hidden><label>Listados en PDF<input type="file" id="att-pdf" multiple accept="application/pdf,.pdf"></label><p class="att-hint">Solo PDF. Cada página queda como borrador. El texto se extrae en tu equipo; los escaneos usan lectura local. La primera vez puede descargarse la herramienta de lectura. Las firmas se confirman manualmente. No se admiten fotos ni imágenes.</p></div></div>');
     }
     /* alta en Personal con el formulario del módulo Personal */
     function atPartirNombre(t) {
@@ -3071,158 +3071,32 @@ function normalizePersonNames(key, value) {
         } catch (e) {}
       }
     })();
-    /* foto */
-    async function atReducir(file, max) {
-      let bmp = null;
-      try {
-        bmp = await createImageBitmap(file);
-      } catch (e) {
-        bmp = await new Promise(r => {
-          const im = new Image();
-          im.onload = () => r(im);
-          im.onerror = () => r(null);
-          im.src = URL.createObjectURL(file);
-        });
-      }
-      if (!bmp || !bmp.width) {
-        if (/^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= max) return file;
-        throw {
-          code: 'formato'
-        };
-      }
-      const sc = Math.min(1, 2200 / Math.max(bmp.width, bmp.height)),
-        cv = document.createElement('canvas');
-      cv.width = Math.round(bmp.width * sc);
-      cv.height = Math.round(bmp.height * sc);
-      cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
-      let q = 0.85,
-        blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', q));
-      while (blob && blob.size > max && q > 0.4) {
-        q -= 0.15;
-        blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', q));
-      }
-      return blob || file;
-    }
-    function atPrompt() {
-      return "Eres capturista de Recursos Humanos. La imagen es el formato FT-RH-010 \"Listado de asistencia a cursos\" de MAM DE LA FRONTERA S.A. DE C.V., llenado a mano.\nExtrae los datos exactamente como están escritos. Reglas:\n- Incluye TODOS los renglones que tengan nombre escrito, aunque no tengan número de empleado (en ese caso numero = \"\").\n- Números de empleado: normalmente 5 dígitos. Si un dígito no se lee, ponlo como \"?\".\n- puesto: lo que esté escrito en la columna Puesto de ese renglón.\n- firmo = true solo si hay firma o rúbrica en la columna Firma de ese renglón.\n- Ignora renglones totalmente vacíos.\n- Casillas: cuenta como marcada la que tenga X, palomita o relleno.\n- objetivo: usa el texto marcado y las claves del catálogo: 1 Actualizar y perfeccionar conocimientos y habilidades; 2 Proporcionar información de nuevas tecnologías; 3 Preparar para ocupar vacantes o puestos de nueva creación; 4 Prevenir riesgos de trabajo; 5 Incremento a la Productividad. No copies el número impreso sin comprobar el significado. Si no hay marca o no hay equivalencia (por ejemplo nivel educativo), usa null.\n- fecha en formato AAAA-MM-DD. duracion: solo el número de horas.\n- codigoSugerido: el código del curso que corresponde al curso escrito, o \"\" si ninguno corresponde.\nCursos (código | nombre):\n".concat(atCursos().map(c => c.codigo + ' | ' + c.nombre).join('\n'), "\nResponde SOLO con JSON con esta forma exacta:\n{\"curso\":\"\",\"codigoSugerido\":\"\",\"duracion\":\"\",\"fecha\":\"\",\"clasificacion\":\"Interno|Externo|\",\"registro\":\"\",\"instructor\":\"\",\"rfc\":\"\",\"area\":\"\",\"lugar\":\"Planta 1|Planta 2|\",\"objetivo\":null,\"modalidad\":\"Presencial|Online|Mixta|E-learning|\",\"asistentes\":[{\"numero\":\"\",\"nombre\":\"\",\"puesto\":\"\",\"firmo\":true}]}");
-    }
-    async function atPaginasPDF(file) {
-      if(!window.pdfjsLib&&window.samaraLoadPdfLibrary)await window.samaraLoadPdfLibrary('reader');
-      if (!window.pdfjsLib) throw new Error('No se cargó el lector de PDF.');
-      const pdf = await pdfjsLib.getDocument({
-          data: await file.arrayBuffer()
-        }).promise,
-        out = [];
-      for (let n = 1; n <= pdf.numPages; n++) {
-        const pg = await pdf.getPage(n),
-          v0 = pg.getViewport({
-            scale: 1
-          }),
-          sc = Math.min(3, 2200 / Math.max(v0.width, v0.height)),
-          v = pg.getViewport({
-            scale: sc
-          }),
-          cv = document.createElement('canvas');
-        cv.width = Math.round(v.width);
-        cv.height = Math.round(v.height);
-        const cx = cv.getContext('2d');
-        cx.fillStyle = '#fff';
-        cx.fillRect(0, 0, cv.width, cv.height);
-        await pg.render({
-          canvasContext: cx,
-          viewport: v
-        }).promise;
-        out.push({
-          nombre: pdf.numPages > 1 ? "".concat(file.name, " · hoja ").concat(n) : file.name,
-          blob: await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.85))
-        });
-      }
-      return out;
-    }
+    /* PDF: extracción y OCR locales, sin enviar documentos a servicios de lectura. */
+    function atPdfContext(){return {courses:atCursos().map(c=>({code:c.codigo,name:c.nombre})),employees,instructors:atIns().map(i=>({name:i.nombre}))};}
     async function atLeerVarios(files) {
-      if(AT.reading){toast('Espera a que termine la lectura actual.');return;}
-      AT.reading=true;
-      $('#att-dialog').close();
-      AT.ed = null;
-      AT.cola=files.map(file=>({nombre:file.name,estado:'leyendo'}));renderAttendance();
-      const items = [];
-      for (const f of files) {
-        if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)) {
-          try {
-            (await atPaginasPDF(f)).forEach(p => items.push({
-              nombre: p.nombre,
-              blob: p.blob,
-              estado: 'pendiente'
-            }));
-          } catch (e) {
-            items.push({
-              nombre: f.name,
-              estado: 'error',
-              msg: 'No se pudo abrir el PDF: '+(e.message||String(e))
-            });
-          }
-        } else items.push({
-          nombre: f.name,
-          blob: f,
-          estado: 'pendiente'
-        });
-      }
-      AT.cola = items;
-      renderAttendance();
-      AT.reading=false;
-      await atProcesarCola(items);
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return toast('No tienes permiso para cargar listas.');
+      if(!sessionStorage.getItem('samara.session'))return toast('AUTH_REQUIRED: Inicia sesión para continuar.');
+      if(AT.reading)return toast('Espera a que termine la lectura actual.');
+      if(files.some(file=>!(/\.pdf$/i.test(file.name)||file.type==='application/pdf')))return toast('Solo se admiten archivos PDF. No se admiten fotos ni imágenes.');
+      AT.reading=true;$('#att-dialog').close();AT.ed=null;
+      for(const old of new Set(AT.cola.map(item=>item.source).filter(Boolean)))await old.document.destroy?.();
+      AT.cola=files.map(file=>({nombre:file.name,estado:'leyendo',msg:'Abriendo PDF…'}));renderAttendance();
+      const items=[],reader=window.SamaraPdfReader;
+      try{for(const file of files){try{const source=await reader.open(file);if(appListeners.signal.aborted){await source.document.destroy?.();return;}for(let n=1;n<=source.pages;n++)items.push({nombre:file.name+(source.pages>1?' · hoja '+n:''),source,page:n,estado:'pendiente'});}catch(error){items.push({nombre:file.name,estado:'error',msg:error.message||String(error)});}}}finally{AT.reading=false;AT.cola=items;}
+      if(!appListeners.signal.aborted)await atProcesarCola(items);
     }
-    async function atProcesarCola(items,verify=false){
-      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit')){toast('Tu perfil no permite leer ni capturar listas.');return;}
-      if(AT.reading)return;AT.reading=true;
-      try{
-      for (const it of items) {
-        if (it.estado !== 'pendiente') continue;
-        it.estado = 'leyendo';it.msg='';
-        renderAttendance();
-        try {
-          const r = await window.leerListaFT(it.blob, atPrompt(),message=>{it.msg=message;if(!AT.ed)renderAttendance();},{verify}),
-            ed = atDesdeLectura(r),
-            c = atC(ed.cursoCodigo);
-          const rec = {
-            id: "lst-".concat(Date.now(), "-").concat(Math.random().toString(36).slice(2, 6)),
-            objectiveCatalogVersion:'sirce-v1',
-            borrador: true,
-            estado: 'Borrador',
-            origen: it.nombre,
-            cursoCodigo: ed.cursoCodigo,
-            cursoNombre: c ? c.nombre : '',
-            sirce: !!(c && c.sirce),
-            fecha: ed.fecha,
-            encabezado: ed.enc,
-            encabezadoAceptado: {},
-            listaCurso: ed.lista.curso,
-            leidaDeFoto: true,
-            asistentes: ed.asistentes.map(a => ({
-              ...a,
-              nombre: '',
-              puesto: '',
-              estado: ''
-            })),
-            actualizado: new Date().toISOString()
-          };
-          attendance = [rec, ...attendance];
-          saveStore('samara.attendance.v1', attendance);
-          AT.readPause=null;verify=false;
-          it.estado = 'listo';
-          it.id = rec.id;
-          it.pend = atConteo(rec);
-        } catch (e) {
-          if(e.pause){AT.readPause=e.pause;it.estado='pausado';for(const waiting of items)if(waiting.estado==='pendiente')waiting.estado='pausado';break;}
-          it.estado = 'error';
-          it.msg = e && e.code === 'formato' ? 'Formato HEIC: usa JPG o PNG.' : 'No se pudo leer: ' + String(e && (e.message || e.code) || e);
-          if(verify){for(const waiting of items)if(waiting.estado==='pendiente')waiting.estado='pausado';break;}
-        }
-        if(it.estado==='listo')it.blob = null;
-        if (!AT.ed) renderAttendance();
-      }
-      toast(items.some(item=>item.estado==='pausado')?'Lectura pausada. Las hojas pendientes siguen en esta ventana.':items.some(item=>item.estado==='error')?'Quedaron archivos sin leer. Puedes reintentarlos desde la lista.':'Lectura terminada. Revisa cada borrador marcado con ⚠.');
-      }finally{AT.reading=false;if(!AT.ed)renderAttendance();}
+    async function atProcesarCola(items){
+      if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return toast('Tu perfil no permite leer ni capturar listas.');
+      if(!sessionStorage.getItem('samara.session'))return toast('AUTH_REQUIRED: Inicia sesión para continuar.');
+      if(AT.reading)return;AT.reading=true;const reader=window.SamaraPdfReader;
+      try{for(const item of items){if(item.estado!=='pendiente')continue;item.estado='leyendo';renderAttendance();try{
+       const result=await reader.read(item.source,item.page,atPdfContext(),message=>{item.msg=message;if(!AT.ed&&!appListeners.signal.aborted)renderAttendance();});
+       if(appListeners.signal.aborted)return;
+       const ed=atDesdeLectura(result),course=atC(ed.cursoCodigo),rec={id:'lst-'+Date.now()+'-'+crypto.randomUUID().slice(0,8),objectiveCatalogVersion:'sirce-v1',borrador:true,estado:'Borrador',origen:item.nombre,cursoCodigo:ed.cursoCodigo,cursoNombre:course?course.nombre:'',sirce:!!course?.sirce,fecha:ed.fecha,encabezado:ed.enc,encabezadoAceptado:{},listaCurso:ed.lista.curso,leidaDePDF:true,lecturaLocal:true,lecturaNotas:result.advertencias||[],lecturaTexto:result.texto||'',asistentes:ed.asistentes.map(a=>({...a,nombre:'',puesto:'',estado:''})),actualizado:new Date().toISOString()};
+       attendance=[rec,...attendance];saveStore('samara.attendance.v1',attendance);item.estado='listo';item.id=rec.id;item.pend=atConteo(rec);
+      }catch(error){item.estado='error';item.msg='No se pudo leer esta página: '+(error.message||String(error));}if(!AT.ed)renderAttendance();}
+      }finally{await reader.close();AT.reading=false;if(!appListeners.signal.aborted&&!AT.ed)renderAttendance();}
+      toast(items.some(item=>item.estado==='error')?'Algunas páginas requieren reintentar o capturar manualmente.':'PDF procesado. Revisa los borradores y confirma las firmas.');
     }
     function atDesdeLectura(r) {
       r = r || {};
@@ -3261,19 +3135,19 @@ function normalizePersonNames(key, value) {
         enc.instructor = ins.nombre;
       }
       return {
-        leida: true,
+        leida: true,lecturaLocal:!!r.local,lecturaNotas:r.advertencias||[],lecturaTexto:r.texto||'',
         lista: {
           curso: r.curso || ''
         },
         cursoCodigo: cod,
-        fecha: /^\d{4}-\d{2}-\d{2}$/.test(r.fecha || '') ? r.fecha : atHoy(),
+        fecha: /^\d{4}-\d{2}-\d{2}$/.test(r.fecha || '') ? r.fecha : r.local?'':atHoy(),
         enc,
         encOk: {},
         asistentes: (r.asistentes || []).filter(a => a && (a.numero || a.nombre)).map(a => ({
           numero: String(a.numero || '').replace(/\s/g, ''),
           escrito: String(a.nombre || '').trim(),
           pEsc: String(a.puesto || '').trim(),
-          firmo: a.firmo !== false,
+          firmo: r.local?false:a.firmo !== false,
           ok: false
         }))
       };
@@ -3461,7 +3335,7 @@ function normalizePersonNames(key, value) {
           ...e.encOk
         },
         listaCurso: e.lista.curso || '',
-        leidaDeFoto: !!e.leida,
+        ...(e.lecturaLocal?{leidaDePDF:true,lecturaLocal:true,lecturaNotas:e.lecturaNotas||[],lecturaTexto:e.lecturaTexto||''}:{leidaDeFoto:!!e.leida}),
         asistentes: e.asistentes.map(a => {
           const p = AT_P[a.numero],
             [cl] = atEst(a);
@@ -3819,7 +3693,7 @@ function normalizePersonNames(key, value) {
     /* eventos */
     const AT_A = {
       nueva: () => atNuevaDialog(),
-      foto: () => {$('#att-photo-panel').hidden=false;$('#att-foto').focus();},
+      pdf: () => {$('#att-pdf-panel').hidden=false;$('#att-pdf').focus();},
       cerrar: () => $('#att-dialog').close(),
       manual: () => {
         $('#att-dialog').close();
@@ -3840,10 +3714,10 @@ function normalizePersonNames(key, value) {
         AT.hasta = '';
         renderAttendance();
       },
-      reintentarlectura: d => {const item=AT.cola[Number(d.i)];if(!item||!['error','pausado'].includes(item.estado)||!item.blob||AT.reading)return;item.estado='pendiente';return atProcesarCola([item],true);},
-      reanudarlectura:()=>{if(AT.reading)return;const pending=AT.cola.filter(item=>['pausado','pendiente'].includes(item.estado)&&item.blob);pending.forEach(item=>item.estado='pendiente');return atProcesarCola(pending,true);},
-      manuallectura:d=>{if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return toast('Tu perfil no permite capturar listas.');const index=Number(d.i),item=AT.cola[index];if(!item||!item.blob||AT.reading)return;atAbrir({leida:false,cursoCodigo:'',fecha:atHoy(),origen:item.nombre,queueIndex:index});},
+      reintentarlectura:d=>{const item=AT.cola[Number(d.i)];if(!item||item.estado!=='error'||!item.source||AT.reading)return;item.estado='pendiente';return atProcesarCola([item]);},
+      manuallectura:d=>{if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return;const index=Number(d.i),item=AT.cola[index];if(!item||AT.reading)return;atAbrir({leida:false,cursoCodigo:'',fecha:atHoy(),origen:item.nombre,queueIndex:index});},
       limpiarcola: () => {
+        for(const source of new Set(AT.cola.map(item=>item.source).filter(Boolean)))source.document.destroy?.();
         AT.cola = [];
         renderAttendance();
       },
@@ -3979,7 +3853,7 @@ function normalizePersonNames(key, value) {
     appOn(document,'change', ev => {
       const t = ev.target;
       if (!t.closest('#view-attendance,#att-dialog')) return;
-      if (t.id === 'att-foto' && t.files?.length) atLeerVarios([...t.files]);else if (t.id === 'att-f-sirce') {
+      if (t.id === 'att-pdf' && t.files?.length) atLeerVarios([...t.files]);else if (t.id === 'att-f-sirce') {
         AT.sirce = t.value;
         renderAttendance();
       } else if (t.id === 'att-f-estado') {

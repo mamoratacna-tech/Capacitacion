@@ -2,7 +2,7 @@ SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
-LECTURA Y CUOTA: consulta LECTURA_CUOTA_GEMINI.txt (App, Code y EstilosListados).
+LECTURA SIN GEMINI: consulta LECTURA_PDF_LOCAL.txt. Solo PDF. Crea el HTML LecturaPDF.
 
 PANEL SIN LA S: consulta PANEL_SIN_S.txt (solo Index.html y Estilos.html).
 
@@ -43,7 +43,8 @@ sin duplicar IDs. No borres tus hojas de Google ni crees una base nueva.
 
 Los catálogos y plantillas ya existentes siguen siendo la fuente de referencia.
 El Resumen calcula indicadores reales de personal SAMARA y del programa anual.
-La conexión real a tu cuenta y la lectura con Gemini requieren probarse allí.
+La lectura usa texto del PDF y OCR local. Manuscritos y firmas requieren revisión.
+La conexión real a tu cuenta debe probarse en tu proyecto publicado.
 Las pruebas locales no equivalen a una publicación en Google.
 
 SIRCE POR LISTADO: crea también SirceListados.html si no existe. Consulta SIRCE_LISTADOS.txt para los catálogos adjuntos, las 21 columnas de salida y la carga masiva de claves por listado.
