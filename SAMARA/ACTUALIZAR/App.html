@@ -8,6 +8,7 @@
     // Shared Google Sheets persistence. The Site UI calls these synchronous wrappers.
     const cloud = {
       cache: {},
+      baseline: {},
       pending: {},
       revision: 0,
       saving: false,
@@ -38,8 +39,9 @@
     const formModules={'program-form':'program','course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
     appOn(document,'submit',event=>{const module=formModules[event.target.id];if(module&&window.SamaraAccess?.can&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('No tienes permiso para guardar cambios en este módulo.');}},true);
     appOn(window,'samara-access-error',event=>toast(event.detail));
-    function googleCall(method, ...args) {
-      return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args, sessionStorage.getItem('samara.session')||''));
+    async function googleCall(method, ...args) {
+      const run=()=>new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args,sessionStorage.getItem('samara.session')||''));
+      try{return await run();}catch(error){if(!/AUTH_REQUIRED/.test(error.message||String(error))||!window.SamaraAccess?.reauthenticate)throw error;await window.SamaraAccess.reauthenticate();return run();}
     }
     function cloudLabel(text) {
       document.getElementById('cloud-status').textContent = text;
@@ -48,11 +50,11 @@
     function cloudError(error, conflict = false) {
       cloud.blocked = true;
       cloudLabel(conflict ? 'Hay cambios de otro usuario' : 'Cambios pendientes de guardar');
-      document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
+      // Keep open forms and their unsaved fields intact.
       const panel = document.getElementById('cloud-error');
       panel.hidden = false;
       document.getElementById('cloud-error-title').textContent = conflict ? 'Otro usuario actualizó la información' : 'No se pudieron guardar los cambios';
-      document.getElementById('cloud-error-message').textContent = conflict ? 'Descarga tus cambios pendientes y vuelve a cargar la aplicación para ver la versión más reciente.' : 'Tus cambios siguen en esta ventana. Puedes descargar una copia o volver a intentar el guardado.';
+      document.getElementById('cloud-error-message').textContent = conflict ? 'El mismo registro cambió en otra ventana. Tu captura sigue aquí. Descarga una copia antes de actualizar los datos para revisar ambas versiones.' : 'Tus cambios siguen en esta ventana. Puedes descargar una copia o volver a intentar el guardado.';
       document.getElementById('cloud-retry').hidden = conflict;
       document.getElementById('cloud-reload').hidden = !conflict;
       console.error('Google save:', error?.message || String(error));
@@ -69,13 +71,15 @@
             cloud.pending = {};
             cloudLabel('Guardando en Google…');
             try {
-              const result = await googleCall('api_saveAppState', batch, cloud.revision);
+              const baseline=Object.fromEntries(Object.keys(batch).map(key=>[key,structuredClone(cloud.baseline?.[key]??null)]));
+              const result = await googleCall('api_saveAppState', batch, cloud.revision,baseline);
               if (result.conflict) {
-                const error = new Error('Otra ventana actualizó la información. Descarga tus cambios pendientes antes de volver a cargar.');
+                const error = new Error('El mismo registro cambió en otra ventana. Tu captura se conserva para revisar ambas versiones.');
                 error.conflict = true;
                 throw error;
               }
               cloud.revision = result.revision;
+              cloud.baseline={...(cloud.baseline||{}),...structuredClone(batch)};
               cloud.lastError = null;
             } catch (error) {
               cloud.pending = { ...batch, ...cloud.pending };
@@ -83,7 +87,7 @@
               cloudError(error, !!error.conflict);
             }
           }
-          if (!cloud.blocked) cloudLabel('Guardado en Google');
+          if (!cloud.blocked){cloudLabel('Guardado en Google');document.getElementById('cloud-error').hidden=true;}
         } finally {
           cloud.saving = false;
           cloud.inFlight = null;
@@ -280,6 +284,7 @@ function normalizePersonNames(key, value) {
     const bootstrap = window.SAMARA_ENTRY?.bootstrap || await googleCall('api_loadAppState');
     if(window.SAMARA_ENTRY)delete window.SAMARA_ENTRY.bootstrap;
     cloud.cache = bootstrap.state;
+    cloud.baseline=structuredClone(bootstrap.state);
     cloud.revision = bootstrap.revision;
     migrateLegacy(bootstrap.legacy);
     cloudLabel('Conectado a Google');
@@ -663,6 +668,7 @@ function normalizePersonNames(key, value) {
       if(['inactivo','inactiva','baja','bajas','i','no','0','false'].includes(key))return 'Inactivo';
       throw new Error('Estado de empleado no reconocido: '+value+'. Usa Activo o Inactivo/Baja.');
     }
+    function employeePlant(employee){return window.SirceListados.employeePlant(employee);}
     function employeeIsActive(employee) {try{return employeeStatus(employee.activeStatus||employee.status||employee._legacy?.estado)==='Activo';}catch{return true;}}
     function employeeDepartmentOptions(job,selected='') {
       const names=[...new Set([positions.find(item=>norm(item.job)===norm(job))?.department,...matrixPositions.filter(item=>norm(item.job)===norm(job)).map(item=>item.department)].filter(Boolean))];
@@ -693,6 +699,8 @@ function normalizePersonNames(key, value) {
         if(previous&&norm(previous.position)!==norm(item.position)&&!row.department)item.department='';
         if(!item.department&&departments.length===1)item.department=departments[0];
         if(!item.department){errors.push(tag+'falta Departamento; no se puede resolver de forma única para el puesto.');continue;}
+        if(row.plant&&!employeePlant({plant:row.plant})){errors.push(tag+'planta no reconocida; usa Planta 1 o Planta 2.');continue;}
+        item.plant=employeePlant(item);
         if(row.classification){const classification=positionClassification(row.classification);if(!classification){errors.push(tag+'clasificación inválida; usa D (Directo) o I (Indirecto).');continue;}item.classification=classification;}
         try{item.activeStatus=options.mode==='active'?'Activo':employeeStatus(row.activeStatus,previous?employeeIsActive(previous)?'Activo':'Inactivo':'Activo');}catch(error){errors.push(tag+error.message);continue;}
         if(previous){if(!employeeIsActive(previous)&&item.activeStatus==='Activo')activated++;if(employeeIsActive(previous)&&item.activeStatus==='Inactivo')deactivated++;next[next.indexOf(previous)]=item;updated++;}else{next.push(item);added++;if(item.activeStatus==='Activo')activated++;}
@@ -745,7 +753,7 @@ function normalizePersonNames(key, value) {
       return {...catalogs,rows,vacancies,next,missing:rows.filter(row=>!row.classification)};
     }
     function employeeImportChanges(before,after){
-      const labels={classification:'Clasificación',no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
+      const labels={plant:'Planta',classification:'Clasificación',no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
       return after.map(employee=>{
         const previous=before.find(item=>norm(item.curp)===norm(employee.curp));
         const fields=previous?Object.keys(labels).filter(key=>String(previous[key]||'')!==String(employee[key]||'')).map(key=>({label:labels[key],before:previous[key]||'—',after:employee[key]||'—'})):[];
@@ -766,8 +774,8 @@ function normalizePersonNames(key, value) {
     }
     function employeeCompany(employee) {return norm(employee.company || employee.empresa || employee.entity || 'SAMARA')==='tacna'?'TACNA':'SAMARA';}
     function employeeRows(rows) {
-      const labels=['No. empleado','CURP','Nombre(s)','Apellido paterno','Apellido materno','Estudios','Documento probatorio','Tipo de institución','Puesto','Departamento'];
-      return rows.map(e=>'<tr>'+[e.no,e.curp,String(e.names||'').toLocaleUpperCase('es-MX'),String(e.paternal||'').toLocaleUpperCase('es-MX'),String(e.maternal||'').toLocaleUpperCase('es-MX'),employeeCatalogLabel('studies',e.studies),employeeCatalogLabel('proofDocType',e.proofDocType),employeeCatalogLabel('institutionType',e.institutionType),e.position,e.department].map((value,index)=>'<td data-label="'+labels[index]+'">'+escapeHtml(value||'—')+'</td>').join('')+'<td data-label="Acciones"><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'" aria-label="Eliminar empleado">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="11" class="empty-state">No hay empleados en esta sección para la búsqueda actual.</td></tr>';
+      const labels=['No. empleado','CURP','Nombre(s)','Apellido paterno','Apellido materno','Estudios','Documento probatorio','Tipo de institución','Puesto','Departamento','Planta'];
+      return rows.map(e=>'<tr>'+[e.no,e.curp,String(e.names||'').toLocaleUpperCase('es-MX'),String(e.paternal||'').toLocaleUpperCase('es-MX'),String(e.maternal||'').toLocaleUpperCase('es-MX'),employeeCatalogLabel('studies',e.studies),employeeCatalogLabel('proofDocType',e.proofDocType),employeeCatalogLabel('institutionType',e.institutionType),e.position,e.department,employeePlant(e)||'Pendiente'].map((value,index)=>'<td data-label="'+labels[index]+'">'+escapeHtml(value||'—')+'</td>').join('')+'<td data-label="Acciones"><div class="employee-row-actions"><button type="button" class="button outline" data-edit-employee="'+escapeHtml(e.curp)+'" aria-label="Editar empleado">✎</button><button type="button" class="button outline" data-delete-employee="'+escapeHtml(e.curp)+'" aria-label="Eliminar empleado">Eliminar</button></div></td></tr>').join('') || '<tr><td colspan="12" class="empty-state">No hay empleados en esta sección para la búsqueda actual.</td></tr>';
     }
     function renderPeople() {
       if(!$('#view-people').classList.contains('active'))return;
@@ -788,6 +796,7 @@ function normalizePersonNames(key, value) {
     }
     async function persistCollections(updates) {
       for(const key of Object.keys(updates))if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key)&&JSON.stringify(normalizePersonNames(key,updates[key]))!==JSON.stringify(cloud.cache[key]))throw Error('No tienes permiso de edición en un módulo vinculado. Solicita que revisen tu perfil.');
+      if(cloud.blocked&&(cloud.lastError?.code==='AUTH_REQUIRED'||/AUTH_REQUIRED/.test(cloud.lastError?.message||'')))cloud.blocked=false;
       if(cloud.blocked)throw cloud.lastError || new Error('Reintenta el guardado pendiente antes de continuar.');
       Object.entries(updates).forEach(([key,value])=>{if(JSON.stringify(normalizePersonNames(key,value))!==JSON.stringify(cloud.cache[key]))saveStore(key,value);});await flushCloud();
       if(cloud.blocked)throw cloud.lastError || new Error('No se pudieron guardar los cambios.');
@@ -1228,6 +1237,7 @@ function normalizePersonNames(key, value) {
     }
     async function persistCollection(key, draft) {
       if(window.SamaraAccess?.canStore&&!window.SamaraAccess.canStore(key))throw Error('No tienes permiso de edición en este módulo.');
+      if(cloud.blocked&&(cloud.lastError?.code==='AUTH_REQUIRED'||/AUTH_REQUIRED/.test(cloud.lastError?.message||'')))cloud.blocked=false;
       if (cloud.blocked) throw cloud.lastError || new Error('Hay cambios pendientes. Reintenta el guardado desde el aviso de conexión.');
       // Join the same queue as automatic saves, including an already running request.
       // Keep the draft pending until Google confirms it; slow saves are not failures.
@@ -1683,6 +1693,7 @@ function normalizePersonNames(key, value) {
       employeeForm.reset();
       $('#employee-form-title').textContent = employee ? 'Editar empleado' : 'Agregar empleado';
       for (const key of ['no', 'curp', 'names', 'paternal', 'maternal']) employeeForm.elements[key].value = employee?.[key] || '';
+      employeeForm.elements.plant.value=employee?employeePlant(employee):'';
       employeeForm.elements.company.value=employee?employeeCompany(employee):'SAMARA';
       fillEmployeeCatalogs(employee);
       fillEmployeePositionOptions(employee?.position || '');
@@ -1695,12 +1706,13 @@ function normalizePersonNames(key, value) {
       const input=event.target,start=input.selectionStart,end=input.selectionEnd;
       input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
     });
-    employeeForm.addEventListener('submit', event => {
+    employeeForm.addEventListener('submit', async event => {
       event.preventDefault();
       const form = new FormData(employeeForm),
         item = {
           ...(employees.find(employee=>norm(employee.curp)===norm(editingEmployeeCurp))||{}),
           company: String(form.get('company')||'SAMARA'),
+          plant: employeePlant({plant:form.get('plant')}),
           department: String(form.get('department')||'').trim().toUpperCase(),
           activeStatus: String(form.get('activeStatus')||'Activo'),
           no: String(form.get('no') || '').trim(),
@@ -1713,6 +1725,7 @@ function normalizePersonNames(key, value) {
           institutionType: String(form.get('institutionType') || '').trim(),
           position: String(form.get('position') || '').trim()
         };
+      if(!item.plant){toast('Selecciona la planta del empleado.');return;}
       if(!item.department){toast('Selecciona el departamento que corresponde al puesto.');return;}
       if (item.curp.length !== 18) {
         toast('La CURP debe tener 18 caracteres.');
@@ -1722,17 +1735,13 @@ function normalizePersonNames(key, value) {
         toast('Ya existe un registro con esa CURP.');
         return;
       }
-      employees = editingEmployeeCurp ? employees.map(old => norm(old.curp) === norm(editingEmployeeCurp) ? item : old) : [...employees, item];
-      employees.sort((a, b) => String(a.no).localeCompare(String(b.no), 'es', {
-        numeric: true
-      }));
-      saveStore('samara.employees.v2', employees);
-      employeeDialog.close();
-      activeEmployeeCompany=employeeCompany(item);
-      renderPeople();
-      renderPositions();
-      renderMatrix();
-      toast('Empleado actualizado.');
+      const button=employeeForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
+      const next=editingEmployeeCurp?employees.map(old=>norm(old.curp)===norm(editingEmployeeCurp)?item:old):[...employees,item];
+      next.sort((a,b)=>String(a.no).localeCompare(String(b.no),'es',{numeric:true}));
+      try{
+        await persistCollection('samara.employees.v2',next);employees=next;
+        employeeDialog.close();activeEmployeeCompany=employeeCompany(item);renderPeople();renderPositions();renderMatrix();toast('Empleado actualizado.');
+      }catch(error){toast('No se guardó: '+error.message);}finally{button.disabled=false;}
     });
     let positionOccupationRecords=[],positionLookup=new Map(),positionByCode=new Map(),occupationByName=new Map(),occupationLabelCounts=new Map(),indexedOccupationCatalog=null;
     const occupationCollator=new Intl.Collator('es',{numeric:true,sensitivity:'base'});
@@ -1975,6 +1984,7 @@ function normalizePersonNames(key, value) {
           proofDocType: ['tipodocprobatorio', 'tipodocumentoprobatorio'],
           institutionType: ['tipodeinstitucion', 'tipoinstitucion'],
           company: ['empresa','company'],
+          plant: ['planta','plant','plantadelempleado','plantadelpersonal','establecimiento','clavedeestablecimiento'],
           department: ['departamento','depto','area'],
           classification: ['clasificacion','clasificaciondelpuesto','clasificacionpuesto','directoindirecto','di'],
           activeStatus: ['estado','estatus','status','activo','activoinactivo','estadodelempleado','situacion'],
@@ -2057,7 +2067,7 @@ function normalizePersonNames(key, value) {
       if (kind === 'sirce-asistencia') {
         eyebrow.textContent = 'SIRCE · ASISTENCIA';
         title.textContent = 'Generar listado de asistencia';
-        body.innerHTML = "".concat(courseSelect(), "<div class=\"form-grid\">").concat(inputField('Fecha de inicio', 'att-start', '', 'date', true)).concat(inputField('Fecha de término', 'att-end', '', 'date', true)).concat(inputField('Clave del curso SIRCE', 'att-course-key', 'Clave asignada por SIRCE', 'text', true)).concat(inputField('Clave de establecimiento', 'att-establishment', '', 'text', true, '862341')).concat(inputField('RFC de agente STPS (si aplica)', 'att-rfc', '', 'text', false)).concat(inputField('Clave tipo de agente', 'att-agent-code', '1 interno; verifica externos', 'text', true, '1')).concat(inputField('Clave de modalidad', 'att-modality', 'Verifica el catálogo', 'text', true, '1'), "</div><label class=\"report-label\">Clave de capacitación DC-2<select id=\"att-objective\"><option value=\"1\">1 · Actualizar y perfeccionar conocimientos y habilidades</option><option value=\"2\">2 · Proporcionar información de nuevas tecnologías</option><option value=\"3\">3 · Preparar para ocupar vacantes o puestos de nueva creación</option><option value=\"4\">4 · Prevenir riesgos de trabajo</option><option value=\"5\">5 · Incremento a la Productividad</option></select></label><div class=\"notice-box compact\"><b>Selecciona solo a quienes asistieron.</b><p>Los campos personales se completan desde el padrón de empleados. Verifica las claves de estudios, documento, institución, ocupación y curso con los catálogos vigentes antes de presentar el archivo.</p></div><div class=\"attendee-actions\"><label><input type=\"checkbox\" id=\"att-select-all\"> Seleccionar todos</label><span>").concat(employees.length, " empleados registrados en Google</span></div><div id=\"attendee-list\" class=\"attendee-list\"></div>");
+        body.innerHTML = "".concat(courseSelect(), "<div class=\"form-grid\">").concat(inputField('Fecha de inicio', 'att-start', '', 'date', true)).concat(inputField('Fecha de término', 'att-end', '', 'date', true)).concat(inputField('Clave del curso SIRCE', 'att-course-key', 'Clave asignada por SIRCE', 'text', true)).concat('<p>El establecimiento se toma de la planta del empleado en Personal.</p>').concat(inputField('RFC de agente STPS (si aplica)', 'att-rfc', '', 'text', false)).concat(inputField('Clave tipo de agente', 'att-agent-code', '1 interno; verifica externos', 'text', true, '1')).concat(inputField('Clave de modalidad', 'att-modality', 'Verifica el catálogo', 'text', true, '1'), "</div><label class=\"report-label\">Clave de capacitación DC-2<select id=\"att-objective\"><option value=\"1\">1 · Actualizar y perfeccionar conocimientos y habilidades</option><option value=\"2\">2 · Proporcionar información de nuevas tecnologías</option><option value=\"3\">3 · Preparar para ocupar vacantes o puestos de nueva creación</option><option value=\"4\">4 · Prevenir riesgos de trabajo</option><option value=\"5\">5 · Incremento a la Productividad</option></select></label><div class=\"notice-box compact\"><b>Selecciona solo a quienes asistieron.</b><p>Los campos personales se completan desde el padrón de empleados. Verifica las claves de estudios, documento, institución, ocupación y curso con los catálogos vigentes antes de presentar el archivo.</p></div><div class=\"attendee-actions\"><label><input type=\"checkbox\" id=\"att-select-all\"> Seleccionar todos</label><span>").concat(employees.length, " empleados registrados en Google</span></div><div id=\"attendee-list\" class=\"attendee-list\"></div>");
         run.textContent = 'Descargar listado CSV';
         renderAttendeeList();
         const first = getSelectedCourse();
@@ -2184,11 +2194,12 @@ function normalizePersonNames(key, value) {
         toast('Selecciona al menos un empleado que haya asistido.');
         return;
       }
+      if(selected.some(employee=>!employeePlant(employee))){toast('Completa la planta de cada empleado en Personal antes de exportar SIRCE.');return;}
       const rows = selected.map(employee => {
         const position = positions.find(item => norm(item.job) === norm(employee.position)),
           agentCode = $('#att-agent-code').value.trim(),
           modalityCode = $('#att-modality').value.trim();
-        return [employee.no, employee.curp, employee.names, employee.paternal, employee.maternal, '2', '2', position?.sirceCode || '', employeeCatalogCode('studies', employee.studies), employeeCatalogCode('proofDocType', employee.proofDocType), employeeCatalogCode('institutionType', employee.institutionType), key, course.name, String(course.theme).match(/^\d+/)?.[0] || '', course.duration, formatDmy(start), formatDmy(end), agentCode, $('#att-rfc').value.trim(), modalityCode, $('#att-objective').value, $('#att-establishment').value.trim(), ''];
+        return [employee.no, employee.curp, employee.names, employee.paternal, employee.maternal, '2', '2', position?.sirceCode || '', employeeCatalogCode('studies', employee.studies), employeeCatalogCode('proofDocType', employee.proofDocType), employeeCatalogCode('institutionType', employee.institutionType), key, course.name, String(course.theme).match(/^\d+/)?.[0] || '', course.duration, formatDmy(start), formatDmy(end), agentCode, $('#att-rfc').value.trim(), modalityCode, $('#att-objective').value, SirceListados.establishment(employee), ''];
       });
       exportCsv('SIRCE-Listados-de-asistencia.csv', [sirceAttendanceHeaders, ...rows]);
       reportDialog.close();
@@ -2348,7 +2359,7 @@ function normalizePersonNames(key, value) {
         renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
       }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e)])]));
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa', 'Planta'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e), employeePlant(e)])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
@@ -2954,6 +2965,7 @@ function normalizePersonNames(key, value) {
     function atPintarEstado() {
       const e=AT.ed;
       if(!e||!$('#att-save'))return;
+      const summary=$('#att-sirce-fields [data-sirce-establishments]');if(summary)summary.value=ssPlantSummary(e);
       const b = atBloqueos(),
         w = atAvisos();
       if(e.objectiveNeedsReview)b.push('Revisa el objetivo anterior y elige uno del catálogo adjunto.');
@@ -3172,7 +3184,8 @@ function normalizePersonNames(key, value) {
       const first=(resolve,values)=>values.map(value=>resolve(value)).find(Boolean)||'';
       const objective=course?objectiveCode(course):'';
       const defaults={claveCurso:'',inicio:list.fecha||'',fin:list.fecha||'',estado:'2',municipio:'2',area:first(SirceListados.areaCode,[course?.theme,course?.area,h.area]),modalidad:first(value=>SirceListados.code('modalities',value),[course?.modality,h.modalidad]),objetivo:objective,agente:(instructor?.type||h.clasificacion||course?.instructorClass)==='Externo'?'2':'1',rfc:instructor?.rfc||''};
-      const result={...defaults,...saved,establecimiento:SirceListados.establishment(list)};
+      const result={...defaults,...saved,establecimiento:undefined};
+      delete result.establecimiento;
       result.area=SirceListados.areaCode(saved.area)||defaults.area;
       for(const [field,kind] of [['modalidad','modalities'],['objetivo','objectives'],['agente','agents']])result[field]=SirceListados.code(kind,saved[field])||defaults[field];
       if(instructor){result.agente=instructor.type==='Interno'?'1':'2';result.rfc=instructor.type==='Interno'?'':result.rfc||instructor.rfc||'';}
@@ -3180,11 +3193,16 @@ function normalizePersonNames(key, value) {
     }
     function sirceObjectiveFullLabel(code,fallback=''){return objectiveLabel(code)||fallback;}
     function ssSelect(field,label,kind,value,rows=null){return '<label>'+label+'<select data-sirce-field="'+field+'"><option value="">Selecciona del catálogo</option>'+(rows||SirceListados.catalogs[kind]).map(item=>'<option value="'+atE(item.code)+'" '+(String(value)===item.code?'selected':'')+'>'+atE(item.code+' · '+(kind==='objectives'?sirceObjectiveFullLabel(item.code,item.name):item.name))+'</option>').join('')+'</select>'+(kind==='objectives'?'<small class="objective-full-label">'+atE(sirceObjectiveFullLabel(value))+'</small>':'')+'</label>';}
+    function ssPlantSummary(list){
+      const selected=(list.asistentes||[]).map(a=>employees.find(e=>String(e.no)===String(a.numero))),counts=new Map();
+      selected.forEach(e=>{const label=employeePlant(e),text=label?label+' · '+SirceListados.establishment(e):'Planta pendiente en Personal';counts.set(text,(counts.get(text)||0)+1);});
+      return [...counts].map(([label,total])=>label+' ('+total+')').join(' / ')||'Agrega asistentes para consultar sus plantas';
+    }
     function ssFields(list){
       const m=ssDefaults(list),internal=(ssInstructor(list)?.type||list.encabezado?.clasificacion||list.enc?.clasificacion)==='Interno'||m.agente==='1',state=SirceListados.catalogs.states.find(row=>row.code===m.estado);
-      return '<div class="sirce-fields"><label>CLAVE CURSO SIRCE · opcional al capturar<input data-sirce-field="claveCurso" value="'+atE(m.claveCurso)+'" placeholder="Completar después del alta en SIRCE" autocomplete="off"></label><label>Establecimiento<select data-sirce-field="establecimiento"><option value="862341" '+(m.establecimiento==='862341'?'selected':'')+'>Planta 1 · 862341</option><option value="862974" '+(m.establecimiento==='862974'?'selected':'')+'>Planta 2 · 862974</option></select></label><label>Fecha de inicio<input type="date" data-sirce-field="inicio" value="'+atE(m.inicio)+'"></label><label>Fecha de término<input type="date" data-sirce-field="fin" value="'+atE(m.fin)+'"></label>'+ssSelect('estado','Estado','states',m.estado)+ssSelect('municipio','Municipio','municipalities',m.municipio,SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)))+ssSelect('area','Área temática','areas',m.area)+ssSelect('modalidad','Modalidad','modalities',m.modalidad)+ssSelect('objetivo','Objetivo de capacitación','objectives',m.objetivo)+ssSelect('agente','Tipo de agente','agents',m.agente).replace('<select ',ssInstructor(list)?'<select disabled ':'<select ')+'<label data-sirce-rfc '+(internal?'hidden':'')+'>RFC AGENTE STPS<input data-sirce-field="rfc" value="'+atE(internal?'':m.rfc)+'"></label></div><p class="form-hint">La clave corresponde a este listado, no al código del curso en el glosario. Interno: RFC AGENTE STPS vacío. Los catálogos son los archivos que proporcionaste.</p>';
+      return '<div class="sirce-fields"><label>CLAVE CURSO SIRCE · opcional al capturar<input data-sirce-field="claveCurso" value="'+atE(m.claveCurso)+'" placeholder="Completar después del alta en SIRCE" autocomplete="off"></label><label>Establecimiento por empleado<input data-sirce-establishments readonly value="'+atE(ssPlantSummary(list))+'"><small>Se toma de Personal, según la planta de cada asistente.</small></label><label>Fecha de inicio<input type="date" data-sirce-field="inicio" value="'+atE(m.inicio)+'"></label><label>Fecha de término<input type="date" data-sirce-field="fin" value="'+atE(m.fin)+'"></label>'+ssSelect('estado','Estado','states',m.estado)+ssSelect('municipio','Municipio','municipalities',m.municipio,SirceListados.catalogs.municipalities.filter(row=>norm(row.entity)===norm(state?.name)))+ssSelect('area','Área temática','areas',m.area)+ssSelect('modalidad','Modalidad','modalities',m.modalidad)+ssSelect('objetivo','Objetivo de capacitación','objectives',m.objetivo)+ssSelect('agente','Tipo de agente','agents',m.agente).replace('<select ',ssInstructor(list)?'<select disabled ':'<select ')+'<label data-sirce-rfc '+(internal?'hidden':'')+'>RFC AGENTE STPS<input data-sirce-field="rfc" value="'+atE(internal?'':m.rfc)+'"></label></div><p class="form-hint">La clave corresponde a este listado, no al código del curso en el glosario. Interno: RFC AGENTE STPS vacío. Los catálogos son los archivos que proporcionaste.</p>';
     }
-    function ssRead(root){const data={establecimiento:'862341'};root.querySelectorAll('[data-sirce-field]').forEach(input=>data[input.dataset.sirceField]=input.value.trim());if(data.agente==='1')data.rfc='';return data;}
+    function ssRead(root){const data={};root.querySelectorAll('[data-sirce-field]').forEach(input=>data[input.dataset.sirceField]=input.value.trim());if(data.agente==='1')data.rfc='';return data;}
     function ssKeyAvailable(id,key){if(key&&attendance.some(list=>list.id!==id&&String(list.sirceDatos?.claveCurso||'').trim()===key))throw Error('Esta CLAVE CURSO ya está asignada a otro listado.');}
     function ssRefreshFields(root,target){
       if(target.dataset.sirceField==='objetivo'){const description=target.closest('label').querySelector('.objective-full-label');if(description)description.textContent=sirceObjectiveFullLabel(target.value);}
@@ -3201,15 +3219,15 @@ function normalizePersonNames(key, value) {
     async function ssSave(list,root){
       if(window.SamaraAccess?.can&&!window.SamaraAccess.can('attendance','edit'))return list;
       const data=ssRead(root);ssKeyAvailable(list.id,data.claveCurso);
-      const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,encabezado:{...row.encabezado,objetivo:data.objetivo,lugar:data.establecimiento==='862974'?'Planta 2':'Planta 1'},actualizado:new Date().toISOString()}:row);
+      const next=attendance.map(row=>row.id===list.id?{...row,sirceDatos:data,objectiveCatalogVersion:'sirce-v1',objectiveNeedsReview:false,encabezado:{...row.encabezado,objetivo:data.objetivo},actualizado:new Date().toISOString()}:row);
       await persistCollection('samara.attendance.v1',next);attendance=next;return next.find(row=>row.id===list.id);
     }
     function ssPersonFixes(result){
       const target=$('#sirce-result');if(!target)return;
       $('#sirce-person-fixes')?.remove();
-      const peopleIssues=result.personIssues||[];if(!peopleIssues.length)return;
+      const grouped=new Map();for(const issue of result.personIssues||[]){const previous=grouped.get(issue.no);grouped.set(issue.no,{...issue,fields:[...new Set([...(previous?.fields||[]),...issue.fields])]});}const peopleIssues=[...grouped.values()];if(!peopleIssues.length)return;
       const can= !window.SamaraAccess?.can||window.SamaraAccess.can('people','edit');
-      target.insertAdjacentHTML('afterend','<div id="sirce-person-fixes"><h3>Completar datos de Personal</h3><p>Selecciona los datos reales del expediente. Se guardarán en Personal antes de volver a descargar.</p>'+peopleIssues.map(issue=>'<section data-sirce-person="'+atE(issue.no)+'"><b>'+atE(issue.no+' · '+issue.name)+'</b><div class="sirce-fields">'+issue.fields.map(field=>'<label>'+(field==='proofDocType'?'Documento probatorio':'Tipo de institución')+'<select data-sirce-person-field="'+field+'" '+(!can?'disabled':'')+'><option value="">Selecciona del expediente</option>'+SirceListados.catalogs[field==='proofDocType'?'documents':'institutions'].map(row=>'<option value="'+atE(row.code)+'">'+atE(row.code+' · '+row.name)+'</option>').join('')+'</select></label>').join('')+'</div></section>').join('')+(can?'<button type="button" class="button outline" data-sirce-action="fix-person">Guardar correcciones de Personal</button>':'<p>Solicita a RH o a un usuario con permiso de edición de Personal que complete estos datos.</p>')+'</div>');
+      target.insertAdjacentHTML('afterend','<div id="sirce-person-fixes"><h3>Completar datos de Personal</h3><p>Selecciona los datos reales del expediente. Se guardarán en Personal antes de volver a descargar.</p>'+peopleIssues.map(issue=>'<section data-sirce-person="'+atE(issue.no)+'"><b>'+atE(issue.no+' · '+issue.name)+'</b><div class="sirce-fields">'+issue.fields.map(field=>'<label>'+(field==='plant'?'Planta del empleado':field==='proofDocType'?'Documento probatorio':'Tipo de institución')+'<select data-sirce-person-field="'+field+'" '+(!can?'disabled':'')+'><option value="">Selecciona del expediente</option>'+(field==='plant'?[{code:'Planta 1',name:'862341'},{code:'Planta 2',name:'873691'}]:SirceListados.catalogs[field==='proofDocType'?'documents':'institutions']).map(row=>'<option value="'+atE(row.code)+'">'+atE(row.code+' · '+row.name)+'</option>').join('')+'</select></label>').join('')+'</div></section>').join('')+(can?'<button type="button" class="button outline" data-sirce-action="fix-person">Guardar correcciones de Personal</button>':'<p>Solicita a RH o a un usuario con permiso de edición de Personal que complete estos datos.</p>')+'</div>');
     }
     function ssResult(list){const course=courses.find(row=>row.code===list.cursoCodigo);return SirceListados.rows({...list,sirceDatos:ssDefaults(list)},employees,positions,course,ssInstructor(list));}
     function ssCourseExportRecord(list){
@@ -3279,7 +3297,7 @@ function normalizePersonNames(key, value) {
     let ssBulkPlan=null;
     appOn(document,'change',async event=>{
       const input=event.target;
-      if(input.matches('[data-sirce-field]')){const root=input.closest('.sirce-dialog')||$('#att-root');ssRefreshFields(root,input);if(AT.ed&&!input.closest('.sirce-dialog')){AT.ed.sirceDatos=ssRead(root);if(input.dataset.sirceField==='objetivo'){AT.ed.enc.objetivo=input.value;AT.ed.objectiveNeedsReview=false;atPintar();}if(input.dataset.sirceField==='establecimiento'){AT.ed.enc.lugar=input.value==='862974'?'Planta 2':'Planta 1';atPintar();}}}
+      if(input.matches('[data-sirce-field]')){const root=input.closest('.sirce-dialog')||$('#att-root');ssRefreshFields(root,input);if(AT.ed&&!input.closest('.sirce-dialog')){AT.ed.sirceDatos=ssRead(root);if(input.dataset.sirceField==='objetivo'){AT.ed.enc.objetivo=input.value;AT.ed.objectiveNeedsReview=false;atPintar();}}}
       if(input.id!=='sirce-bulk-file'||!input.files?.[0])return;
       ssBulkPlan=null;$('#sirce-bulk-apply').disabled=true;
       try{
@@ -3302,7 +3320,7 @@ function normalizePersonNames(key, value) {
       try{
         if(action==='fix-person'){
           if(window.SamaraAccess?.can&&!window.SamaraAccess.can('people','edit'))throw Error('No tienes permiso para editar Personal.');
-          const next=structuredClone(employees);for(const section of $$('#sirce-person-fixes [data-sirce-person]')){const matches=next.filter(e=>String(e.no)===section.dataset.sircePerson);if(matches.length!==1)throw Error('Revisa el número de empleado en Personal.');for(const input of section.querySelectorAll('[data-sirce-person-field]')){const kind=input.dataset.sircePersonField==='proofDocType'?'documents':'institutions';if(!SirceListados.code(kind,input.value))throw Error('Selecciona los datos de todos los empleados indicados.');matches[0][input.dataset.sircePersonField]=input.value;}}
+          const next=structuredClone(employees);for(const section of $$('#sirce-person-fixes [data-sirce-person]')){const matches=next.filter(e=>String(e.no)===section.dataset.sircePerson);if(matches.length!==1)throw Error('Revisa el número de empleado en Personal.');for(const input of section.querySelectorAll('[data-sirce-person-field]')){const kind=input.dataset.sircePersonField==='proofDocType'?'documents':'institutions';if(input.dataset.sircePersonField==='plant'?!employeePlant({plant:input.value}):!SirceListados.code(kind,input.value))throw Error('Selecciona los datos de todos los empleados indicados.');matches[0][input.dataset.sircePersonField]=input.value;}}
           await persistCollection('samara.employees.v2',next);employees=next;atRefrescarPadron();$('#sirce-person-fixes').remove();$('#sirce-result').textContent='Datos de Personal corregidos. Pulsa Descargar Excel SIRCE de nuevo.';return;
         }
         if(action==='apply'){
@@ -3443,7 +3461,7 @@ function normalizePersonNames(key, value) {
         if(!window.PDFLib)await window.samaraLoadPdfLibrary('generator');
         atRefrescarPadron();
         const eligible=(list.asistentes||[]).filter(row=>row.estado==='ok'&&row.firmo).map(row=>({numero:String(row.numero||''),nombre:AT_P[row.numero]?.nombre||row.nombre||row.escrito||''})).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-        const place=list.encabezado?.lugar||(SirceListados.establishment(list)==='862974'?'Planta 2':'Planta 1');
+        const place=list.encabezado?.lugar||'Planta pendiente';
         const bytes=await pdfRecepcion(atB64(window.TPL_RECEPCION),{curso:list.cursoNombre,fecha:date,lugar:place,asistentes:eligible});
         await atEntregar(bytes,'FT-RH-011 '+(list.cursoCodigo||'')+' '+date);
       }catch(error){$('#receipt-error').textContent='No se pudo generar la recepción: '+error.message;}finally{button.disabled=false;}
@@ -3890,7 +3908,6 @@ function normalizePersonNames(key, value) {
       }else if (t.dataset.h) {
         AT.ed.enc[t.dataset.h] = t.value;
         if(t.dataset.h==='objetivo'){AT.ed.objectiveNeedsReview=false;const select=$('#att-sirce-fields [data-sirce-field="objetivo"]');select.value=t.value;ssRefreshFields($('#att-root'),select);AT.ed.sirceDatos=ssRead($('#att-root'));}
-        if(t.dataset.h==='lugar'){const select=$('#att-sirce-fields [data-sirce-field="establecimiento"]');select.value=t.value==='Planta 2'?'862974':'862341';AT.ed.sirceDatos=ssRead($('#att-root'));}
         delete AT.ed.encOk[t.dataset.h];
         atPintar();
       } else if (t.dataset.firma) {

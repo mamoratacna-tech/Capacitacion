@@ -9,7 +9,7 @@ const persist = source.slice(source.indexOf('    async function persistCollectio
 function setup() {
   const calls = [];
   const cloud = {pending:{},cache:{},revision:10,saving:false,blocked:false,inFlight:null};
-  const context = vm.createContext({window:{},cloud, cloudKeys:['attendance','employees'], structuredClone, setTimeout, clearTimeout,
+  const context = vm.createContext({window:{},document:{getElementById:()=>({hidden:true})},cloud, cloudKeys:['attendance','employees'], structuredClone, setTimeout, clearTimeout,
     cloudLabel(){}, cloudError(error){cloud.blocked=true;},
     googleCall(method,batch,revision){return new Promise((resolve,reject)=>calls.push({batch,revision,resolve,reject}));}});
   vm.runInContext(names + queue + store + persist + ';globalThis.api={persistCollection,flushCloud,saveStore};',context);
@@ -39,7 +39,7 @@ function setup() {
   assert.equal(Object.keys(f.cloud.pending).length,0);
   const c=setup(); const conflict=c.persistCollection('attendance',[{id:'conflict-draft'}]);
   c.calls[0].resolve({conflict:true,revision:20});
-  await assert.rejects(conflict,/Otra ventana/);
+  await assert.rejects(conflict,/mismo registro/);
   assert.equal(c.cloud.pending.attendance[0].id,'conflict-draft');
   assert.equal(c.cloud.revision,10);
   console.log('OK: guardado >15 s, cola sin solicitudes simultáneas, revisiones consecutivas, cambios durante el guardado, fallo y reintento, conflicto conserva borrador.');

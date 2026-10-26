@@ -51,9 +51,9 @@ function normalizePersonNames(key, value) {
     return item;
   });
 }
-function appRead_(sheet){
+function appRead_(sheet,providedRows){
   const fragments={},state={};let revision=0;
-  sheet.getDataRange().getValues().slice(1).forEach(row=>{
+  (providedRows||sheet.getDataRange().getValues()).slice(1).forEach(row=>{
     if(row[0]==='_revision'){revision=Number(row[2])||0;return;}
     if(!APP_KEYS_.includes(row[0]))return;
     if(!fragments[row[0]])fragments[row[0]]=[];
@@ -67,7 +67,26 @@ function api_loadAppState(){const actor=authRequire_(arguments[arguments.length-
   try{const ss=database_(),result=appRead_(appSheet_(ss));if(result.revision===0)result.legacy=readAll_(ss);return {...authFilterState_(result,actor),notificationReads:notificationReads_(actor)};}
   finally{lock.releaseLock();}
 }
-function api_saveAppState(updates,expectedRevision){const actor=authRequire_(arguments[arguments.length-1]);
+// Three-way merge: untouched records keep the current server value. A real
+// collision on the same record stops the entire linked batch without overwriting.
+function appSame_(a,b){const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;return JSON.stringify(stable(a))===JSON.stringify(stable(b));}
+function appRecordKey_(key,row){if(!row||typeof row!=='object')return '';const text=value=>String(value||'').trim().toUpperCase();return text(row.id||row.curp||row.code||row.no||(row.job&&(key==='samara.matrixPositions.v2'?row.job+'|'+row.department:row.job))||(row.role&&row.role+'|'+row.name+'|'+row.startDate));}
+function appMerge_(key,base,local,current){
+ if(appSame_(local,base)||appSame_(local,current))return {value:current};
+ if(appSame_(current,base))return {value:local};
+ if(![base,local,current].every(Array.isArray))return {conflict:true};
+ const maps=[base,local,current].map(rows=>new Map(rows.map(row=>[appRecordKey_(key,row),row])));
+ if(maps.some((map,index)=>map.has('')||map.size!==[base,local,current][index].length))return {conflict:true};
+ const [before,wanted,latest]=maps,merged=new Map();
+ for(const id of new Set([...before.keys(),...wanted.keys(),...latest.keys()])){
+  const b=before.get(id),l=wanted.get(id),c=latest.get(id);
+  if(appSame_(l,b)||appSame_(l,c)){if(c!==undefined)merged.set(id,c);}
+  else if(appSame_(c,b)){if(l!==undefined)merged.set(id,l);}
+  else return {conflict:true};
+ }
+ return {value:[...new Set([...wanted.keys(),...latest.keys()])].filter(id=>merged.has(id)).map(id=>merged.get(id))};
+}
+function api_saveAppState(updates,expectedRevision,baseline){const actor=authRequire_(arguments[arguments.length-1]);
   if(!updates||typeof updates!=='object'||Array.isArray(updates))throw Error('Cambios inválidos');
   const keys=Object.keys(updates);
   if(!keys.length||keys.some(key=>!APP_KEYS_.includes(key)))throw Error('Colección desconocida');
@@ -78,7 +97,13 @@ function api_saveAppState(updates,expectedRevision){const actor=authRequire_(arg
   try{
     const sheet=appSheet_(database_()),stored=sheet.getDataRange().getValues();
     const revisionRow=stored.find(row=>row[0]==='_revision'),currentRevision=Number(revisionRow&&revisionRow[2])||0;
-    if(Number(expectedRevision)!==currentRevision)return {conflict:true,revision:currentRevision};
+    const hasBase=baseline&&typeof baseline==='object'&&!Array.isArray(baseline)&&keys.every(key=>Object.prototype.hasOwnProperty.call(baseline,key));
+    if(hasBase){
+      const state=appRead_(sheet,stored.filter((row,index)=>index===0||keys.includes(row[0]))).state,next={},conflicts=[];
+      for(const key of keys){const merge=appMerge_(key,normalizePersonNames(key,baseline[key]),normalizePersonNames(key,updates[key]),Object.prototype.hasOwnProperty.call(state,key)?state[key]:null);if(merge.conflict)conflicts.push(key);else next[key]=merge.value;}
+      if(conflicts.length)return {conflict:true,revision:currentRevision,collections:conflicts};
+      updates=next;
+    }else if(Number(expectedRevision)!==currentRevision)return {conflict:true,revision:currentRevision};
     const revision=currentRevision+1,rows=[['Colección','Parte','JSON'],['_revision',0,String(revision)]];
     APP_KEYS_.forEach(key=>{
       if(!Object.prototype.hasOwnProperty.call(updates,key)){stored.slice(1).filter(row=>row[0]===key).forEach(row=>rows.push(row.slice(0,3)));return;}

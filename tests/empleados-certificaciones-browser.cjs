@@ -14,7 +14,7 @@ const html=include('Index').replace(/<\?!= include\('([^']+)'\); \?>/g,(_,name)=
  await page.locator('[data-view="people"]').click();
  assert.ok((await page.locator('#people-table').textContent()).includes('PRODUCCIÓN'));
  await page.locator('#import-active-employees').click();
- await page.locator('#employee-file').setInputFiles({name:'activos.csv',mimeType:'text/csv',buffer:Buffer.from('No,Departamento\r\n1,NUEVA AREA\r\n')});
+ await page.locator('#employee-file').setInputFiles({name:'activos.csv',mimeType:'text/csv',buffer:Buffer.from('No,Departamento,Planta\r\n1,NUEVA AREA,Planta 2\r\n')});
  await page.locator('#employee-import-dialog').waitFor({state:'visible'});
  assert.ok((await page.locator('#employee-import-summary').textContent()).includes('1 marcados como baja'));
  assert.ok((await page.locator('#employee-import-details').textContent()).includes('LUIS DOS'));assert.ok((await page.locator('#employee-import-details').textContent()).includes('NUEVA AREA'));
@@ -31,5 +31,5 @@ const html=include('Index').replace(/<\?!= include\('([^']+)'\); \?>/g,(_,name)=
  await page.locator('[data-print-instructor="i"]').click();assert.equal(await page.locator('[data-print-course]').count(),2);
  await page.locator('.print-date-filter summary').click();await page.locator('#instructor-print-from').fill('2026-01-01');await page.locator('#instructor-print-from').dispatchEvent('change');assert.equal(await page.locator('[data-print-course]').count(),1);
  await page.locator('#instructor-print-dialog [data-close="instructor-print-dialog"]').first().click();
- assert.deepEqual(errors,[]);await browser.close();console.log('OK: carga SAMARA con vista previa, bajas conservadas y TACNA intacta.');
+ assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>window.__testDb.state['samara.employees.v2'].find(e=>e.no==='1').plant),'Planta 2');await browser.close();console.log('OK: planta importada y carga SAMARA con vista previa, bajas conservadas y TACNA intacta.');
 })().catch(error=>{console.error(error);process.exit(1)});

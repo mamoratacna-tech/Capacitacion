@@ -16,7 +16,7 @@ const html=include('Index').replace(/<\?!= include\('([^']+)'\); \?>/g,(_,name)=
  await page.route('https://samara.test/',route=>route.fulfill({contentType:'text/html',body:html}));await page.route('**/*',route=>route.request().url()==='https://samara.test/'?route.fallback():route.abort());await page.goto('https://samara.test/');await page.locator('#cloud-loading').waitFor({state:'detached'});await page.locator('[data-view="attendance"]').click();
  await page.evaluate(()=>{
  const db=window.__testDb,s=db.state;
- s['samara.employees.v2']=[{no:'67092',curp:'EIGM750523MBCSRN00',names:'MONICA',paternal:'ESPINOZA',maternal:'GARCIA',position:'OPERADOR',studies:'6',proofDocType:'',institutionType:''}];
+ s['samara.employees.v2']=[{no:'67092',plant:'Planta 2',curp:'EIGM750523MBCSRN00',names:'MONICA',paternal:'ESPINOZA',maternal:'GARCIA',position:'OPERADOR',studies:'6',proofDocType:'',institutionType:''}];
  s['samara.positions.v2']=[{job:'OPERADOR',sirceCode:'933'}];
  s['samara.courses.v2']=[{code:'C1',name:'CURSO FILTRADO',duration:'2',instructorClass:'Interno'},{code:'C2',name:'OTRO CURSO',duration:'2',instructorClass:'Interno'}];
  s['samara.attendance.v1']=[['one','C1','CURSO FILTRADO','2026-01-09','0001'],['two','C1','CURSO FILTRADO','2026-01-10','0002'],['other','C2','OTRO CURSO','2026-01-09','0003'],['pending','C1','CURSO FILTRADO','2026-01-11','']].map(([id,cursoCodigo,cursoNombre,fecha,claveCurso])=>({id,cursoCodigo,cursoNombre,fecha,estado:'Validada',encabezado:{instructor:'ANA EJEMPLO',duracion:'2',clasificacion:'Interno',lugar:id==='two'?'Planta 2':'Planta 1'},sirceDatos:{claveCurso,inicio:fecha,fin:fecha,estado:'2',municipio:'2',area:'96',modalidad:'1',objetivo:'1',agente:'1'},asistentes:[{numero:'67092',estado:'ok',firmo:true}]}));

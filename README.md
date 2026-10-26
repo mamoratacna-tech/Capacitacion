@@ -13,6 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
+Última actualización: [Continuidad de captura, Personal y plantas SIRCE](descargas/SAMARA_CONTINUIDAD_PERSONAL_PLANTAS.zip).
+Recupera la sesión sin recargar, conserva cambios de registros distintos y agrega
+grupos plegables y planta en Personal. SIRCE utiliza la planta de cada empleado:
+Planta 1 **862341**, Planta 2 **873691**.
+[Instrucciones](SAMARA/CONTINUIDAD_PERSONAL_PLANTAS.txt). Sustituye los siete archivos juntos.
+
 Última corrección: [Guardar listados después de capturar la fecha](descargas/SAMARA_CORRECCION_FECHA_LISTADOS.zip).
 Si ya instalaste la lectura local, sustituye solo App.html y publica una nueva versión.
 [Instrucciones](SAMARA/CORRECCION_FECHA_LISTADOS.txt).

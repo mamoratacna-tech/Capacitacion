@@ -14,7 +14,8 @@ function areaCode(value){
 }
 function date(value){const text=String(value||'');return /^\d{4}-\d{2}-\d{2}$/.test(text)&&!isNaN(Date.parse(text+'T12:00:00Z'))&&new Date(text+'T12:00:00Z').toISOString().slice(0,10)===text;}
 function dmy(value){if(!date(value))throw Error('Selecciona fechas válidas para SIRCE.');return value.slice(8,10)+'-'+value.slice(5,7)+'-'+value.slice(2,4);}
-function establishment(list){const place=norm(list.encabezado?.lugar||list.enc?.lugar);if(place==='PLANTA2')return '862974';if(place==='PLANTA1')return '862341';const value=String(list.sirceDatos?.establecimiento||'');return ['862341','862974'].includes(value)?value:'862341';}
+function employeePlant(employee){const raw=employee?.plant||employee?.planta||employee?._legacy?.planta||'',value=norm(raw);if(['1','PLANTA1','862341'].includes(value))return 'Planta 1';if(['2','PLANTA2','873691','862974'].includes(value))return 'Planta 2';return '';}
+function establishment(employee){return {'Planta 1':'862341','Planta 2':'873691'}[employeePlant(employee)]||'';}
 function rows(list,people,positions,course,instructor){
  const m=list.sirceDatos||{},issues=[],personIssues=[],output=[],key=String(m.claveCurso||'').trim();
  if(!key)issues.push('Falta la CLAVE CURSO asignada por SIRCE a este listado.');
@@ -31,14 +32,15 @@ function rows(list,people,positions,course,instructor){
   const tag='Asistente '+(index+1)+' ('+(a.numero||a.nombre||'sin identificar')+'): ';
   if(a.estado!=='ok'){issues.push(tag+'debe estar validado.');return;}
   const matches=people.filter(e=>String(e.no)===String(a.numero));if(matches.length!==1){issues.push(tag+'no se identifica de forma única en Personal.');return;}
-  const e=matches[0],curp=String(e.curp||'').trim().toUpperCase();if(curp.length!==18)issues.push(tag+'revisa la CURP.');if(seen.has(curp))issues.push(tag+'CURP duplicada en el listado.');seen.add(curp);
+  const e=matches[0],employeeEstablishment=establishment(e),curp=String(e.curp||'').trim().toUpperCase();if(curp.length!==18)issues.push(tag+'revisa la CURP.');if(seen.has(curp))issues.push(tag+'CURP duplicada en el listado.');seen.add(curp);
+  if(!employeeEstablishment){issues.push(tag+'selecciona la planta del empleado en Personal.');personIssues.push({no:String(e.no),name:[e.names,e.paternal,e.maternal].filter(Boolean).join(' '),fields:['plant']});}
   if(!e.names||!e.paternal)issues.push(tag+'faltan nombre o primer apellido.');
   const position=positions.find(p=>norm(p.job)===norm(e.position));
   const occupation=code('occupations',position?.sirceCode)||code('occupations',position?.sirceOccupation);
   const studies=code('studies',e.studies),document=code('documents',e.proofDocType||e.docProbatorio||e._legacy?.docProbatorio),institution=code('institutions',e.institutionType||e.tipoInstitucion||e._legacy?.tipoInstitucion);
    if(!document||!institution)personIssues.push({no:String(e.no),name:[e.names,e.paternal,e.maternal].filter(Boolean).join(' '),fields:[...(!document?['proofDocType']:[]),...(!institution?['institutionType']:[])]});
   for(const [label,value] of [['ocupación SIRCE',occupation],['escolaridad',studies],['documento probatorio',document],['institución',institution]])if(!value)issues.push(tag+'revisa '+label+' en Personal/Puestos SIRCE.');
-  output.push([curp,String(e.names||'').toUpperCase(),String(e.paternal||'').toUpperCase(),String(e.maternal||'').toUpperCase(),m.estado,m.municipio,occupation,studies,document,institution,key,list.cursoNombre||course?.name||'',m.area,duration,date(m.inicio)?dmy(m.inicio):'',date(m.fin)?dmy(m.fin):'',agent,rfc,m.modalidad,m.objetivo,establishment(list)]);
+  output.push([curp,String(e.names||'').toUpperCase(),String(e.paternal||'').toUpperCase(),String(e.maternal||'').toUpperCase(),m.estado,m.municipio,occupation,studies,document,institution,key,list.cursoNombre||course?.name||'',m.area,duration,date(m.inicio)?dmy(m.inicio):'',date(m.fin)?dmy(m.fin):'',agent,rfc,m.modalidad,m.objetivo,employeeEstablishment]);
  });
  return {headers:D.headers,rows:output,issues:[...new Set(issues)],personIssues,excluded:(list.asistentes||[]).length-signed.length};
 }
@@ -93,7 +95,7 @@ async function workbook(result){
  let book=await zip.file('xl/workbook.xml').async('string');book=book.replace(/(<definedName[^>]*name="_xlnm.Print_Area"[^>]*>)[\s\S]*?(<\/definedName>)/,(_,start,end)=>start+"'Sheet1'!$A$1:$U$"+(result.rows.length+1)+end);zip.file('xl/workbook.xml',book);
  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
-window.SirceListados={catalogs:C,headers:D.headers,code,areaCode,establishment,date,importDate,courseHeaders,rows,bulkPlan,workbook};
+window.SirceListados={catalogs:C,headers:D.headers,code,areaCode,employeePlant,establishment,date,importDate,courseHeaders,rows,bulkPlan,workbook};
 })();
 
 </script>

@@ -1,0 +1,84 @@
+SAMARA UNIVERSITY — CONTINUIDAD DE CAPTURA, PERSONAL Y PLANTAS SIRCE
+
+INSTALAR EN EL PROYECTO EXISTENTE (SIETE ARCHIVOS COMPLETOS)
+1. Abre tu proyecto existente en script.google.com.
+2. Sustituye TODO el contenido de estos archivos por los de ACTUALIZAR:
+   App.html, Code.gs, Estilos.html, Index.html, SirceListados.html,
+   Usuarios.html y UsuariosServidor.gs.
+   Code y UsuariosServidor son secuencias de comandos; los otros son HTML.
+   No los pegues al final. Actualízalos juntos: el guardado y el acceso se
+   comunican con el servidor y esta entrega cambia ambas partes.
+3. Conserva LecturaPDF, catálogos, plantillas, datos iniciales y demás archivos.
+   No se necesitan archivos nuevos ni permisos nuevos en appsscript.json.
+   No borres usuarios, hojas de Google ni propiedades DB_ID, SIRCE_ID o acceso.
+4. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación publicada.
+
+GUARDAR DESPUÉS DE UN PERIODO SIN ACTIVIDAD
+- La sesión tiene respaldo en el proyecto: ya no depende únicamente de la
+  caché temporal de Apps Script. Se renueva al usar funciones del servidor.
+- Vence después de 12 horas sin actividad en el servidor; por seguridad,
+  una misma sesión dura como máximo 7 días aunque haya actividad.
+- Si vence durante una captura, aparece “Confirma tu sesión” sobre el formulario.
+  Usa la cuenta con la que comenzaste y su contraseña. El guardado continúa
+  sin recargar la aplicación. Si tu nombre de usuario cambió, puedes escribir
+  el nuevo; debe corresponder a la misma cuenta.
+- Si cancelas, el formulario conserva sus datos. Pulsa Guardar nuevamente
+  cuando quieras confirmar la sesión. No recargues para recuperar el acceso.
+- Cerrar sesión, cambiar la contraseña, desactivar o eliminar una cuenta
+  siguen revocando su acceso. No se guarda la contraseña en el navegador.
+
+CAMBIOS DE OTRA VENTANA O PERSONA
+- Ya no se rechaza un guardado solo porque otra colección o un registro
+  distinto cambió durante el tiempo que dejaste abierta la aplicación.
+- El servidor compara lo que cargaste, tu cambio y los datos actuales:
+  conserva altas, cambios y bajas realizados en otros registros.
+- Si ambas personas cambiaron el MISMO registro, se detiene el lote y se
+  avisa para revisar ambas versiones. No se elige una versión automáticamente.
+  La captura y los cambios pendientes permanecen en la ventana; el aviso
+  permite descargar una copia antes de actualizar los datos.
+- La aplicación no es una vista en vivo de otras ventanas. Cuando termines
+  tu captura, puedes actualizar para ver todos los cambios ajenos recientes.
+- En Personal el formulario espera la confirmación del servidor antes de
+  cerrarse. Un fallo o una sesión cancelada conserva los campos capturados.
+
+PERSONAL
+- “Personal activo” y “Personal inactivo” son grupos desplegables. Haz clic
+  en el encabezado para abrir o cerrar cada grupo, como los años en Asistencia.
+- Activos comienza abierto e inactivos cerrado. El contador pequeño de activos
+  se conserva y muestra el total de la empresa seleccionada, aunque busques.
+- Se agrega Planta a la tabla, al formulario y al CSV de empleados.
+- En altas y ediciones manuales debes seleccionar Planta 1 o Planta 2.
+- Para carga masiva, agrega una columna “Planta” al archivo de empleados
+  general o de activos. Se aceptan “Planta 1”, “Planta 2”, “1”, “2” o los códigos.
+  La vista previa muestra los cambios de planta antes de aplicarlos.
+- Si el archivo omite la planta, se conserva la ya registrada. Si nunca se
+  registró, queda “Pendiente”; no se adivina por departamento, empresa o curso.
+- La carga de activos sigue limitada a SAMARA y conserva la revisión de bajas.
+
+ESTABLECIMIENTOS SIRCE POR EMPLEADO
+  Planta 1: 862341
+  Planta 2: 873691
+
+- El Excel individual y el masivo ZIP obtienen el establecimiento de Personal
+  para CADA asistente. Una misma lista puede exportar ambas plantas.
+- El lugar de ejecución del curso se conserva para FT-RH-010 y otros formatos;
+  no determina el establecimiento del empleado.
+- En Datos SIRCE se muestra un resumen de plantas y cantidades, en lugar de
+  un selector que imponga un solo establecimiento a toda la lista.
+- Si falta la planta, se impide exportar y se indica a quién completar.
+  Puedes hacerlo en Personal o en “Completar datos de Personal” dentro de
+  SIRCE, si tu perfil tiene permiso para editar Personal.
+- Los empleados existentes no reciben una planta automáticamente. Completa
+  sus asignaciones manualmente o mediante la columna del Excel.
+- Un código anterior 862974 registrado en la planta del empleado se reconoce
+  como Planta 2, pero la salida usa siempre el código actualizado 873691.
+
+PRUEBAS
+Sesión vencida, contraseña incorrecta, renovación y cancelación sobre un
+formulario abierto; respaldo ante expulsión de caché; revisión antigua sin
+sobrescribir registros ajenos y conflicto real sin escrituras parciales;
+importación de planta, grupos plegables y diseño sin barras horizontales;
+Excel individual y ZIP con planta del empleado y códigos actualizados.
+Se verificaron localmente con Google simulado. Esta entrega no publica ni
+accede a tu cuenta real: publica la nueva versión en tu proyecto.

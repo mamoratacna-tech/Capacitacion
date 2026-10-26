@@ -2,6 +2,9 @@ SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
+CONTINUIDAD Y PLANTAS: consulta CONTINUIDAD_PERSONAL_PLANTAS.txt.
+Actualiza sus siete archivos juntos. Planta 2 SIRCE: 873691.
+
 CORRECCIÓN DE FECHA: consulta CORRECCION_FECHA_LISTADOS.txt. Solo App.html.
 
 LECTURA SIN GEMINI: consulta LECTURA_PDF_LOCAL.txt. Solo PDF. Crea el HTML LecturaPDF.
