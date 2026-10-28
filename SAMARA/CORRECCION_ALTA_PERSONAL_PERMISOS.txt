@@ -1,0 +1,43 @@
+SAMARA UNIVERSITY — ALTA DE EMPLEADOS CON PERFIL LIMITADO
+
+FALLO REPRODUCIDO
+Un usuario con Personal en Captura / edición y otros módulos sin acceso podía
+quedar bloqueado al inicializar la aplicación. Cuando faltaba un catálogo en
+los datos entregados a ese perfil, el lector intentaba inicializarlo mediante
+una escritura. Como el perfil no podía escribir en ese módulo, tampoco quedaba
+una lista local disponible y la carga fallaba (por ejemplo, catálogo no iterable).
+
+CORRECCIÓN
+Los catálogos y listas iniciales quedan disponibles localmente para que el
+formulario funcione. Se mantienen las comprobaciones de permisos del cliente
+y del servidor; no se concede acceso de edición a otros módulos.
+
+INSTALAR (UN ARCHIVO COMPLETO)
+1. Abre tu proyecto existente en script.google.com.
+2. Abre el archivo HTML App y sustituye TODO su contenido por ACTUALIZAR/App.html.
+   No lo pegues al final ni crees un segundo archivo App.
+3. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar.
+4. El usuario adicional debe recargar la aplicación publicada. Si modificaste
+   sus permisos, debe ingresar de nuevo con su usuario y contraseña.
+
+Este archivo se instala sobre la actualización CONTINUIDAD_PERSONAL_PLANTAS.
+Si no instalaste sus siete archivos juntos, utiliza el paquete completo actual.
+No necesitas cambiar usuarios, contraseñas, hojas de Google ni propiedades.
+
+PERMISOS PARA EL ALTA MANUAL
+- Personal > Captura / edición permite agregar o modificar empleados con
+  puestos y departamentos que ya estén registrados.
+- Personal > Solo consulta permite verlos, pero no agregarlos ni modificarlos.
+- La carga masiva que cree o cambie puestos y departamentos mantiene el
+  requisito de edición del módulo vinculado de Matriz. Esta corrección no
+  elimina esa comprobación ni autoriza editar catálogos sin permiso.
+
+PRUEBA LOCAL
+Se reprodujo la carga bloqueada con un usuario no administrador que solo tenía
+Personal en edición. Con la corrección, ese usuario agregó un empleado con
+planta, puesto y departamento existentes, recargó y modificó el registro.
+Se comprobó que no escribiera catálogos ajenos ni pudiera administrar usuarios.
+Con Personal en Solo consulta, los botones siguieron ocultos y el servidor
+rechazó un intento directo de escritura. Las pruebas usaron el código real del
+servidor con Google simulado; publica la versión en tu proyecto para aplicarla.

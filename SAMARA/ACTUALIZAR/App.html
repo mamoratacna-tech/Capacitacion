@@ -113,7 +113,11 @@ function normalizePersonNames(key, value) {
   });
 }
     function loadStore(key, fallback) {
-      if (!Object.prototype.hasOwnProperty.call(cloud.cache, key)) saveStore(key, structuredClone(fallback));
+      if (!Object.prototype.hasOwnProperty.call(cloud.cache, key)) {
+        // Keep local defaults available even when this collection cannot be written.
+        cloud.cache[key]=structuredClone(fallback);
+        saveStore(key,structuredClone(fallback));
+      }
       return normalizePersonNames(key,structuredClone(cloud.cache[key]));
     }
     function saveStore(key, value) {

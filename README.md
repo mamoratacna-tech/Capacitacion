@@ -13,6 +13,11 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
+Última corrección: [Alta de empleados con permisos de Personal](descargas/SAMARA_CORRECCION_ALTA_PERSONAL_PERMISOS.zip).
+Corrige la carga de catálogos con perfiles limitados y permite el alta manual
+con Personal en Captura / edición. Sustituye solo App.html.
+[Instrucciones](SAMARA/CORRECCION_ALTA_PERSONAL_PERMISOS.txt).
+
 Última actualización: [Continuidad de captura, Personal y plantas SIRCE](descargas/SAMARA_CONTINUIDAD_PERSONAL_PLANTAS.zip).
 Recupera la sesión sin recargar, conserva cambios de registros distintos y agrega
 grupos plegables y planta en Personal. SIRCE utiliza la planta de cada empleado:
