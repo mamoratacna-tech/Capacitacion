@@ -1703,7 +1703,7 @@ function normalizePersonNames(key, value) {
       employeeForm.elements.plant.value=employee?employeePlant(employee):'';
       employeeForm.elements.company.value=employee?employeeCompany(employee):'SAMARA';
       let contractValues=employee||{};try{contractValues=SamaraEvaluations.contractPatch(contractValues);}catch(error){}
-      for(const key of ['classification','hireDate','contractType','contractStart','contractDays','contractEnd','supervisor','rioLevel'])employeeForm.elements[key].value=contractValues[key]||'';
+      for(const key of ['classification','hireDate','contractType','contractStart','contractDays','contractEnd','rioLevel'])employeeForm.elements[key].value=contractValues[key]||'';
       employeeForm.elements.contractDays.disabled=contractValues.contractType==='Indefinido';employeeForm.elements.contractEnd.readOnly=contractValues.contractType==='Indefinido'||!!contractValues.contractDays;
       fillEmployeeCatalogs(employee);
       fillEmployeePositionOptions(employee?.position || '');
@@ -1736,7 +1736,7 @@ function normalizePersonNames(key, value) {
           institutionType: String(form.get('institutionType') || '').trim(),
           position: String(form.get('position') || '').trim()
         };
-      try{Object.assign(item,SamaraEvaluations.contractPatch({...item,...Object.fromEntries(['classification','hireDate','contractType','contractStart','contractDays','contractEnd','supervisor','rioLevel'].map(key=>[key,String(form.get(key)||'').trim()]))}));}catch(error){toast(error.message);return;}
+      try{Object.assign(item,SamaraEvaluations.contractPatch({...item,...Object.fromEntries(['classification','hireDate','contractType','contractStart','contractDays','contractEnd','rioLevel'].map(key=>[key,String(form.get(key)||'').trim()]))}));}catch(error){toast(error.message);return;}
       if(!item.plant){toast('Selecciona la planta del empleado.');return;}
       if(!item.department){toast('Selecciona el departamento que corresponde al puesto.');return;}
       if (item.curp.length !== 18) {
@@ -2372,7 +2372,7 @@ function normalizePersonNames(key, value) {
         renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
       }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa', 'Planta', 'Tipo de contrato','Inicio de contrato','Días de contrato','Vencimiento de contrato','Fecha de ingreso','Supervisor','Nivel RIO'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e), employeePlant(e),e.contractType||'',e.contractStart||'',e.contractDays||'',e.contractEnd||'',e.hireDate||'',e.supervisor||'',e.rioLevel||''])]));
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa', 'Planta', 'Tipo de contrato','Inicio de contrato','Días de contrato','Vencimiento de contrato','Fecha de ingreso','Nivel RIO'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e), employeePlant(e),e.contractType||'',e.contractStart||'',e.contractDays||'',e.contractEnd||'',e.hireDate||'',e.rioLevel||''])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
@@ -3947,7 +3947,8 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
-    window.SamaraEvaluations.init({load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
+    window.SamaraContractsPdf.init({context:()=>employees,save:async records=>{await persistCollection('samara.employees.v2',records);employees=records;renderPeople();window.SamaraEvaluations.render();},toast});
+    window.SamaraEvaluations.init({importContracts:()=>window.SamaraContractsPdf.open(),load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
     window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
     window.SamaraDashboard.init({context:()=>({courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)}),validateList:ssResult,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),navigate:(module,options={})=>{
       if(window.SamaraAccess?.can&&!window.SamaraAccess.can(module)){toast('No tienes acceso a este módulo.');return;}

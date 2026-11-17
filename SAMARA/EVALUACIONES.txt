@@ -1,5 +1,8 @@
 SAMARA UNIVERSITY — MÓDULO EVALUACIONES
 
+ADECUACIÓN VIGENTE: consulta EVALUACIONES_DEPARTAMENTOS_CONTRATOS.txt para
+los cuatro apartados, agrupación por departamentos y carga del PDF de contratos.
+
 INSTALACIÓN: CINCO ARCHIVOS A SUSTITUIR Y DOS HTML NUEVOS
 1. Abre tu proyecto existente en script.google.com.
 2. Sustituye COMPLETOS App.html, Code.gs, Index.html, Usuarios.html y
@@ -18,8 +21,8 @@ INSTALACIÓN: CINCO ARCHIVOS A SUSTITUIR Y DOS HTML NUEVOS
 CÓMO SE TRABAJA
 1. Personal es la fuente del contrato y la clasificación.
 2. Evaluaciones calcula quién requiere mitad de periodo, renovación o anual.
-3. Filtra por año, fechas, tipo, departamento, planta, clasificación o supervisor.
-4. Descarga el formato original autollenado y la lista para el supervisor.
+3. Filtra por año, fechas, tipo, departamento, planta, clasificación o departamento.
+4. Descarga el formato original autollenado y la lista para el departamento.
 5. Registra entrega, fecha real de evaluación y recepción de documentos.
    El historial permanece en la misma base Google Sheets de la aplicación.
 
@@ -28,7 +31,7 @@ PERSONAL: CAMPOS NUEVOS
 - Fecha de ingreso (distinta al inicio del contrato vigente).
 - Tipo de contrato: Temporal, Indefinido o Especial.
 - Inicio del contrato, días y vencimiento.
-- Supervisor y nivel de RIO.
+- Nivel de RIO.
 
 Con días capturados se calcula el vencimiento incluyendo el primer día:
   inicio + días - 1.
@@ -43,7 +46,7 @@ sí solo una anual pendiente; se considera la fecha real de ingreso, si existe.
 
 Puedes usar los nuevos campos en las cargas generales o de activos. Los
 encabezados incluyen Tipo de contrato, Inicio de contrato, Días de contrato,
-Vencimiento de contrato, Fecha de ingreso, Supervisor y Nivel RIO. También
+Vencimiento de contrato, Fecha de ingreso, Nivel RIO. También
 se incluyen en Exportar empleados. Las fechas admiten ISO AAAA-MM-DD,
 DD/MM/AAAA y fechas de Excel. La vista previa muestra cambios contractuales.
 Se conservan los valores omitidos; un tipo de contrato que diga 180 días y
@@ -60,7 +63,7 @@ CALENDARIO CONFIRMADO
 - Si existe mitad de periodo o renovación REALIZADA en el mismo año,
   la anual pendiente de ese año aparece No aplica. La siguiente será en
   abril del año siguiente. Cuenta el año de realización, no el de programación.
-- Entregar el formato al supervisor, recibir un examen o marcar un RIO
+- Entregar el formato al departamento, recibir un examen o marcar un RIO
   no equivale a realizar una evaluación ni excluye por sí solo la anual.
 - Una anual ya realizada se conserva aunque se registre otra evaluación después.
 - Los ingresos posteriores a abril no generan una anual anterior a su ingreso.
@@ -70,7 +73,7 @@ CALENDARIO CONFIRMADO
 SEGUIMIENTO Y DOCUMENTOS
 Estados: Pendiente, Entregada, Vencida, Realizada, No aplica e Histórico.
 La fecha programada vencida prevalece como aviso aunque se haya entregado.
-En Seguimiento registra supervisor, periodo, entrega y fecha real de realización.
+En Seguimiento registra departamento, periodo, entrega y fecha real de realización.
 La mitad de periodo propone del inicio hasta la mitad. La anual permite
 capturar el periodo de desempeño; no se supone un periodo que no confirmaste.
 No se permiten fechas reales futuras ni una realización anterior a la entrega.
@@ -113,8 +116,8 @@ Se limpiaron empleado, salario, calificaciones y comentarios de ejemplo.
 Los datos que no existen en Personal quedan vacíos para completar en el formato.
 Abre Excel o Word para imprimir o guardar como PDF desde esas aplicaciones.
 
-Imprimir entrega a supervisores usa los filtros actuales y genera el listado
-con empleado, puesto, departamento, supervisor, tipo, fechas del contrato,
+Imprimir entrega a departamentos usa los filtros actuales y genera el listado
+con empleado, puesto, departamento, departamento, tipo, fechas del contrato,
 ¿Se renueva? y espacio de firma de autorización. Puedes guardarlo como PDF
 con el diálogo de impresión del navegador. No se inventan salarios, incidencias
 ni firmas. La muestra incluida contiene únicamente empleados ficticios.
@@ -141,6 +144,6 @@ VERIFICADO LOCALMENTE
 Cálculo con los ejemplos de contratos, años bisiestos y cambios de año;
 regla anual por fecha real; indefinidos; historial y duplicados; permiso propio
 de Evaluaciones y protección de Personal; guardado y recarga; diseño adaptable;
-seis variantes de Word/Excel preparadas y PDF de entrega a supervisores.
+seis variantes de Word/Excel preparadas y PDF de entrega a departamentos.
 Las pruebas usan el código del servidor con Google simulado. La entrega no
 publica tu proyecto ni modifica la base real hasta que instales y captures.

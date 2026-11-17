@@ -13,6 +13,11 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
+Última adecuación: [Evaluaciones por departamento y contratos PDF](descargas/SAMARA_EVALUACIONES_DEPARTAMENTOS.zip).
+Cuatro apartados: Mitad de periodo, Renovación, Anual y Promociones (reservado).
+Carga el PDF de contratos en Personal, revisa sus coincidencias y consulta los
+pendientes por departamento. [Instrucciones](SAMARA/EVALUACIONES_DEPARTAMENTOS_CONTRATOS.txt).
+
 Última actualización: [Módulo Evaluaciones](descargas/SAMARA_EVALUACIONES.zip).
 Contratos en Personal, mitad de periodo y renovación calculadas, anuales en abril
 desde 2027, exclusión por evaluación realizada e historial. Incluye los formatos

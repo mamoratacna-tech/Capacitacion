@@ -1,0 +1,106 @@
+SAMARA UNIVERSITY — EVALUACIONES POR DEPARTAMENTO Y CONTRATOS DEL PDF
+
+INSTALAR SOBRE LA ENTREGA EVALUACIONES
+1. En tu proyecto existente de Apps Script sustituye completos:
+   App.html, Code.gs, Index.html, Usuarios.html y Evaluaciones.html.
+2. Crea un archivo HTML nuevo llamado ContratosPDF (sin .html) y pega el
+   contenido completo de ACTUALIZAR/ContratosPDF.html.
+3. Conserva PlantillasEvaluaciones, LecturaPDF, UsuariosServidor y los demás
+   archivos de la entrega anterior. No cambies hojas, usuarios ni propiedades.
+4. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación publicada.
+   Si no instalaste el módulo anterior, usa el paquete completo actual.
+
+CUATRO APARTADOS
+- Mitad de periodo.
+- Renovación.
+- Anual.
+- Promociones: reservado, pendiente de tu explicación. No genera registros,
+  formatos ni reglas de promoción por ahora.
+
+En los tres primeros se muestra Por atender: pendientes, entregadas y vencidas.
+Las realizadas, No aplica e históricas se consultan cambiando Estado.
+Todos los años incluye los hitos de contratos que terminan en otro año;
+por ejemplo, la renovación de enero/febrero de 2027 sigue visible aunque
+la mitad de periodo haya sido en 2026. La campaña anual siguiente es abril 2027.
+Puedes elegir un año para revisar otra campaña o el historial.
+
+Dentro de cada apartado, los empleados se agrupan en departamentos desplegables.
+El departamento viene de Personal. Se conserva la clasificación y planta del
+empleado; no se deducen de los nombres truncados o puestos del PDF.
+No necesitas registrar supervisores en el sistema. Se retiró ese campo del
+formulario de Personal y del seguimiento de Evaluaciones. Los formatos Word
+originales conservan sus espacios de firma para llenarlos cuando corresponda.
+
+APLICAR EL PDF QUE ADJUNTASTE
+El reporte fue leído y validado: contiene 31 contratos, con 13 de 90 días,
+17 de 45 días y 1 de 30 días. Sus vencimientos van del 20/11/2026 al 09/02/2027.
+Los datos personales del reporte no se incorporan a los archivos públicos
+ni se cargan automáticamente al instalar el código.
+
+1. En Personal pulsa Cargar contratos PDF. También está disponible desde
+   Evaluaciones cuando tu usuario tiene permiso de edición de Personal.
+2. Selecciona el PDF original Mxli Vencimiento de Contrato que adjuntaste.
+3. Revisa el cruce con el padrón: número de empleado, nombre completo y
+   departamento de Personal, contrato anterior y contrato del reporte.
+4. Pulsa Actualizar contratos en Personal.
+5. Abre Evaluaciones. Las fechas y estatus se recalculan desde Personal.
+
+La lectura es local en el navegador y utiliza el texto del PDF original.
+No usa Gemini ni envía el documento a un servicio de lectura. No admite fotos
+ni necesita OCR para este reporte. El PDF original no se guarda en Sheets.
+
+QUÉ ACTUALIZA
+Solo cuatro campos: tipo de contrato (Temporal), días, inicio y vencimiento.
+El número de empleado se usa para identificar; no se reemplazan nombre,
+CURP, puesto, departamento, planta, clasificación, estado activo/inactivo,
+fechas de realización ni documentos de las evaluaciones existentes.
+No se registran salarios, incidencias P/R/F, decisiones ni firmas del PDF.
+El reporte es parcial: las personas que no aparecen conservan sus datos.
+
+COINCIDENCIAS POR REVISAR
+- Número no encontrado en SAMARA: se informa y no se crea un empleado con
+  nombre/puesto truncado y sin CURP o departamento.
+- Número ambiguo en Personal: se informa y no se elige una persona al azar.
+- Baja/inactivo: no se modifica ni se reactiva.
+- Contrato indefinido vigente o contrato con inicio posterior al PDF:
+  se conserva y se pide revisar el expediente antes de cambiarlo manualmente.
+Las coincidencias válidas se pueden actualizar aunque haya otras por revisar.
+Si la lectura del PDF tiene contratos duplicados, fechas imposibles o
+vencimientos contradictorios con sus días, no permite aplicar esa lectura.
+Volver a cargar el mismo PDF deja los contratos aplicados como Sin cambios.
+
+ESTATUS Y FECHAS
+- Mitad: inicio + parte entera de días/2.
+- Renovación: inicio + días - 1 (vencimiento inclusivo).
+- Antes de la fecha: Pendiente; si tiene entrega registrada: Entregada.
+- Después de la fecha, sin realización: Vencida.
+- Con fecha real ya capturada: Realizada; se conservan esas evaluaciones.
+- La anual pendiente de ese mismo año pasa a No aplica si ya se realizó
+  mitad de periodo o renovación. Las entregas no causan esa exclusión.
+- El PDF no acredita que se haya realizado una evaluación. No se marcan
+  evaluaciones como realizadas a partir del vencimiento, salario o incidencias.
+- Promociones queda sin reglas ni estatus hasta definir su proceso.
+
+ENTREGAS POR DEPARTAMENTO
+Imprimir entrega por departamento usa el apartado y filtros actuales.
+Cada departamento tiene su propia hoja/sección, con personas, contratos,
+fechas, decisión de renovación y espacio de firma de autorización.
+No requiere nombres de supervisores. Puedes guardar el resultado como PDF.
+El control CSV también utiliza el apartado y filtros actuales y ya no
+incluye una columna de supervisor.
+
+PERMISOS
+Cargar contratos requiere Personal > Captura / edición. No requiere editar
+Matriz porque no crea ni modifica puestos o departamentos.
+Evaluaciones > Captura / edición permite registrar el seguimiento.
+Solo consulta permite consultar, imprimir y descargar; el servidor rechaza
+la escritura sin permisos. Se mantiene la protección ante cambios concurrentes.
+
+VALIDADO
+Se leyó tu PDF real con pdf.js y se verificaron sus 31 contratos y fechas.
+Se probó PDF -> Personal -> Evaluaciones por departamento con datos de prueba:
+actualización de contratos, repetición sin cambios, empleados desconocidos
+sin alta, realizadas conservadas, casos pendientes/vencidos, anuales 2027,
+Promociones reservado, permisos y navegación sin cambios de datos.
+El padrón real se cruza al aplicar la carga en tu aplicación publicada.
