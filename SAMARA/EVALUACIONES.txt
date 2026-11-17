@@ -1,3 +1,7 @@
+NOTA DE ACTUALIZACIÓN: la entrega más reciente es PERSONAL_EVALUACIONES_EXCEL.txt.
+Los contratos se actualizan desde Personal mediante Excel o captura manual.
+El siguiente documento describe una entrega anterior.
+
 SAMARA UNIVERSITY — MÓDULO EVALUACIONES
 
 ADECUACIÓN VIGENTE: consulta EVALUACIONES_DEPARTAMENTOS_CONTRATOS.txt para

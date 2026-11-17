@@ -14,7 +14,7 @@
  access.can=(module,mode='view')=>{module=['positions','departments'].includes(module)?'matrix':module;const user=access.user;if(!user)return true;if(module==='users')return user.role==='admin';if(user.role==='admin')return true;if(!user.permissions)return true;const level=user.permissions[module]||'none';return mode==='edit'?level==='edit':level==='view'||level==='edit';};
  access.canStore=key=>access.can(collectionModules[key],'edit');
  access.writeModule=button=>{
-  if(!button)return null;if(button.id==='import-contracts-pdf'||button.matches('[data-employee-contracts-pdf]'))return 'people';if(button.matches('[data-delete-evaluation]'))return 'evaluations';
+  if(!button)return null;if(button.matches('[data-delete-evaluation]'))return 'evaluations';
   const att=button.dataset.att;if(att==='altaemp')return 'people';if(['altains','editins'].includes(att)||button.id==='course-register-instructor')return 'instructors';if(['nueva','pdf','manual','manuallectura','guardar','borrar','borrarlista','descartarlista','abrir','reintentarlectura','altaemp','altains','editins'].includes(att)||button.matches('[data-sirce-bulk],[data-sirce-action="save"],[data-sirce-action="apply"]'))return 'attendance';
   const dialogs={'contracts-pdf-dialog':'people','evaluation-dialog':'evaluations','program-dialog':'program','course-dialog':'courses','department-dialog':'courses','instructor-dialog':'instructors','employee-dialog':'people','employee-import-dialog':'people','position-dialog':'matrix','matrix-dialog':'matrix','matrix-department-dialog':'matrix','cmcap-add-dialog':'cmcap','legal-dialog':'cmcap','user-editor':'users'},module=button.closest('.view')?.id.replace('view-','')||dialogs[button.closest('dialog')?.id];
   if(!module)return null;
@@ -57,7 +57,7 @@
   catch(error){$('session-message').textContent=error.message||String(error);}finally{button.disabled=false;label.textContent=oldText;}
  }
  $('logout-user').onclick=leaveSession;
- function showUser(user){access.user=user;$('session-name').textContent=user.name;$('session-role').textContent=user.role==='admin'?'Cuenta maestra':'Perfil personalizado';$('session-avatar').textContent=user.role==='admin'?'RH':'CC';$('users-nav').hidden=user.role!=='admin';document.querySelectorAll('.nav-item[data-view]').forEach(button=>button.hidden=!access.can(button.dataset.view));document.querySelectorAll('.nav-group').forEach(group=>{group.hidden=![...group.querySelectorAll('.nav-item[data-view]')].some(button=>!button.hidden)&&!group.querySelector('.sidebar-source');});access.apply(document.body);}
+ function showUser(user){access.user=user;$('session-name').textContent=user.name;$('session-role').textContent=user.role==='admin'?'Cuenta maestra':'Perfil personalizado';$('session-avatar').textContent=user.role==='admin'?'RH':'CC';$('users-nav').hidden=user.role!=='admin';document.querySelectorAll('.nav-item[data-view]').forEach(button=>button.hidden=!access.can(button.dataset.view));if($('evaluations-navigation'))$('evaluations-navigation').hidden=!access.can('evaluations');document.querySelectorAll('.nav-group').forEach(group=>{group.hidden=![...group.querySelectorAll('.nav-item[data-view]')].some(button=>!button.hidden)&&!group.querySelector('.sidebar-source');});access.apply(document.body);}
  if(access.user)showUser(access.user);else call('api_authMe',access.token).then(showUser).catch(error=>{$('session-message').textContent=error.message||'Inicia sesión.';});
 
 })();

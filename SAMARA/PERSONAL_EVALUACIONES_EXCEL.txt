@@ -1,0 +1,104 @@
+SAMARA UNIVERSITY — PERSONAL COMO ORIGEN DE EVALUACIONES
+
+INSTALAR ESTA ADECUACIÓN
+Sustituye completos estos seis archivos del proyecto existente de Apps Script:
+App.html, Index.html, Estilos.html, Evaluaciones.html, Usuarios.html y
+SirceListados.html. No hay archivos nuevos que crear para esta adecuación.
+
+Conserva los demás archivos y la información de Google Sheets.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar (lápiz) >
+Nueva versión > Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste el módulo Evaluaciones de la entrega anterior,
+utiliza SAMARA_ARCHIVOS_COMPLETOS.zip y las instrucciones generales.
+
+PERSONAL ES LA FUENTE
+Los contratos se capturan y actualizan en Personal. Evaluaciones consulta
+esos datos, junto con el puesto, departamento, planta y clasificación.
+No se necesita cargar un PDF de contratos en Evaluaciones.
+
+LOS TRES CAMPOS DEL EXCEL Y DEL FORMULARIO
+1. Tipo de Contrato: por ejemplo, 30 días, 45 días, 60 días, 90 días,
+   120 días, 180 días, Indefinido u Obra determinada.
+2. Inicio Contrato.
+3. Fecha final del Contrato.
+
+El número de días se obtiene del Tipo de Contrato. No se pide de nuevo
+en un cuarto campo. La fecha final se calcula como inicio + días - 1.
+Si el Excel incluye fecha final, se valida que coincida; no se reemplaza
+silenciosamente una fecha contradictoria. Obra determinada permite una
+fecha final manual. Indefinido conserva el inicio y queda sin vencimiento.
+Las columnas antiguas de Días de contrato y Vencimiento siguen siendo
+compatibles para archivos de versiones anteriores.
+
+En la tabla de Personal hay una columna Contrato que reúne los tres datos,
+sin añadir una barra horizontal. Las fechas se muestran con año completo.
+
+CÓMO CARGAR TU ARCHIVO
+1. Abre Personal > Empleados SAMARA > Cargar empleados.
+2. Selecciona el Excel Personal - empleados.xlsx que adjuntaste.
+3. Revisa los cambios. Se reconocen los catorce encabezados de tu ejemplo,
+   incluyendo Número, Tipo de Contrato, Inicio Contrato y
+   Fecha final del Contrato. Las fechas numéricas de Excel se normalizan.
+4. Revisa las clasificaciones de puesto/departamento que estén pendientes.
+   Se conserva la clasificación existente cuando ya está registrada.
+5. Aplica los cambios revisados. Después abre Evaluaciones.
+
+Cargar empleados actualiza las coincidencias sin dar de baja a los ausentes.
+Cargar empleados activos se utiliza cuando el archivo representa la lista
+completa de activos SAMARA: muestra la revisión antes de marcar bajas.
+La carga no inventa evaluaciones realizadas ni elimina el seguimiento existente.
+Repetir el archivo no duplica empleados ni registros de evaluación.
+
+PLANTAS DEL EXCEL
+20 = Planta 1 = establecimiento SIRCE 862341.
+21 = Planta 2 = establecimiento SIRCE 873691.
+También se conservan los nombres Planta 1 / Planta 2 y sus claves conocidas.
+El establecimiento SIRCE se toma de la planta del empleado.
+
+EXPORTAR PERSONAL
+La exportación comienza con los mismos catorce encabezados de tu Excel.
+Tipo de Contrato muestra 45 días, 90 días, Indefinido, etc., en vez de separar
+el plazo en otra columna. Después se incluyen los campos complementarios
+que ya tiene la aplicación: clasificación, estado, empresa, ingreso y RIO.
+
+MENÚ IZQUIERDO
+En Administración abre Evaluaciones. Se despliegan cuatro opciones:
+- Mitad de periodo.
+- Renovación.
+- Anual.
+- Promociones.
+
+Cada opción abre su apartado. Se mantiene el agrupado por departamento,
+los filtros de año y estado y las realizadas en su historial.
+En móvil, abrir Evaluaciones mantiene el menú abierto para elegir el apartado;
+al elegirlo se cierra el menú y se muestra la información.
+Promociones continúa reservado hasta definir su proceso.
+
+FECHAS Y ESTATUS
+Mitad de periodo: inicio + parte entera de días / 2.
+Renovación: vencimiento del contrato.
+Anual: abril; la siguiente campaña inicial es abril de 2027.
+Los indefinidos generan solamente anuales.
+Una mitad o renovación efectivamente realizada ese año excluye la anual
+del mismo año; la siguiente corresponde al abril del siguiente año.
+Las fechas programadas se pueden ajustar en el seguimiento.
+Pendiente, Entregada o Vencida depende de la fecha y del seguimiento registrado.
+Una fecha de vencimiento pasada no acredita que la evaluación se realizó.
+Los registros realizados se conservan al actualizar el contrato en Personal.
+
+PERMISOS
+Personal > Captura / edición permite capturar los tres campos e importar
+empleados. Si la carga crea puestos/departamentos nuevos, requiere también
+el permiso del catálogo relacionado; se conserva la validación del servidor.
+Evaluaciones > Solo consulta permite ver sus cuatro apartados e imprimir.
+Evaluaciones > Captura / edición permite registrar el seguimiento.
+Quienes no tienen acceso a Evaluaciones tampoco ven su submenú.
+
+VERIFICACIÓN
+El Excel adjunto contiene 233 empleados: 177 indefinidos y 56 con vencimiento.
+Se verificaron sus encabezados, fechas, plazos y plantas 20/21 en el lector
+real del navegador. No se publican sus nombres, CURP ni números en el paquete.
+Con datos de prueba se verificó Excel > Personal > Evaluaciones, repetición
+sin duplicados, conservación de realizadas, edición manual, exportación,
+permisos, menú desplegable y ausencia de barra horizontal.
+La información real se guardará cuando apliques la carga en tu aplicación.

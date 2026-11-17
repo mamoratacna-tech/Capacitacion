@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Evaluaciones por departamento y contratos PDF](descargas/SAMARA_EVALUACIONES_DEPARTAMENTOS.zip).
+Última adecuación: [Personal → Evaluaciones y menú desplegable](descargas/SAMARA_PERSONAL_EVALUACIONES_EXCEL.zip).
+Tres campos de contrato en Personal, compatibles con el Excel proporcionado;
+plantas 20/21 y cuatro apartados bajo Evaluaciones en el menú izquierdo.
+[Instrucciones](SAMARA/PERSONAL_EVALUACIONES_EXCEL.txt). Sustituye seis archivos.
+
+Entrega anterior: [Evaluaciones por departamento y contratos PDF](descargas/SAMARA_EVALUACIONES_DEPARTAMENTOS.zip).
 Cuatro apartados: Mitad de periodo, Renovación, Anual y Promociones (reservado).
 Carga el PDF de contratos en Personal, revisa sus coincidencias y consulta los
 pendientes por departamento. [Instrucciones](SAMARA/EVALUACIONES_DEPARTAMENTOS_CONTRATOS.txt).

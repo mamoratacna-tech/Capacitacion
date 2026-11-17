@@ -14,7 +14,7 @@ function areaCode(value){
 }
 function date(value){const text=String(value||'');return /^\d{4}-\d{2}-\d{2}$/.test(text)&&!isNaN(Date.parse(text+'T12:00:00Z'))&&new Date(text+'T12:00:00Z').toISOString().slice(0,10)===text;}
 function dmy(value){if(!date(value))throw Error('Selecciona fechas válidas para SIRCE.');return value.slice(8,10)+'-'+value.slice(5,7)+'-'+value.slice(2,4);}
-function employeePlant(employee){const raw=employee?.plant||employee?.planta||employee?._legacy?.planta||'',value=norm(raw);if(['1','PLANTA1','862341'].includes(value))return 'Planta 1';if(['2','PLANTA2','873691','862974'].includes(value))return 'Planta 2';return '';}
+function employeePlant(employee){const raw=employee?.plant||employee?.planta||employee?._legacy?.planta||'',value=norm(raw);if(['1','20','PLANTA1','862341'].includes(value))return 'Planta 1';if(['2','21','PLANTA2','873691','862974'].includes(value))return 'Planta 2';return '';}
 function establishment(employee){return {'Planta 1':'862341','Planta 2':'873691'}[employeePlant(employee)]||'';}
 function rows(list,people,positions,course,instructor){
  const m=list.sirceDatos||{},issues=[],personIssues=[],output=[],key=String(m.claveCurso||'').trim();

@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: PERSONAL → EVALUACIONES Y MENÚ DESPLEGABLE.
+Lee PERSONAL_EVALUACIONES_EXCEL.txt: sustituye seis archivos, sin crear nuevos.
+Los contratos se actualizan desde Personal con el Excel, y Evaluaciones los consulta.
+
 SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
