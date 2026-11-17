@@ -1296,16 +1296,15 @@ function normalizePersonNames(key, value) {
         button.textContent = 'Guardar integrante';
       }
     });
-    function setEvaluationNavigation(open){const menu=$('#evaluations-subnav');if(!menu)return;menu.hidden=!open;$('#sidebar [data-view="evaluations"]').setAttribute('aria-expanded',String(open));}
-    function showView(name,options={}) {
+
+    function showView(name) {
       if(window.SamaraAccess?.can&&!window.SamaraAccess.can(name)){toast('No tienes acceso a este módulo.');return;}
       if(name==='users'&&window.SamaraAccess?.user?.role!=='admin'){toast('Solo la administradora puede gestionar usuarios.');return;}
       if(name==='users')window.SamaraAccess?.loadUsers();
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
       window.SamaraNotifications?.schedule();
-      window.SamaraEvaluations?.syncNavigation();
       if(name==='dashboard')window.SamaraDashboard.render();
-      if(name==='evaluations'){setEvaluationNavigation(true);window.SamaraEvaluations.render();}
+      if(name==='evaluations')window.SamaraEvaluations.render();
       if(name==='program')window.SamaraProgram.render();
       if(name==='reports')window.SamaraReports.render(true);
       if(name==='people')renderPeople();
@@ -1320,7 +1319,8 @@ function normalizePersonNames(key, value) {
         renderCourses();
       }
 
-      $$('.nav-item').forEach(item => {const active=item.dataset.view === (['positions','departments'].includes(name) ? 'matrix' : name);item.classList.toggle('active',active);if(active)item.setAttribute('aria-current','page');else item.removeAttribute('aria-current');});
+      $$('.nav-item').forEach(item => {const active=!item.dataset.evaluationSection&&item.dataset.view === (['positions','departments'].includes(name) ? 'matrix' : name);item.classList.toggle('active',active);if(active)item.setAttribute('aria-current','page');else item.removeAttribute('aria-current');});
+      window.SamaraEvaluations?.syncNavigation();
       if (name === 'departments') renderMatrixDepartments();
       if (name === 'cmcap') renderCmcap();
       if (name === 'attendance') renderAttendance();
@@ -1340,7 +1340,7 @@ function normalizePersonNames(key, value) {
         reports: 'Reportes'
       };
       $('#crumb').textContent = labels[name] || 'Resumen';
-      if(!options.keepSidebarOpen){$('#sidebar').classList.remove('open');$('#menu-toggle').setAttribute('aria-expanded','false');}
+      $('#sidebar').classList.remove('open');$('#menu-toggle').setAttribute('aria-expanded','false');
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
@@ -2261,8 +2261,7 @@ function normalizePersonNames(key, value) {
     }
 
     // Interface actions
-    $$('.nav-item').forEach(item=>appOn(item,'click',()=>{if(item.dataset.view==='evaluations'){if(window.SamaraAccess?.can&&!window.SamaraAccess.can('evaluations'))return;const open=$('#evaluations-subnav').hidden;if(open)showView('evaluations',{keepSidebarOpen:true});else setEvaluationNavigation(false);return;}showView(item.dataset.view);}));
-    $$('[data-evaluation-section]').forEach(button=>appOn(button,'click',()=>{if(window.SamaraAccess?.can&&!window.SamaraAccess.can('evaluations'))return;window.SamaraEvaluations.selectSection(button.dataset.evaluationSection);showView('evaluations');}));
+    $$('.nav-item').forEach(item=>appOn(item,'click',()=>{if(window.SamaraAccess?.can&&!window.SamaraAccess.can(item.dataset.view))return;if(item.dataset.evaluationSection)window.SamaraEvaluations.selectSection(item.dataset.evaluationSection);showView(item.dataset.view);}));
     $$('[data-nav]').forEach(item => item.addEventListener('click', () => showView(item.dataset.nav)));
     $('#menu-toggle').addEventListener('click', () => {const open=$('#sidebar').classList.toggle('open');$('#menu-toggle').setAttribute('aria-expanded',String(open));});
     $('#sidebar-close').addEventListener('click',()=>{$('#sidebar').classList.remove('open');$('#menu-toggle').setAttribute('aria-expanded','false');$('#menu-toggle').focus();});
@@ -3950,7 +3949,7 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
-    window.SamaraEvaluations.init({openPeople:()=>showView('people'),load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
+    window.SamaraEvaluations.init({openPeople:()=>showView('people'),load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions,attendance,courses}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
     window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
     window.SamaraDashboard.init({context:()=>({courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)}),validateList:ssResult,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),navigate:(module,options={})=>{
       if(window.SamaraAccess?.can&&!window.SamaraAccess.can(module)){toast('No tienes acceso a este módulo.');return;}

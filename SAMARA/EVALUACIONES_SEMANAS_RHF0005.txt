@@ -1,0 +1,90 @@
+SAMARA UNIVERSITY — EVALUACIÓN, SEMANAS Y RHF0005
+
+INSTALAR
+Sustituye completos estos cinco archivos en el proyecto existente de Apps Script:
+- App.html
+- Index.html
+- Evaluaciones.html
+- PlantillasEvaluaciones.html
+- UsuariosServidor.gs
+
+No necesitas crear nuevos archivos ni cambiar permisos OAuth.
+Conserva los datos y los demás archivos. Guarda y publica:
+Implementar > Gestionar implementaciones > Editar (lápiz) > Nueva versión >
+Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste Evaluaciones, utiliza el paquete completo actual.
+
+MENÚ IZQUIERDO
+Administración conserva Personal y CMCAP. Inmediatamente después aparece
+la sección propia Evaluación, con el mismo diseño de título de sección:
+- Mitad de periodo.
+- Renovación.
+- Anual.
+- Promociones.
+Las cuatro opciones están visibles debajo del título. Promociones continúa
+reservado hasta definir su proceso. Los permisos del módulo se conservan.
+
+FILTRO POR SEMANA
+En cualquier apartado elige Semana o pulsa Esta semana / Próxima semana.
+Las semanas van de lunes a domingo. Se muestra el rango de fechas completo.
+Por atender muestra pendientes, entregadas y vencidas de la semana elegida.
+Quitar semana vuelve a consultar todos los años; Ver pendientes limpia filtros.
+
+La semana utiliza la fecha programada de cada evaluación. En Renovación
+esa fecha corresponde al vencimiento del contrato, salvo un ajuste manual.
+En Mitad de periodo se usa la fecha calculada o ajustada de esa evaluación.
+Elegir semana limpia Año y Desde/Hasta para evitar rangos contradictorios.
+Elegir Año o Desde/Hasta quita la semana. Las semanas que cruzan diciembre
+con enero incluyen correctamente ambos años. Cambiar de apartado conserva
+la semana elegida para revisar los otros tipos en el mismo periodo.
+
+IMPRIMIR POR DEPARTAMENTO
+Cada encabezado de departamento tiene Imprimir lista a la derecha.
+En Renovación imprime la entrega con empleados, contrato, fechas,
+¿Se renueva? Sí / No y espacio para firma de autorización.
+El botón imprime únicamente ese departamento y respeta los filtros activos,
+incluida la semana. No abre/cierra el grupo ni modifica el seguimiento.
+El botón general de impresión sigue permitiendo reunir varios departamentos.
+También puedes guardar la impresión como PDF desde el navegador.
+
+RHF0005 SIN EQUIS ROJAS
+Se retiraron las dos figuras de cruz roja que estaban guardadas en la plantilla.
+Se conservaron sus casillas, ahora como cuadrados vacíos compatibles con
+Excel y PDF. Permanecen el logotipo, las tablas, las firmas y el resto del formato.
+
+CAPACITACIÓN TOMADA POR EL TRABAJADOR
+Al descargar Formato de un empleado directo se consultan automáticamente
+sus listados de asistencia. Se usa el año de la evaluación (fecha real si ya
+se capturó; de lo contrario, fecha programada).
+
+Se incluyen los cursos de ese año que tengan:
+- Listado validado.
+- Empleado identificado por CURP o número único de empleado.
+- Asistente validado y firma registrada.
+- Fecha de ejecución válida, sin fechas futuras.
+
+Cada renglón muestra fecha completa y nombre del curso. Un mismo curso en
+la misma fecha aparece una sola vez; si se tomó en fechas diferentes,
+se conservan ambas asistencias. Se usa el nombre guardado en el listado
+o, si falta, el nombre del glosario correspondiente a su código.
+
+El formato original muestra las primeras tres capacitaciones. Si hay más,
+se agrega la hoja Capacitación con las restantes, fechas y códigos.
+El formato indica la continuación. En Excel selecciona Imprimir todo el libro
+para incluir esa hoja junto con las dos páginas del RHF0005.
+Si no hay asistencias confirmadas del año, los renglones quedan vacíos.
+
+ORIGEN Y PERMISOS
+Los contratos continúan capturándose en Personal. Evaluaciones calcula
+sus pendientes desde esos datos y conserva las realizadas.
+UsuariosServidor permite consultar Cursos y Listados como referencias para
+el formato de Evaluaciones; no otorga edición de esos módulos ni de Personal.
+Los usuarios sin permiso de Evaluaciones tampoco ven su sección en el menú.
+
+COMPROBADO
+158 pruebas unitarias aprobadas. Se verificaron en navegador el menú,
+semanas normales y entre años, impresión de un solo departamento, permisos,
+lectura de Personal y guardado sin duplicados.
+Se generó un RHF real con cinco cursos de ejemplo y se verificó como XLSX y PDF:
+tres en el formato y dos en la continuación, con seis casillas vacías y sin cruces.
+Las muestras incluidas son ficticias; no contienen el padrón real.

@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Personal → Evaluaciones y menú desplegable](descargas/SAMARA_PERSONAL_EVALUACIONES_EXCEL.zip).
+Última adecuación: [Evaluación, semanas e impresión RHF0005](descargas/SAMARA_EVALUACIONES_SEMANAS_RHF0005.zip).
+Sección propia después de Administración, cuatro opciones, filtro semanal,
+impresión por departamento y capacitación anual en el RHF0005 sin cruces rojas.
+[Instrucciones](SAMARA/EVALUACIONES_SEMANAS_RHF0005.txt). Sustituye cinco archivos.
+
+Entrega anterior: [Personal → Evaluaciones y menú desplegable](descargas/SAMARA_PERSONAL_EVALUACIONES_EXCEL.zip).
 Tres campos de contrato en Personal, compatibles con el Excel proporcionado;
 plantas 20/21 y cuatro apartados bajo Evaluaciones en el menú izquierdo.
 [Instrucciones](SAMARA/PERSONAL_EVALUACIONES_EXCEL.txt). Sustituye seis archivos.

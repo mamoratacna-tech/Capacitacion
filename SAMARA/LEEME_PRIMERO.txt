@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: EVALUACIÓN, SEMANAS E IMPRESIÓN RHF0005.
+Lee EVALUACIONES_SEMANAS_RHF0005.txt: sustituye cinco archivos completos.
+Sección propia en el menú, filtro semanal y cursos del año en el formato.
+
 ACTUALIZACIÓN MÁS RECIENTE: PERSONAL → EVALUACIONES Y MENÚ DESPLEGABLE.
 Lee PERSONAL_EVALUACIONES_EXCEL.txt: sustituye seis archivos, sin crear nuevos.
 Los contratos se actualizan desde Personal con el Excel, y Evaluaciones los consulta.
