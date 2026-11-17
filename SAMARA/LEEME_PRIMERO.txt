@@ -2,6 +2,9 @@ SAMARA UNIVERSITY — ACTUALIZAR CON ARCHIVOS COMPLETOS
 
 Los archivos de ACTUALIZAR están completos. No se pegan por partes.
 
+MÓDULO EVALUACIONES: consulta EVALUACIONES.txt. Sustituye sus cinco archivos
+y crea los HTML Evaluaciones y PlantillasEvaluaciones. Instálalos juntos.
+
 ALTA DE EMPLEADOS Y PERFILES: consulta CORRECCION_ALTA_PERSONAL_PERMISOS.txt.
 Sobre la actualización de continuidad y plantas, sustituye solo App.html.
 

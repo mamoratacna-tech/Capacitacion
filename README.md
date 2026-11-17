@@ -13,6 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
+Última actualización: [Módulo Evaluaciones](descargas/SAMARA_EVALUACIONES.zip).
+Contratos en Personal, mitad de periodo y renovación calculadas, anuales en abril
+desde 2027, exclusión por evaluación realizada e historial. Incluye los formatos
+Word/Excel originales autollenados y la lista de autorización para supervisores.
+[Instrucciones](SAMARA/EVALUACIONES.txt). Sustituye cinco archivos y crea dos HTML.
+
 Última corrección: [Alta de empleados con permisos de Personal](descargas/SAMARA_CORRECCION_ALTA_PERSONAL_PERMISOS.zip).
 Corrige la carga de catálogos con perfiles limitados y permite el alta manual
 con Personal en Captura / edición. Sustituye solo App.html.

@@ -1,0 +1,146 @@
+SAMARA UNIVERSITY — MÓDULO EVALUACIONES
+
+INSTALACIÓN: CINCO ARCHIVOS A SUSTITUIR Y DOS HTML NUEVOS
+1. Abre tu proyecto existente en script.google.com.
+2. Sustituye COMPLETOS App.html, Code.gs, Index.html, Usuarios.html y
+   UsuariosServidor.gs por sus archivos de ACTUALIZAR.
+3. Crea dos archivos HTML con + > HTML, llamados exactamente:
+   Evaluaciones
+   PlantillasEvaluaciones
+   Pega en cada uno el contenido completo de su .html de ACTUALIZAR.
+   Escribe los nombres sin la extensión al crearlos en Apps Script.
+4. Conserva todos los demás archivos, catálogos, plantillas y propiedades.
+   No borres hojas ni usuarios. No se requieren permisos OAuth nuevos.
+5. Guarda. Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación publicada.
+   Los siete archivos de esta entrega se instalan juntos.
+
+CÓMO SE TRABAJA
+1. Personal es la fuente del contrato y la clasificación.
+2. Evaluaciones calcula quién requiere mitad de periodo, renovación o anual.
+3. Filtra por año, fechas, tipo, departamento, planta, clasificación o supervisor.
+4. Descarga el formato original autollenado y la lista para el supervisor.
+5. Registra entrega, fecha real de evaluación y recepción de documentos.
+   El historial permanece en la misma base Google Sheets de la aplicación.
+
+PERSONAL: CAMPOS NUEVOS
+- Clasificación: D (Directo), I (Indirecto), o referencia al puesto/departamento.
+- Fecha de ingreso (distinta al inicio del contrato vigente).
+- Tipo de contrato: Temporal, Indefinido o Especial.
+- Inicio del contrato, días y vencimiento.
+- Supervisor y nivel de RIO.
+
+Con días capturados se calcula el vencimiento incluyendo el primer día:
+  inicio + días - 1.
+Sin días puedes capturar un vencimiento manual. El tipo Especial permite
+contratos con fecha de término conocida aunque no se capturen días.
+Indefinido deja días y vencimiento vacíos y solo genera pendientes anuales.
+Si faltan datos o clasificación, Evaluaciones los señala en Datos pendientes;
+no inventa fechas de contrato ni determina D/I a partir del nombre del puesto.
+La anual puede calcularse con clasificación conocida aunque el contrato esté
+pendiente de completar. Renovar un contrato después de abril no elimina por
+sí solo una anual pendiente; se considera la fecha real de ingreso, si existe.
+
+Puedes usar los nuevos campos en las cargas generales o de activos. Los
+encabezados incluyen Tipo de contrato, Inicio de contrato, Días de contrato,
+Vencimiento de contrato, Fecha de ingreso, Supervisor y Nivel RIO. También
+se incluyen en Exportar empleados. Las fechas admiten ISO AAAA-MM-DD,
+DD/MM/AAAA y fechas de Excel. La vista previa muestra cambios contractuales.
+Se conservan los valores omitidos; un tipo de contrato que diga 180 días y
+una columna Días que diga 80 se rechazan para que revises la contradicción.
+
+CALENDARIO CONFIRMADO
+- Mitad de periodo: inicio + parte entera de días/2.
+  Ejemplo del control: inicio 09/01/2026, 45 días -> mitad 31/01/2026 y
+  vencimiento 22/02/2026. La renovación se programa al vencimiento.
+- Puedes ajustar la fecha programada de una evaluación sin cambiar el contrato.
+- Las anuales se generan en abril, a partir de la campaña de abril de 2027.
+  El 30 de abril representa el límite del mes, no la obligación de realizarlas
+  todas ese día. La fecha real se captura por separado.
+- Si existe mitad de periodo o renovación REALIZADA en el mismo año,
+  la anual pendiente de ese año aparece No aplica. La siguiente será en
+  abril del año siguiente. Cuenta el año de realización, no el de programación.
+- Entregar el formato al supervisor, recibir un examen o marcar un RIO
+  no equivale a realizar una evaluación ni excluye por sí solo la anual.
+- Una anual ya realizada se conserva aunque se registre otra evaluación después.
+- Los ingresos posteriores a abril no generan una anual anterior a su ingreso.
+- Los empleados activos SAMARA generan pendientes. Las bajas conservan
+  seguimientos guardados como históricos y no generan obligaciones nuevas.
+
+SEGUIMIENTO Y DOCUMENTOS
+Estados: Pendiente, Entregada, Vencida, Realizada, No aplica e Histórico.
+La fecha programada vencida prevalece como aviso aunque se haya entregado.
+En Seguimiento registra supervisor, periodo, entrega y fecha real de realización.
+La mitad de periodo propone del inicio hasta la mitad. La anual permite
+capturar el periodo de desempeño; no se supone un periodo que no confirmaste.
+No se permiten fechas reales futuras ni una realización anterior a la entrega.
+
+Para directos se controla:
+- Evaluación firmada recibida.
+- Examen del área recibido, sin capturar resultados o calificaciones del examen.
+- Nivel y recepción del RIO firmado.
+Para indirectos se controla la evaluación firmada.
+En renovación se agrega decisión Sí/No y recepción de la autorización firmada.
+Una evaluación puede estar Realizada y tener expediente pendiente: la tabla
+indica qué documentos faltan. No se confunden realización y expediente completo.
+
+Puedes guardar un enlace HTTPS a la carpeta o expediente firmado que administres
+fuera de la aplicación. No se suben archivos firmados automáticamente ni se
+crean permisos de Drive. Las firmas se verifican y recaban manualmente.
+No se agrega un campo de estatus del contrato ni resultados del examen.
+La decisión de renovación NO cambia el contrato ni da de baja a nadie.
+Los cambios de contrato los actualizas desde Personal.
+
+HISTORIAL
+Registrar evaluación anterior permite documentar una evaluación realizada con
+otro contrato o en otro año. Busca el empleado por nombre o número y captura
+la fecha real. Después completa el seguimiento documental.
+El registro anterior participa en la regla de exclusión anual y no se duplica
+si ya existe para ese empleado, tipo y fecha.
+Al actualizar el contrato en Personal se calculan los pendientes del nuevo ciclo
+sin borrar los seguimientos que ya guardaste. Los pendientes calculados que
+nunca se guardaron se recalculan con los datos vigentes de Personal.
+Eliminar un seguimiento pide confirmación; la obligación calculada puede volver
+como pendiente. No se elimina al empleado ni su contrato.
+
+FORMATOS ADJUNTOS
+Directos, los tres tipos: RHF0005F en Excel.
+Indirectos, mitad de periodo: SAMARA - ID, Evaluación de mitad de período, Word.
+Indirectos, renovación y anual: Performance Review, Word (confirmado).
+Formato descarga el archivo original con encabezados de Personal y datos de la
+evaluación. Se conserva el diseño, las imágenes y el área de impresión del Excel.
+Se limpiaron empleado, salario, calificaciones y comentarios de ejemplo.
+Los datos que no existen en Personal quedan vacíos para completar en el formato.
+Abre Excel o Word para imprimir o guardar como PDF desde esas aplicaciones.
+
+Imprimir entrega a supervisores usa los filtros actuales y genera el listado
+con empleado, puesto, departamento, supervisor, tipo, fechas del contrato,
+¿Se renueva? y espacio de firma de autorización. Puedes guardarlo como PDF
+con el diálogo de impresión del navegador. No se inventan salarios, incidencias
+ni firmas. La muestra incluida contiene únicamente empleados ficticios.
+Exportar control CSV descarga el seguimiento visible con esos mismos filtros.
+
+El control Excel adjunto se usó como referencia de columnas y cálculo.
+No se cargaron sus empleados ni se dedujeron fechas reales a partir de fechas
+programadas. Registra el historial que conozcas con Registrar evaluación anterior.
+
+RIO Y EXÁMENES
+No se adjuntaron las plantillas de RIO por nivel ni de exámenes por área.
+Se incluye el control de su recepción; no se genera un documento oficial
+sustituto. Para automatizar su llenado necesitaremos esos formatos.
+
+USUARIOS
+RH administrador ve el módulo nuevo. Para otros perfiles, entra a Usuarios
+> Editar > Evaluaciones y asigna Solo consulta o Captura / edición.
+Si también modificarán contratos, agrega Personal > Captura / edición.
+Un usuario que solo tiene Evaluaciones no puede cambiar contratos de Personal.
+La consulta permite ver y descargar, pero no registrar, modificar o eliminar.
+Se conserva el guardado concurrente y la recuperación de sesión anteriores.
+
+VERIFICADO LOCALMENTE
+Cálculo con los ejemplos de contratos, años bisiestos y cambios de año;
+regla anual por fecha real; indefinidos; historial y duplicados; permiso propio
+de Evaluaciones y protección de Personal; guardado y recarga; diseño adaptable;
+seis variantes de Word/Excel preparadas y PDF de entrega a supervisores.
+Las pruebas usan el código del servidor con Google simulado. La entrega no
+publica tu proyecto ni modifica la base real hasta que instales y captures.

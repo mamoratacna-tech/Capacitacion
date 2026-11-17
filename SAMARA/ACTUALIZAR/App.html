@@ -17,7 +17,7 @@
       blocked: false,
       timer: null
     };
-    const cloudKeys = ['samara.courseProgram.v1','samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
+    const cloudKeys = ['samara.evaluations.v1','samara.courseProgram.v1','samara.matrixDepartments.v1','samara.courseDepartments.v1','samara.legalRepresentative.v1','samara.attendance.v1', 'samara.attendanceMigration.v1', 'samara.matrixPositions.v2', 'samara.positions.v2', 'samara.occupationCatalog.v1', 'samara.employees.v2', 'samara.demoEmployees.v1', 'samara.instructors.v1', 'samara.cmcap.v2', 'samara.courses.v2'];
     function appConfirm(message) {
       return new Promise(resolve => {
         const dialog = document.createElement('dialog');
@@ -36,7 +36,7 @@
       });
     }
     appOn(document,'click',event=>{const module=window.SamaraAccess?.writeModule?.(event.target.closest('button'));if(module&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('Tu perfil permite consultar este módulo, pero no editarlo.');}},true);
-    const formModules={'program-form':'program','course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
+    const formModules={'evaluation-form':'evaluations','program-form':'program','course-form':'courses','department-form':'courses','instructor-form':'instructors','employee-form':'people','employee-import-form':'people','position-form':'matrix','matrix-form':'matrix','matrix-department-form':'matrix','cmcap-add-form':'cmcap','legal-form':'cmcap'};
     appOn(document,'submit',event=>{const module=formModules[event.target.id];if(module&&window.SamaraAccess?.can&&!window.SamaraAccess.can(module,'edit')){event.preventDefault();event.stopImmediatePropagation();toast('No tienes permiso para guardar cambios en este módulo.');}},true);
     appOn(window,'samara-access-error',event=>toast(event.detail));
     async function googleCall(method, ...args) {
@@ -698,6 +698,7 @@ function normalizePersonNames(key, value) {
         const patch=Object.fromEntries(Object.entries(row).filter(([key,value])=>key!=='_row'&&value!==''&&value!==undefined));
         const item={...(previous||{}),...patch,curp:curp||previous.curp,no:number||previous?.no||'',company};
         for(const field of ['names','paternal','maternal','position','department'])if(typeof item[field]==='string')item[field]=item[field].trim().toUpperCase();
+        try{if(window.SamaraEvaluations){const normalized=SamaraEvaluations.contractPatch(item);if(row.contractEnd&&row.contractStart&&row.contractDays&&SamaraEvaluations.inputDate(row.contractEnd)!==normalized.contractEnd)throw Error('El vencimiento no coincide con el inicio y los días capturados.');Object.assign(item,normalized);}}catch(error){errors.push(tag+error.message);continue;}
         const job=jobCatalog.find(record=>norm(record.job)===norm(item.position));
         const departments=[...new Set([job?.department,...jobMatrix.filter(record=>norm(record.job)===norm(item.position)).map(record=>record.department)].filter(Boolean))];
         if(previous&&norm(previous.position)!==norm(item.position)&&!row.department)item.department='';
@@ -757,7 +758,7 @@ function normalizePersonNames(key, value) {
       return {...catalogs,rows,vacancies,next,missing:rows.filter(row=>!row.classification)};
     }
     function employeeImportChanges(before,after){
-      const labels={plant:'Planta',classification:'Clasificación',no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
+      const labels={contractType:'Tipo de contrato',contractStart:'Inicio de contrato',contractDays:'Días de contrato',contractEnd:'Vencimiento',supervisor:'Supervisor',rioLevel:'Nivel RIO',plant:'Planta',classification:'Clasificación',no:'Número',names:'Nombre',paternal:'Apellido paterno',maternal:'Apellido materno',position:'Puesto',department:'Departamento',studies:'Estudios',proofDocType:'Documento',institutionType:'Institución',company:'Empresa'};
       return after.map(employee=>{
         const previous=before.find(item=>norm(item.curp)===norm(employee.curp));
         const fields=previous?Object.keys(labels).filter(key=>String(previous[key]||'')!==String(employee[key]||'')).map(key=>({label:labels[key],before:previous[key]||'—',after:employee[key]||'—'})):[];
@@ -1301,6 +1302,7 @@ function normalizePersonNames(key, value) {
       $$('.view').forEach(view => view.classList.toggle('active', view.id === "view-".concat(name)));
       window.SamaraNotifications?.schedule();
       if(name==='dashboard')window.SamaraDashboard.render();
+      if(name==='evaluations')window.SamaraEvaluations.render();
       if(name==='program')window.SamaraProgram.render();
       if(name==='reports')window.SamaraReports.render(true);
       if(name==='people')renderPeople();
@@ -1320,6 +1322,7 @@ function normalizePersonNames(key, value) {
       if (name === 'cmcap') renderCmcap();
       if (name === 'attendance') renderAttendance();
       const labels = {
+        evaluations:'Evaluaciones',
         program: 'Programa de cursos',
         users: 'Usuarios',
         attendance: 'Listados de asistencia',
@@ -1699,6 +1702,9 @@ function normalizePersonNames(key, value) {
       for (const key of ['no', 'curp', 'names', 'paternal', 'maternal']) employeeForm.elements[key].value = employee?.[key] || '';
       employeeForm.elements.plant.value=employee?employeePlant(employee):'';
       employeeForm.elements.company.value=employee?employeeCompany(employee):'SAMARA';
+      let contractValues=employee||{};try{contractValues=SamaraEvaluations.contractPatch(contractValues);}catch(error){}
+      for(const key of ['classification','hireDate','contractType','contractStart','contractDays','contractEnd','supervisor','rioLevel'])employeeForm.elements[key].value=contractValues[key]||'';
+      employeeForm.elements.contractDays.disabled=contractValues.contractType==='Indefinido';employeeForm.elements.contractEnd.readOnly=contractValues.contractType==='Indefinido'||!!contractValues.contractDays;
       fillEmployeeCatalogs(employee);
       fillEmployeePositionOptions(employee?.position || '');
       fillEmployeeDepartmentOptions(employee?.department || '');
@@ -1710,6 +1716,7 @@ function normalizePersonNames(key, value) {
       const input=event.target,start=input.selectionStart,end=input.selectionEnd;
       input.value=input.value.toLocaleUpperCase('es-MX');input.setSelectionRange(start,end);
     });
+    employeeForm.addEventListener('change',event=>{if(!['contractType','contractStart','contractDays'].includes(event.target.name))return;try{const value=SamaraEvaluations.contractPatch(Object.fromEntries(new FormData(employeeForm)));employeeForm.elements.contractEnd.value=value.contractEnd||'';const indefinite=value.contractType==='Indefinido';employeeForm.elements.contractEnd.readOnly=indefinite||!!value.contractDays;employeeForm.elements.contractDays.disabled=indefinite;}catch(error){toast(error.message);}});
     employeeForm.addEventListener('submit', async event => {
       event.preventDefault();
       const form = new FormData(employeeForm),
@@ -1729,6 +1736,7 @@ function normalizePersonNames(key, value) {
           institutionType: String(form.get('institutionType') || '').trim(),
           position: String(form.get('position') || '').trim()
         };
+      try{Object.assign(item,SamaraEvaluations.contractPatch({...item,...Object.fromEntries(['classification','hireDate','contractType','contractStart','contractDays','contractEnd','supervisor','rioLevel'].map(key=>[key,String(form.get(key)||'').trim()]))}));}catch(error){toast(error.message);return;}
       if(!item.plant){toast('Selecciona la planta del empleado.');return;}
       if(!item.department){toast('Selecciona el departamento que corresponde al puesto.');return;}
       if (item.curp.length !== 18) {
@@ -1988,6 +1996,7 @@ function normalizePersonNames(key, value) {
           proofDocType: ['tipodocprobatorio', 'tipodocumentoprobatorio'],
           institutionType: ['tipodeinstitucion', 'tipoinstitucion'],
           company: ['empresa','company'],
+          contractType:['contrato','tipodecontrato','tipocontrato'],contractStart:['iniciocontrato','iniciodecontrato'],contractDays:['dias','diascontrato','diasdelcontrato','diasdecontrato'],contractEnd:['vencimiento','vencimientocontrato','vencimientodecontrato'],hireDate:['ingreso','fechadeingreso'],supervisor:['supervisor','jefeinmediato'],rioLevel:['nivelrio','niveldelrio'],
           plant: ['planta','plant','plantadelempleado','plantadelpersonal','establecimiento','clavedeestablecimiento'],
           department: ['departamento','depto','area'],
           classification: ['clasificacion','clasificaciondelpuesto','clasificacionpuesto','directoindirecto','di'],
@@ -2363,7 +2372,7 @@ function normalizePersonNames(key, value) {
         renderPeople();renderPositions();renderMatrix();$('#employee-import-dialog').close();employeeImportRows=null;toast('Carga de empleados guardada.');
       }catch(error){$('#employee-import-summary').textContent='No se guardó: '+error.message;}finally{button.disabled=false;}
     });
-    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa', 'Planta'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e), employeePlant(e)])]));
+    $('#people-export').addEventListener('click', () => exportCsv('empleados-samara.csv', [['No', '# de CURP', 'Nombre(s)', 'Apellido Paterno', 'Apellido Materno', 'Estudios', 'Tipo Doc. Probatorio', 'Tipo de Institución', 'Puesto', 'Clasificación', 'Departamento', 'Estado', 'Empresa', 'Planta', 'Tipo de contrato','Inicio de contrato','Días de contrato','Vencimiento de contrato','Fecha de ingreso','Supervisor','Nivel RIO'], ...employees.map(e => [e.no, e.curp, e.names, e.paternal, e.maternal, e.studies, e.proofDocType, e.institutionType, e.position, e.classification||'', e.department||'', employeeIsActive(e)?'Activo':'Inactivo', employeeCompany(e), employeePlant(e),e.contractType||'',e.contractStart||'',e.contractDays||'',e.contractEnd||'',e.hireDate||'',e.supervisor||'',e.rioLevel||''])]));
     $('#add-instructor').addEventListener('click', () => openInstructorEditor('', activeInstructorModule));
     $$('[data-instructor-module]').forEach(button => button.addEventListener('click', () => {
       activeInstructorModule = button.dataset.instructorModule;
@@ -3938,6 +3947,7 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
+    window.SamaraEvaluations.init({load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
     window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
     window.SamaraDashboard.init({context:()=>({courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)}),validateList:ssResult,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),navigate:(module,options={})=>{
       if(window.SamaraAccess?.can&&!window.SamaraAccess.can(module)){toast('No tienes acceso a este módulo.');return;}
@@ -3955,7 +3965,7 @@ function normalizePersonNames(key, value) {
     window.SamaraNotifications.init({readState:bootstrap.notificationReads||{},context:window.SamaraDashboard.context,today:window.SamaraDashboard.today,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),validateList:ssResult,navigate:window.SamaraDashboard.navigate,save:(records,activeIds)=>googleCall('api_notificationRead',records,activeIds)});
     window.SamaraDashboard.render();
     renderAttendance();
-    if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
+    if(window.SamaraAccess?.can&&!window.SamaraAccess.can('dashboard')){const first=['courses','matrix','people','evaluations','instructors','attendance','program','cmcap','reports'].find(module=>window.SamaraAccess.can(module));if(first)showView(first);}
     else if (window.SAMARA_INITIAL_VIEW === 'attendance') showView('attendance');
     /* ==================== FIN MÓDULO LISTADOS ==================== */
   } catch (error) {
