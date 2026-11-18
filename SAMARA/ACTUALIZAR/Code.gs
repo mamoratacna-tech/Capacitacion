@@ -12,7 +12,7 @@ function doGet(e){
 // Inserta el contenido de los demás archivos HTML (Estilos, JSZip, DatosIniciales, CatalogoSIRCE, PlantillaFT007, App).
 function include(nombre){
   if(!authRendering_)throw Error('Inicia sesión para abrir la aplicación.');
-  if(!['ContratosPDF','Evaluaciones','PlantillasEvaluaciones','LecturaPDF','Notificaciones','Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
+  if(!['ImpresionEvaluaciones','ContratosPDF','Evaluaciones','PlantillasEvaluaciones','LecturaPDF','Notificaciones','Reportes','Resumen','Programa','Estilos','JSZip','DatosIniciales','CatalogoSIRCE','PlantillaFT007','EstilosListados','PlantillasListados','Cmcap','SirceListados','Usuarios','App'].includes(nombre))throw Error('Archivo no permitido.');
   return HtmlService.createTemplateFromFile(nombre).getRawContent();
 }
 // Ejecuta esta función una vez desde el editor para dar permisos y crear la hoja de datos.
@@ -242,4 +242,11 @@ function api_cmcapFirmantes(fecha){const actor=authRequire_(arguments[arguments.
 function api_listadosHistoricos(){authModule_(arguments[arguments.length-1],'attendance',false);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{return lsLeer_();}finally{lock.releaseLock();}
+}
+
+function api_evaluationPrintTemplate(key,token){
+ authModule_(token,'evaluations',false);
+ if(!['direct','mid','review','exam-interiors','exam-carpentry','exam-exteriors','exam-roller','exam-mep','exam-framing'].includes(key))throw Error('Plantilla de impresión no disponible.');
+ const data=JSON.parse(HtmlService.createHtmlOutputFromFile('DatosImpresionEvaluaciones').getContent());
+ if(!data[key])throw Error('Falta instalar DatosImpresionEvaluaciones.');return data[key];
 }

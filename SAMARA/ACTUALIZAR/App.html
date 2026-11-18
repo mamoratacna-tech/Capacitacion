@@ -4,7 +4,7 @@
   try {
     const appListeners=new AbortController();
     function appOn(target,event,listener,options={}){target.addEventListener(event,listener,{...(typeof options==='boolean'?{capture:options}:options),signal:appListeners.signal});}
-    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>{appListeners.abort();window.SamaraNotifications?.dispose();window.SamaraPdfReader?.close();};
+    if(window.SamaraAccess)window.SamaraAccess.dispose=()=>{appListeners.abort();window.SamaraNotifications?.dispose();window.SamaraPdfReader?.close();window.SamaraEvaluationPrint?.dispose();};
     // Shared Google Sheets persistence. The Site UI calls these synchronous wrappers.
     const cloud = {
       cache: {},
@@ -3949,6 +3949,7 @@ function normalizePersonNames(key, value) {
       }
       atPintar();
     });
+    window.SamaraEvaluationPrint.init({template:key=>googleCall('api_evaluationPrintTemplate',key),toast});
     window.SamaraEvaluations.init({openPeople:()=>showView('people'),load:()=>structuredClone(cloud.cache['samara.evaluations.v1']||[]),save:records=>persistCollection('samara.evaluations.v1',records),context:()=>({employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions,matrixPositions,attendance,courses}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'letter');}});
     window.SamaraProgram.init({load:()=>loadStore('samara.courseProgram.v1',[]),save:records=>persistCollection('samara.courseProgram.v1',records),context:()=>({courses,employees,positions:activeMatrixPositions(),departments:matrixDepartments,attendance}),confirm:appConfirm,toast,print:html=>{$('#print-stage').innerHTML=html;printPreparedDocument(true,'A4');document.getElementById('print-page-layout').textContent+='@page{@bottom-right{content:"Página " counter(page) " de " counter(pages);font:6pt Arial;}}';}});
     window.SamaraDashboard.init({context:()=>({courses,employees:employees.map(e=>({...e,company:employeeCompany(e),activeStatus:employeeIsActive(e)?'Activo':'Inactivo'})),positions:activeMatrixPositions(),catalogPositions:positions,departments:matrixDepartments,attendance,plans:loadStore('samara.courseProgram.v1',[]),instructors,cmcap:cmcapMembers,legal:legalRepresentative,authorizedCourseCodes:courses.filter(c=>atIns().some(i=>atAutorizado(i,c.code))).map(c=>c.code),certifiedInstructorIds:atIns().filter(i=>courses.some(c=>positionIsActive(c)&&atAutorizado(i,c.code))).map(i=>i.id)}),validateList:ssResult,can:module=>!window.SamaraAccess?.can||window.SamaraAccess.can(module),navigate:(module,options={})=>{

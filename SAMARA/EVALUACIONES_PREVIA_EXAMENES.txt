@@ -1,0 +1,96 @@
+SAMARA UNIVERSITY — SEGUIMIENTO, VISTA PREVIA Y EXÁMENES
+
+INSTALAR LA ACTUALIZACIÓN
+1. Sustituye completos cinco archivos del proyecto existente de Apps Script:
+   App.html, Code.gs, Index.html, Evaluaciones.html y PlantillasEvaluaciones.html.
+2. Crea un archivo de tipo HTML llamado ImpresionEvaluaciones (sin .html)
+   y pega todo el contenido de ACTUALIZAR/ImpresionEvaluaciones.html.
+3. Crea otro archivo de tipo HTML llamado DatosImpresionEvaluaciones (sin .html)
+   y pega todo el contenido de ACTUALIZAR/DatosImpresionEvaluaciones.html.
+   Este último contiene las plantillas; su contenido completo se ve como JSON.
+4. Guarda todos los archivos. Conserva los demás archivos, hojas y usuarios.
+5. Publica: Implementar > Gestionar implementaciones > Editar (lápiz) >
+   Nueva versión > Implementar. Recarga la aplicación publicada.
+
+Los datos que ya tienes en Personal se utilizan automáticamente.
+Si aún no instalaste Evaluaciones, usa el paquete completo actual.
+
+INGRESO Y TIPO EN RHF0005F
+INGRESO se llena con Inicio Contrato de Personal. Si se conserva un contrato
+histórico en la evaluación, se utiliza ese inicio guardado en el seguimiento.
+TIPO DE EVALUACIÓN muestra únicamente Mitad de periodo, Renovación o Anual.
+Se conserva el código del documento en su encabezado original.
+Los cursos del año y la continuación permanecen vinculados a la asistencia.
+
+SEGUIMIENTO CON COLORES
+En Seguimiento está el selector Estatus del seguimiento:
+- Pendiente: gris.
+- Entregada: azul.
+- En proceso: ámbar.
+- Realizada: verde.
+
+Selecciona el estatus y pulsa Guardar seguimiento. Se conserva al volver
+al módulo o iniciar otra sesión. Para Realizada se requiere una fecha real
+válida. Capturar esa fecha selecciona Realizada automáticamente.
+Si necesitas corregir una realización, corrige su fecha y estatus en el formulario.
+El aviso rojo Vencida sigue apareciendo cuando corresponde, junto al avance
+manual si ya está entregada o en proceso. El filtro Por atender incluye
+pendientes, entregadas, en proceso y vencidas.
+El CSV incorpora también el estatus de seguimiento.
+
+FORMATO: VISTA PREVIA DE IMPRESIÓN
+Formato abre una ventana dentro de la aplicación, con todas las páginas
+listas para revisar. Pulsa Imprimir para enviarlas a la impresora o elegir
+Guardar como PDF en el cuadro de impresión del navegador.
+La aplicación no inicia una descarga al abrir Formato o Examen.
+Abrir en pestaña permite consultar el PDF en otra pestaña, si lo prefieres.
+
+Se conservan los documentos originales: RHF0005F para directos,
+Mitad de período para indirectos en mitad y Performance Review para
+indirectos en renovación o anual. Los datos del empleado se llenan en sus campos.
+En RHF0005F se mantienen las casillas vacías y los cursos del año con fechas;
+si son más de tres, la continuación queda incluida en la misma vista previa.
+
+EXÁMENES POR DEPARTAMENTO
+Examen aparece junto a Formato únicamente para personal DIRECTO (D)
+en RENOVACIÓN DE CONTRATO y con un departamento de los siguientes:
+- Acabados Interiores / Interiores: examen Interiores Zona 5.
+- Envíos: el mismo examen Interiores Zona 5.
+- Carpintería: examen Carpintería.
+- Acabados Exteriores / Exteriores: examen Exteriores Zona 4.
+- Roladora / Roller Former: examen Roller Former Zona 1.
+- MEP: examen MEP Zona 3.
+- Framing: examen Framing Zona 2.
+
+Se reconocen los nombres con el prefijo SAMARA y sus espacios/acentos.
+La asignación depende del departamento registrado en Personal.
+El examen se imprime con número de empleado, nombre, fecha de evaluación,
+departamento y planta. Se conservan las preguntas e imágenes que enviaste.
+Las respuestas y aciertos quedan para su captura en el documento.
+El seguimiento pide Examen del área recibido solamente en renovación de directos.
+
+ENTREGA DE EVALUACIONES POR DEPARTAMENTO
+Se rediseñó el documento con encabezado, departamento, tipo, fechas y total.
+Las columnas separan número, nombre, puesto/planta, vencimiento, decisión
+y firma de autorización. En Renovación incluye casillas vacías Sí / No.
+La relación se distribuye automáticamente en las hojas necesarias. El
+encabezado de departamento y los espacios de recepción se repiten por hoja.
+Se mantienen los filtros de año, estado, departamento y semana al imprimir.
+El formato utiliza papel Carta horizontal. Las firmas tienen espacio propio.
+
+CARGA Y PERMISOS
+Las plantillas se solicitan cuando abres una vista previa. La sesión reutiliza
+las plantillas ya consultadas para las siguientes personas.
+Los documentos de cada colaborador se generan en su navegador.
+Se mantienen los permisos: Solo consulta permite ver e imprimir; Captura / edición
+permite guardar el seguimiento. Las plantillas requieren sesión y acceso a Evaluaciones.
+No se necesitan permisos OAuth nuevos ni otro servicio de conversión.
+
+VALIDACIÓN
+Se verificaron las nueve plantillas de impresión: tres evaluaciones y seis exámenes.
+Se probó la vista previa real en navegador, impresión con todas sus páginas,
+plantillas compartidas por Interiores/Envíos, reglas D + renovación, guardado y
+recarga de estatus, permisos de consulta y ausencia de descargas automáticas.
+RHF0005F muestra Inicio Contrato como ingreso y solamente Renovación en el campo
+Tipo. La entrega de 23 colaboradores se verificó en tres hojas, con las firmas.
+Las muestras del paquete usan colaboradores ficticios.

@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Evaluación, semanas e impresión RHF0005](descargas/SAMARA_EVALUACIONES_SEMANAS_RHF0005.zip).
+Última adecuación: [Seguimiento, vista previa y exámenes](descargas/SAMARA_EVALUACIONES_PREVIA_EXAMENES.zip).
+Ingreso y tipo corregidos en RHF0005F, seguimiento por colores, entrega por
+departamento rediseñada y vista previa para evaluaciones y seis exámenes del área.
+[Instrucciones](SAMARA/EVALUACIONES_PREVIA_EXAMENES.txt): sustituye cinco archivos y crea dos HTML.
+
+Entrega anterior: [Evaluación, semanas e impresión RHF0005](descargas/SAMARA_EVALUACIONES_SEMANAS_RHF0005.zip).
 Sección propia después de Administración, cuatro opciones, filtro semanal,
 impresión por departamento y capacitación anual en el RHF0005 sin cruces rojas.
 [Instrucciones](SAMARA/EVALUACIONES_SEMANAS_RHF0005.txt). Sustituye cinco archivos.

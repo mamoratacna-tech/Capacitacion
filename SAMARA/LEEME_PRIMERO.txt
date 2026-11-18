@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: SEGUIMIENTO, VISTA PREVIA Y EXÁMENES.
+Lee EVALUACIONES_PREVIA_EXAMENES.txt: sustituye cinco archivos y crea dos HTML.
+Incluye seguimiento por colores y las plantillas de impresión de los seis exámenes.
+
 ACTUALIZACIÓN MÁS RECIENTE: EVALUACIÓN, SEMANAS E IMPRESIÓN RHF0005.
 Lee EVALUACIONES_SEMANAS_RHF0005.txt: sustituye cinco archivos completos.
 Sección propia en el menú, filtro semanal y cursos del año en el formato.
