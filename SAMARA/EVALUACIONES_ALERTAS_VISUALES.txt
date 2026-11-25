@@ -1,0 +1,76 @@
+SAMARA UNIVERSITY — ALERTAS VISUALES DE EVALUACIONES
+
+INSTALAR SOBRE LA VERSIÓN ACTUAL
+1. Sustituye completo únicamente Evaluaciones.html por ACTUALIZAR/Evaluaciones.html.
+2. Guarda en Apps Script y publica: Implementar > Gestionar implementaciones >
+   Editar (lápiz) > Nueva versión > Implementar.
+3. Recarga la aplicación publicada.
+Esta adecuación no requiere crear archivos, permisos ni hojas nuevos.
+Si todavía no instalaste las entregas anteriores de Evaluaciones, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y las instrucciones generales.
+
+ESTADO INICIAL: TODOS
+Estado inicia en Todos, incluidas las realizadas y No aplica.
+Cambiar de apartado, seleccionar una semana o limpiar filtros vuelve a Todos.
+Puedes elegir otro estado para una consulta concreta.
+Los filtros rápidos y los contadores permiten filtrar la alerta por separado.
+
+ALERTA AL ENTRAR
+Encima de los apartados aparece el total de vencidas y próximas a vencer.
+Ver prioridades muestra las vencidas y las que vencen de hoy a siete días.
+El cálculo usa la fecha PROGRAMADA DE LA EVALUACIÓN; en mitad de periodo
+no se utiliza el vencimiento posterior del contrato para ocultar una evaluación tardía.
+Los días se calculan con el calendario de America/Tijuana.
+
+CUATRO CONTADORES
+- Rojo: vencidas, antes de hoy.
+- Ámbar: próximas a vencer, desde hoy hasta siete días inclusive.
+- Azul: con tiempo, más de siete días.
+- Verde: realizadas con fecha real de realización.
+Puedes pulsar cada contador para consultar sus registros.
+Los contadores se refieren al apartado y a los filtros de año, búsqueda,
+departamento, clasificación, planta, semana y fechas.
+Estado y los botones de alerta filtran la tabla; no esconden del resumen
+las otras alertas que corresponden a ese mismo apartado y selección.
+No aplica, históricas pendientes y datos sin fecha válida se distinguen
+sin tratarlos como vencimientos activos. Se mantienen los avisos de Personal.
+
+ALERTAS GRANDES EN CADA FILA
+VENCIDA: hace cuántos días venció.
+VENCE HOY: atender hoy.
+PRÓXIMA A VENCER: cuántos días faltan, hasta siete.
+CON TIEMPO: cuántos días faltan cuando son más de siete.
+REALIZADA: la fecha real en la que se completó.
+Se utilizan color, icono, texto y un acento en la fila.
+Las realizadas no se convierten en vencidas por tener una fecha programada pasada.
+
+SEGUIMIENTO SEPARADO
+Pendiente, Entregada, En proceso y Realizada siguen siendo el avance de trabajo.
+Una vencida puede continuar En proceso: la alerta roja y el seguimiento ámbar
+aparecen en columnas separadas. Las alertas no cambian el estatus guardado.
+Los documentos pendientes permanecen debajo del seguimiento.
+Los botones Seguimiento/Ver, Formato y Examen conservan sus funciones.
+
+ORDEN Y FILTROS
+Las vencidas aparecen primero, luego las que vencen hoy, las próximas,
+las que tienen tiempo y las realizadas. Se aplica también entre departamentos.
+Cada encabezado de departamento indica si tiene vencidas o próximas.
+Todas, Solo vencidas y Próximos 7 días son filtros rápidos.
+Los filtros principales están visibles. Más filtros reúne clasificación,
+planta y el rango de fechas. Si uno de ellos está aplicado, se mantiene abierto.
+Limpiar filtros restaura Todos y el resto de selecciones.
+La vista se adapta a móvil sin barra horizontal.
+
+ENTREGA SIN FIRMAS INFERIORES
+Se retiraron solamente los bloques inferiores Entregó Recursos Humanos
+y Recibió el departamento, con sus líneas de nombre y firma.
+Se conserva la columna Firma de autorización de cada colaborador,
+las casillas de renovación, los datos de la lista y el encabezado por departamento.
+
+DATOS Y VERIFICACIÓN
+La actualización conserva las fechas, contratos, evaluaciones y documentos guardados.
+La prioridad se calcula al consultar; los filtros no generan escrituras ni duplicados.
+Se comprobaron 167 pruebas unitarias y los flujos de navegador: límites de siete días,
+año bisiesto, cambio de año, seguimiento, filtros, consulta sin edición, guardado,
+PDF de entrega y vistas previas de los formatos y seis exámenes.
+Las imágenes y PDF de ejemplo utilizan colaboradores ficticios.

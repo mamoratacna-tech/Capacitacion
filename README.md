@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Seguimiento, vista previa y exámenes](descargas/SAMARA_EVALUACIONES_PREVIA_EXAMENES.zip).
+Última adecuación: [Alertas visuales de Evaluaciones](descargas/SAMARA_EVALUACIONES_ALERTAS_VISUALES.zip).
+Estado inicia en Todos. Alertas al entrar, contadores por urgencia, días restantes
+y seguimiento separado. La entrega conserva la firma por colaborador y retira las inferiores.
+[Instrucciones](SAMARA/EVALUACIONES_ALERTAS_VISUALES.txt): sustituye solo Evaluaciones.html.
+
+Entrega anterior: [Seguimiento, vista previa y exámenes](descargas/SAMARA_EVALUACIONES_PREVIA_EXAMENES.zip).
 Ingreso y tipo corregidos en RHF0005F, seguimiento por colores, entrega por
 departamento rediseñada y vista previa para evaluaciones y seis exámenes del área.
 [Instrucciones](SAMARA/EVALUACIONES_PREVIA_EXAMENES.txt): sustituye cinco archivos y crea dos HTML.
