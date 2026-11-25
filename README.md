@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Alertas visuales de Evaluaciones](descargas/SAMARA_EVALUACIONES_ALERTAS_VISUALES.zip).
+Última adecuación: [Planta y actualización del seguimiento](descargas/SAMARA_EVALUACIONES_PLANTA_SEGUIMIENTO.zip).
+Filtro de planta siempre visible y botón Actualizar estado junto al seguimiento;
+la tabla indica si la evaluación firmada ya fue recibida.
+[Instrucciones](SAMARA/EVALUACIONES_PLANTA_SEGUIMIENTO.txt): sustituye solo Evaluaciones.html.
+
+Entrega anterior: [Alertas visuales de Evaluaciones](descargas/SAMARA_EVALUACIONES_ALERTAS_VISUALES.zip).
 Estado inicia en Todos. Alertas al entrar, contadores por urgencia, días restantes
 y seguimiento separado. La entrega conserva la firma por colaborador y retira las inferiores.
 [Instrucciones](SAMARA/EVALUACIONES_ALERTAS_VISUALES.txt): sustituye solo Evaluaciones.html.

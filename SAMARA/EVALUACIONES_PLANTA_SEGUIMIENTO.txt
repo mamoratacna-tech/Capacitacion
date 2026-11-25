@@ -1,0 +1,46 @@
+SAMARA UNIVERSITY — PLANTA Y ACTUALIZACIÓN DEL SEGUIMIENTO
+
+INSTALACIÓN SOBRE LA VERSIÓN ACTUAL
+1. Sustituye completo únicamente Evaluaciones.html por ACTUALIZAR/Evaluaciones.html.
+2. Guarda en Apps Script y publica: Implementar > Gestionar implementaciones >
+   Editar (lápiz) > Nueva versión > Implementar.
+3. Recarga la aplicación publicada.
+Si todavía no instalaste las entregas anteriores de Evaluaciones, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y las instrucciones generales.
+
+FILTRO DE PLANTA VISIBLE
+Planta aparece junto a Departamento, sin abrir Más filtros.
+Permite consultar Todas, Planta 1 o Planta 2, según la planta de Personal.
+Se combina con departamento, semana, año, búsqueda, clasificación y fechas.
+Las alertas, los contadores y las listas respetan la selección.
+Limpiar filtros restaura Todas las plantas y Estado Todos.
+
+ACTUALIZAR ESTADO Y DOCUMENTOS
+Cada colaborador tiene un botón Actualizar estado en Seguimiento y documentos,
+debajo de su estatus. Abre el seguimiento y permite guardar:
+- Pendiente, Entregada, En proceso o Realizada.
+- Fecha de entrega al departamento y fecha real de realización.
+- Evaluación firmada recibida.
+- RIO firmado y nivel, cuando corresponda a personal directo.
+- Examen recibido y autorización del departamento, cuando correspondan
+  a una renovación de contrato.
+- Observaciones y enlace al expediente.
+Después de capturar los cambios, pulsa Guardar seguimiento.
+Realizada requiere una fecha real; recibir la firma no inventa esa fecha.
+
+La tabla muestra si la evaluación firmada está por recibir o ya fue recibida,
+incluso si todavía está En proceso. El vencimiento y el avance siguen separados.
+
+PERFILES
+Recursos Humanos y los perfiles con Evaluaciones en Captura / edición pueden
+actualizar el seguimiento. Los perfiles de Solo consulta ven Ver seguimiento
+y los campos deshabilitados. En ese caso, Recursos Humanos puede ajustar
+Usuarios > usuario > Evaluaciones > Captura / edición.
+Las evaluaciones No aplica se consultan sin cambiar su condición calculada.
+
+VERIFICACIÓN
+Se comprobaron 167 pruebas unitarias y los flujos de navegador de Evaluaciones:
+filtro visible por planta, combinación con semana, contadores y limpieza;
+entrega, cambios de estado y firma conservados al recargar; consulta sin escritura;
+integración con Personal, impresión y vistas previas; diseño sin barra horizontal.
+La imagen de ejemplo utiliza un colaborador ficticio.

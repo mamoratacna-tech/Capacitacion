@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: PLANTA Y ACTUALIZACIÓN DEL SEGUIMIENTO.
+Lee EVALUACIONES_PLANTA_SEGUIMIENTO.txt: sustituye únicamente Evaluaciones.html.
+Filtro Planta visible y botón Actualizar estado con seguimiento y documentos.
+
 ACTUALIZACIÓN MÁS RECIENTE: ALERTAS VISUALES DE EVALUACIONES.
 Lee EVALUACIONES_ALERTAS_VISUALES.txt: sustituye únicamente Evaluaciones.html.
 Estado Todos, prioridad de vencimientos y entrega sin firmas inferiores.
