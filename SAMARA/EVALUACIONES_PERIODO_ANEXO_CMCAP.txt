@@ -1,0 +1,76 @@
+SAMARA UNIVERSITY — CAPACITACIÓN POR PERIODO Y ANEXO CMCAP
+
+INSTALAR SOBRE LA VERSIÓN ACTUAL
+Sustituye completos estos CUATRO archivos en Apps Script:
+1. Evaluaciones.html
+2. ImpresionEvaluaciones.html
+3. DatosImpresionEvaluaciones.html
+4. PlantillasEvaluaciones.html
+
+Encontrarás los cuatro en ACTUALIZAR. Copia todo su contenido, sin pegarlo
+por partes. DatosImpresionEvaluaciones.html contiene los datos de las plantillas
+en JSON; sustituye también ese contenido completo.
+
+Guarda y publica: Implementar > Gestionar implementaciones > Editar (lápiz)
+> Nueva versión > Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste las entregas anteriores de Evaluaciones, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y sus instrucciones generales.
+
+ALMACENISTA I, II Y III
+Estos tres puestos utilizan RHF0005, revisión F (RHF0005F en la aplicación),
+también cuando Personal los clasifique como indirectos. La regla aplica a mitad
+de periodo, renovación y anual. Su clasificación permanece como I.
+Almacenista IV y otros puestos indirectos conservan sus formatos de indirectos.
+La excepción de formato no los convierte en directos ni les asigna exámenes
+de área o requisitos RIO propios de esa clasificación.
+
+CAPACITACIONES DEL PERIODO EVALUADO
+En Actualizar estado revisa Periodo a evaluar: desde / Hasta. Esas fechas
+determinan los cursos incluidos, con ambos extremos incluidos.
+Se consideran listas validadas con asistencia identificada y firma confirmada.
+Se excluyen cursos fuera del periodo, futuros, borradores y asistencias sin firma.
+Un curso repetido en la misma fecha se muestra una vez; en fechas distintas
+se conserva cada participación. El periodo puede abarcar más de un año.
+
+En mitad de periodo y renovación se conserva el periodo del contrato calculado
+desde Personal, con los ajustes manuales guardados en el seguimiento.
+En anual captura el periodo que realmente estás evaluando: no se inventa uno.
+Si falta una fecha o el rango es inválido, se avisa antes de preparar la impresión.
+
+RHF0005 Y CONTINUACIÓN
+El bloque principal permite cuatro cursos con fecha y nombre.
+A partir del quinto, se agregan renglones en hojas de continuación, con
+identificación del colaborador y periodo. Continúan dentro del mismo PDF.
+Los nombres excepcionalmente extensos se muestran completos en continuación
+y se referencian desde el bloque principal. No se omiten cursos por falta de espacio.
+
+ANEXO DE PERSONAL INDIRECTO
+Al pulsar Formato se abre la vista previa del documento original y el anexo
+dentro del mismo PDF para imprimir juntos.
+El anexo acompaña al Performance Review (renovación o anual) y al formato
+de mitad de periodo de los demás puestos indirectos.
+Usa el diseño aprobado del Performance Review, con:
+- Datos del colaborador, planta, tipo de evaluación y periodo.
+- Cursos tomados exclusivamente dentro del periodo, con renglones continuos.
+- Comentarios, representante y fecha de revisión de la CMCAP.
+- ¿Aplica para renovación de contrato? Sí / No / N/A, con casillas vacías.
+- Nombre y firma de empleado, jefe de departamento, representante CMCAP y RH.
+
+Nombre y Planta comparten las columnas. El bloque CMCAP y las firmas
+mantienen sus divisiones verticales alineadas. Se retiró la leyenda señalada
+debajo de los cursos. Los campos de revisión y las firmas quedan para llenado.
+Si los cursos requieren más hojas, se repite la identificación del colaborador;
+comentarios, decisión y firmas se mantienen juntos al terminar los cursos.
+No hay un límite fijo de cuatro cursos para el anexo de indirectos.
+
+SE CONSERVAN
+Filtro Planta visible, Estado Todos, alertas por vencimiento, Actualizar estado,
+entrega y documentos firmados. La vista previa no descarga automáticamente.
+El permiso Solo consulta permite imprimir, sin modificar seguimientos.
+
+VERIFICACIÓN
+170 pruebas unitarias y seis flujos de navegador comprobados: Personal,
+filtros, seguimiento, roles, formatos PDF/Word/Excel, cuatro cursos en RHF0005,
+excepción de tres almacenistas, periodo inclusivo y entre años, continuidad
+con 80 cursos y textos largos, impresión y consulta sin descargas automáticas.
+Los PDF e imágenes de muestra contienen exclusivamente datos ficticios.

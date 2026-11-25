@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Planta y actualización del seguimiento](descargas/SAMARA_EVALUACIONES_PLANTA_SEGUIMIENTO.zip).
+Última adecuación: [Capacitación por periodo y anexo CMCAP](descargas/SAMARA_EVALUACIONES_PERIODO_ANEXO_CMCAP.zip).
+RHF0005 para Almacenista I, II y III; cursos del periodo evaluado y continuación;
+anexo aprobado para Performance Review y mitad de periodo de indirectos.
+[Instrucciones](SAMARA/EVALUACIONES_PERIODO_ANEXO_CMCAP.txt): sustituye cuatro archivos completos.
+
+Entrega anterior: [Planta y actualización del seguimiento](descargas/SAMARA_EVALUACIONES_PLANTA_SEGUIMIENTO.zip).
 Filtro de planta siempre visible y botón Actualizar estado junto al seguimiento;
 la tabla indica si la evaluación firmada ya fue recibida.
 [Instrucciones](SAMARA/EVALUACIONES_PLANTA_SEGUIMIENTO.txt): sustituye solo Evaluaciones.html.
