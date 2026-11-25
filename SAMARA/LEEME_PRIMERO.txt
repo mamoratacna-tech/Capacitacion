@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: DESCARGAR EVALUACIONES DE INDIRECTOS EN WORD.
+Lee EVALUACIONES_WORD_INDIRECTOS.txt: sustituye dos archivos completos.
+Botón Word en la vista previa; formato y anexo CMCAP editables en un DOCX.
+
 ACTUALIZACIÓN MÁS RECIENTE: CAPACITACIÓN POR PERIODO Y ANEXO CMCAP.
 Lee EVALUACIONES_PERIODO_ANEXO_CMCAP.txt: sustituye cuatro archivos completos.
 RHF0005 para tres almacenistas, cursos del periodo y anexo para indirectos.

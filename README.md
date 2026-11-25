@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Capacitación por periodo y anexo CMCAP](descargas/SAMARA_EVALUACIONES_PERIODO_ANEXO_CMCAP.zip).
+Última adecuación: [Descargar evaluaciones de indirectos en Word](descargas/SAMARA_EVALUACIONES_WORD_INDIRECTOS.zip).
+Botón Word junto a Imprimir, con el formato original y el anexo CMCAP editables;
+incluye las capacitaciones del periodo y los datos del colaborador.
+[Instrucciones](SAMARA/EVALUACIONES_WORD_INDIRECTOS.txt): sustituye dos archivos completos.
+
+Entrega anterior: [Capacitación por periodo y anexo CMCAP](descargas/SAMARA_EVALUACIONES_PERIODO_ANEXO_CMCAP.zip).
 RHF0005 para Almacenista I, II y III; cursos del periodo evaluado y continuación;
 anexo aprobado para Performance Review y mitad de periodo de indirectos.
 [Instrucciones](SAMARA/EVALUACIONES_PERIODO_ANEXO_CMCAP.txt): sustituye cuatro archivos completos.

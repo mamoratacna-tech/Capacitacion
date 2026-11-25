@@ -1,0 +1,54 @@
+SAMARA UNIVERSITY — DESCARGAR EVALUACIONES DE INDIRECTOS EN WORD
+
+INSTALAR SOBRE LA ÚLTIMA ACTUALIZACIÓN
+Sustituye completos estos DOS archivos en Apps Script:
+1. ImpresionEvaluaciones.html
+2. PlantillasEvaluaciones.html
+
+Están en ACTUALIZAR. Copia su contenido completo, sin pegarlo por partes.
+Guarda y publica: Implementar > Gestionar implementaciones > Editar (lápiz)
+> Nueva versión > Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste la actualización del periodo y anexo CMCAP, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y sus instrucciones generales.
+
+CÓMO DESCARGAR
+Abre Evaluaciones > Formato de un colaborador indirecto.
+En la vista previa, junto a Imprimir, aparece el botón Word.
+Al pulsarlo se descarga un .docx editable con el formato del colaborador
+y el anexo CMCAP en el mismo documento.
+
+APLICA A
+- Performance Review: renovación y anual del personal indirecto.
+- Evaluación de mitad de periodo del personal indirecto.
+
+Almacenista I, II y III conservan el RHF0005 según la excepción autorizada;
+su vista previa mantiene las opciones de impresión correspondientes.
+El botón Word no aparece en RHF0005 ni en exámenes del área.
+
+CONTENIDO DEL WORD
+El formato original se llena con los datos del colaborador. En Performance
+Review, nombre, número, puesto y departamento quedan en sus celdas de respuesta.
+Las fechas del periodo en Word se muestran como día/mes/año.
+El anexo incluye los cursos validados y firmados dentro del periodo evaluado,
+las fechas de los cursos, planta, comentarios y representante de la CMCAP,
+la pregunta de renovación Sí / No / N/A y las cuatro firmas.
+Los comentarios, casillas y firmas quedan disponibles para llenado.
+
+El anexo usa tablas y texto de Word editables. Si requiere más páginas,
+los cursos continúan y se repiten sus encabezados; la identificación y periodo
+del colaborador aparecen en el encabezado del anexo.
+Se conserva la vista previa PDF y las opciones Imprimir y Abrir en pestaña.
+
+PERFILES Y USO
+También pueden descargar los perfiles con Evaluaciones en Solo consulta.
+La descarga usa el registro y periodo de la vista previa abierta.
+Mientras se prepara se deshabilita el botón para evitar descargas duplicadas.
+La descarga se inicia al pulsar Word, sin descargas automáticas al abrir Formato.
+
+VERIFICACIÓN
+170 pruebas unitarias y flujos de navegador: Word de ambos formatos, datos
+en sus celdas, anexo editable, cursos del periodo, perfiles de consulta,
+excepción de almacenistas, recuperación de errores y diseño en móvil.
+Se comprobó la apertura de los DOCX en LibreOffice y su conversión a PDF,
+incluidos seis cursos en una hoja de anexo y un caso de 80 cursos con continuidad.
+Las muestras incluidas contienen exclusivamente datos ficticios.
