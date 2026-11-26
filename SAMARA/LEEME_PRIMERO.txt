@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: PROMOCIONES Y NIVELACIONES COMO REGISTRO.
+Lee PROMOCIONES_NIVELACIONES.txt: sustituye tres archivos completos.
+Selector de movimiento y formatos correspondientes, sin avisos de vencimiento.
+
 ACTUALIZACIÓN MÁS RECIENTE: EVALUACIONES DE PROMOCIÓN.
 Lee EVALUACIONES_PROMOCIONES.txt: sustituye cuatro archivos completos.
 Agregar promoción con empleado, nuevo puesto, salario opcional y periodo de cursos.

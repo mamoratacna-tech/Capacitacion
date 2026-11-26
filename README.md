@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Evaluaciones de promoción](descargas/SAMARA_EVALUACIONES_PROMOCIONES.zip).
+Última adecuación: [Promociones y nivelaciones como registro](descargas/SAMARA_PROMOCIONES_NIVELACIONES.zip).
+Selector Promoción / Nivelación, formatos con el movimiento elegido y consulta
+por fecha de registro, sin alertas ni tarjetas de vencimiento en ese apartado.
+[Instrucciones](SAMARA/PROMOCIONES_NIVELACIONES.txt): sustituye tres archivos completos.
+
+Entrega anterior: [Evaluaciones de promoción](descargas/SAMARA_EVALUACIONES_PROMOCIONES.zip).
 Agregar promoción con empleado, puesto del catálogo, salario opcional y periodo
 de cursos. Seguimiento, filtros e impresión con tipo Promoción según clasificación actual.
 [Instrucciones](SAMARA/EVALUACIONES_PROMOCIONES.txt): sustituye cuatro archivos completos.

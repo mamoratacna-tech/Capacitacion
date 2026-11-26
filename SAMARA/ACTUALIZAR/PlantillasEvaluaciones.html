@@ -17,7 +17,7 @@ window.EvaluationTemplates=(()=>{
  // Build real Word tables and text so the annex stays editable after downloading.
  async function wordAnnex(zip,source,row,training){
   const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main',R='http://schemas.openxmlformats.org/officeDocument/2006/relationships',REL='http://schemas.openxmlformats.org/package/2006/relationships',CT='http://schemas.openxmlformats.org/package/2006/content-types',parser=new DOMParser(),serialize=d=>new XMLSerializer().serializeToString(d),parse=s=>{const d=parser.parseFromString(s,'application/xml');if(d.getElementsByTagName('parsererror').length)throw Error('No se pudo preparar el documento Word.');return d;};
-  const date=v=>v.split('-').reverse().join('/'),period=date(training.start)+' al '+date(training.end),type=({mid:'Mitad de periodo',renewal:'Renovación',annual:'Anual',promotion:'Promoción'})[row.kind]||'',width=10640;
+  const date=v=>v.split('-').reverse().join('/'),period=date(training.start)+' al '+date(training.end),type=window.SamaraEvaluations.evaluationType(row),width=10640;
   const run=(text,{bold=false,italic=false,size=18}={})=>'<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial"/><w:color w:val="000000"/><w:sz w:val="'+size+'"/><w:szCs w:val="'+size+'"/>'+(bold?'<w:b/>':'')+(italic?'<w:i/>':'')+'</w:rPr><w:t xml:space="preserve">'+xml(String(text??'').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,''))+'</w:t></w:r>';
   const paragraph=(text='',options={})=>'<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="'+(options.line||210)+'" w:lineRule="exact"/><w:keepLines/>'+(options.keep?'<w:keepNext/>':'')+(options.center?'<w:jc w:val="center"/>':'')+'<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="'+(options.size||18)+'"/><w:szCs w:val="'+(options.size||18)+'"/></w:rPr></w:pPr>'+run(text,options)+'</w:p>';
   const spacer=h=>'<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="'+h+'" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr></w:pPr></w:p>';
@@ -45,7 +45,7 @@ window.EvaluationTemplates=(()=>{
   ];content+=table([a,b],review)+spacer(20);
   const doc=parse(source),body=doc.getElementsByTagNameNS(W,'body')[0],previous=body.lastElementChild;if(!previous||previous.localName!=='sectPr')throw Error('No se encontró la sección final del documento Word.');
   if(row.kind==='promotion'){
-   const main=body.getElementsByTagNameNS(W,'tbl')[0],grid=[...main.getElementsByTagNameNS(W,'tblGrid')[0].children],total=grid.reduce((n,c)=>n+Number(c.getAttributeNS(W,'w')),0),rows=[...main.children].filter(c=>c.localName==='tr'),next=rows[3]||null,details=[tr([cell(total,'Tipo de evaluación: Promoción',{gray:true,span:grid.length})]),tr([cell(total,'Puesto propuesto: '+row.proposedPosition+(row.proposedDepartment?' · '+row.proposedDepartment:''),{span:grid.length})])];if(row.proposedSalary)details.push(tr([cell(total,'Salario propuesto: '+window.SamaraEvaluations.salaryText(row.proposedSalary),{span:grid.length})]));
+   const main=body.getElementsByTagNameNS(W,'tbl')[0],grid=[...main.getElementsByTagNameNS(W,'tblGrid')[0].children],total=grid.reduce((n,c)=>n+Number(c.getAttributeNS(W,'w')),0),rows=[...main.children].filter(c=>c.localName==='tr'),next=rows[3]||null,details=[tr([cell(total,'Tipo de evaluación: '+window.SamaraEvaluations.evaluationType(row),{gray:true,span:grid.length})]),tr([cell(total,'Puesto propuesto: '+row.proposedPosition+(row.proposedDepartment?' · '+row.proposedDepartment:''),{span:grid.length})])];if(row.proposedSalary)details.push(tr([cell(total,'Salario propuesto: '+window.SamaraEvaluations.salaryText(row.proposedSalary),{span:grid.length})]));
    const added=parse('<w:tbl xmlns:w="'+W+'">'+details.join('')+'</w:tbl>');for(const r of [...added.documentElement.children])main.insertBefore(doc.importNode(r,true),next);
   }
   let sectionType=previous.getElementsByTagNameNS(W,'type')[0];if(!sectionType){sectionType=doc.createElementNS(W,'w:type');previous.insertBefore(sectionType,previous.getElementsByTagNameNS(W,'pgSz')[0]||null);}sectionType.setAttributeNS(W,'w:val','nextPage');
@@ -58,7 +58,7 @@ window.EvaluationTemplates=(()=>{
   if(row.kind==='promotion')window.SamaraEvaluations.validate(row);
   const key=window.SamaraEvaluations.formatKey(row),extension=key==='direct'?'xlsx':'docx',zip=await JSZip.loadAsync(window.SAMARA_EVALUATION_TEMPLATES[key],{base64:true});
   const training=window.SamaraEvaluations.periodTraining(row,employee,context);if(!training.valid)throw Error('Captura un periodo a evaluar válido (Desde y Hasta) en Actualizar estado antes de imprimir.');
-  const values={no:row.no,name:row.employeeName,position:row.position,department:row.department,plant:row.plant,supervisor:row.supervisor,hireDate:row.contractStart||employee.contractStart||employee.hireDate||'',type:({mid:'Mitad de periodo',renewal:'Renovación',annual:'Anual',promotion:'Promoción'}[row.kind]),due:row.completedDate||row.scheduledDate,periodStart:training.start,periodEnd:training.end};
+  const values={no:row.no,name:row.employeeName,position:row.position,department:row.department,plant:row.plant,supervisor:row.supervisor,hireDate:row.contractStart||employee.contractStart||employee.hireDate||'',type:window.SamaraEvaluations.evaluationType(row),due:row.completedDate||row.scheduledDate,periodStart:training.start,periodEnd:training.end};
   values.proposedPosition=row.kind==='promotion'?row.proposedPosition:'';values.proposedPositionCode=row.kind==='promotion'?row.proposedPositionCode||'':'';values.proposedSalary=row.kind==='promotion'&&row.proposedSalary?window.SamaraEvaluations.salaryText(row.proposedSalary):'__________';
   if(key!=='direct')for(const name of ['hireDate','due','periodStart','periodEnd'])if(window.SamaraEvaluations.date(values[name]))values[name]=values[name].split('-').reverse().join('/');
   values.trainingPeriod=training.start.split('-').reverse().join('/')+' al '+training.end.split('-').reverse().join('/');values.trainingContinuation=training.courses.length>4?'(continúa en hoja Capacitación)':'';for(let i=0;i<4;i++){const course=training.courses[i];values['trainingDate'+(i+1)]=course?course.date.split('-').reverse().join('/'):'';values['trainingCourse'+(i+1)]=course?course.name:'';}
@@ -66,11 +66,11 @@ window.EvaluationTemplates=(()=>{
   if(key==='direct'&&training.courses.length>4)await trainingSheet(zip,row,training);
   const blob=await zip.generateAsync({type:'blob',mimeType:key==='direct'?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});return {blob,extension};
  }
- async function download(row,employee,context){const result=await prepare(row,employee,context);await window.descargarArchivo(result.blob,'Evaluacion-'+String(row.no).replace(/[^a-z0-9-]/gi,'')+'-'+row.kind+'-'+row.scheduledDate+'.'+result.extension);}
+ async function download(row,employee,context){const result=await prepare(row,employee,context);await window.descargarArchivo(result.blob,'Evaluacion-'+String(row.no).replace(/[^a-z0-9-]/gi,'')+'-'+(row.kind==='promotion'?window.SamaraEvaluations.movementCode(row):row.kind)+'-'+row.scheduledDate+'.'+result.extension);}
  async function downloadWord(row,employee,context,{canDownload=()=>true}={}){
   if(row.classification!=='I'||window.SamaraEvaluations.formatKey(row)==='direct')throw Error('Word está disponible para Performance Review y Mitad de periodo del personal indirecto.');
   const result=await prepare(row,employee,context);if(result.extension!=='docx')throw Error('No se pudo preparar el archivo Word.');if(!canDownload())return false;
-  await window.descargarArchivo(result.blob,'Evaluacion-'+String(row.no).replace(/[^a-z0-9-]/gi,'')+'-'+row.kind+'-'+row.scheduledDate+'.docx');
+  await window.descargarArchivo(result.blob,'Evaluacion-'+String(row.no).replace(/[^a-z0-9-]/gi,'')+'-'+(row.kind==='promotion'?window.SamaraEvaluations.movementCode(row):row.kind)+'-'+row.scheduledDate+'.docx');
  }
  return {prepare,download,downloadWord};
 })();

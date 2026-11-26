@@ -73,3 +73,17 @@ test('edición e historial de promoción conservan identidad y clasificación; n
  assert.equal(E.formatKey({...first,classification:'I',position:'ANALISTA'}),'review');assert.equal(E.formatKey({...first,classification:'I',position:'ALMACENISTA II'}),'direct');assert.equal(E.examKey(first),'');
  const csv=E.controlRows([saved]);assert.ok(csv[0].includes('Salario propuesto'));assert.equal(csv[0].length,csv[1].length);const html=E.departmentHTML([saved]);assert.match(html,/¿Se promueve\?/);assert.match(html,/OPERADOR II/);assert.doesNotMatch(html,/¿Se renueva\?/);
 });
+
+test('nivelación se registra en Promociones, permite conservar puesto y mantiene su tipo en exportación',()=>{
+ const e=person(),c={...ctx(e),matrixPositions:[{id:'current',job:e.position,department:e.department,classification:'D'}]},input={employeeId:e.curp,proposedPositionId:'current',movementType:'leveling',scheduledDate:'2026-11-01',periodStart:'2026-10-01',periodEnd:'2026-10-31',proposedSalary:'1500'};
+ const r=E.createPromotion(c,input);assert.equal(r.kind,'promotion');assert.equal(r.movementType,'leveling');assert.equal(E.evaluationType(r),'Nivelación');assert.equal(r.position,r.proposedPosition);assert.match(r.id,/^evlevel\|/);assert.equal(E.formatKey(r),'direct');const csv=E.controlRows([r]);assert.ok(csv[0].includes('Fecha de registro'));assert.ok(csv[1].includes('Nivelación'));assert.match(E.departmentHTML([r]),/¿Se nivela\?/);assert.match(E.departmentHTML([r]),/Nivelación/);
+ assert.throws(()=>E.createPromotion(c,{...input,movementType:'promotion'}),/distinto/);assert.throws(()=>E.createPromotion(c,{...input,movementType:'otro'}),/Promoción o Nivelación/);
+});
+test('registros de promoción/nivelación conservan seguimiento sin vencer ni generar alertas por fechas',()=>{
+ for(const movementType of [undefined,'promotion','leveling'])for(const scheduledDate of ['2025-01-01','2026-11-25','2028-12-31']){const row={kind:'promotion',movementType,scheduledDate};assert.equal(E.status(row,'2026-11-25'),'Pendiente');assert.equal(E.status({...row,workflowState:'En proceso'},'2026-11-25'),'En proceso');assert.equal(E.urgency(row,'2026-11-25').key,'registry');assert.equal(E.urgencyTotals([row],'2026-11-25').overdue,0);assert.equal(E.urgencyTotals([row],'2026-11-25').soon,0);}
+ assert.equal(E.status({kind:'mid',scheduledDate:'2026-11-01'},'2026-11-25'),'Vencida');assert.equal(E.urgency({kind:'annual',scheduledDate:'2026-11-27'},'2026-11-25').key,'soon');
+});
+test('promociones anteriores son Promoción por defecto y cambiar movimiento conserva el registro',()=>{
+ const e=person(),c={...ctx(e),matrixPositions:[{id:'p2',job:'OPERADOR II',department:e.department}]},input={employeeId:e.curp,proposedPositionId:'p2',scheduledDate:'2026-11-01',periodStart:'2026-10-01',periodEnd:'2026-10-31',proposedSalary:''},legacy=E.createPromotion(c,input);delete legacy.movementType;const before=JSON.stringify(legacy);assert.equal(E.evaluationType(legacy),'Promoción');assert.equal(JSON.stringify(legacy),before);
+ const changed=E.createPromotion(c,{...input,movementType:'leveling'},legacy);assert.equal(changed.id,legacy.id);assert.equal(E.evaluationType(changed),'Nivelación');assert.equal(E.samePromotion(legacy,changed),false);assert.equal(E.samePromotion(changed,{...changed}),true);
+});

@@ -1,0 +1,63 @@
+SAMARA UNIVERSITY — PROMOCIONES Y NIVELACIONES COMO REGISTRO
+
+INSTALAR SOBRE LA VERSIÓN ACTUAL
+Sustituye completos estos TRES archivos de ACTUALIZAR en Apps Script:
+1. Evaluaciones.html
+2. ImpresionEvaluaciones.html
+3. PlantillasEvaluaciones.html
+
+Guarda y publica: Implementar > Gestionar implementaciones > Editar (lápiz)
+> Nueva versión > Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste Promociones y las entregas anteriores de Evaluaciones,
+utiliza SAMARA_ARCHIVOS_COMPLETOS.zip y sus instrucciones generales.
+
+TIPO DE MOVIMIENTO
+En Promociones > Agregar promoción aparece el selector Tipo de movimiento:
+- Promoción.
+- Nivelación.
+
+La selección se guarda y aparece en el listado, el seguimiento, el control CSV
+y Tipo de evaluación de los formatos PDF, Word y Excel cuando corresponda.
+Los registros anteriores se reconocen como Promoción por defecto.
+Puedes cambiar el tipo al editar el registro; se conserva su identidad.
+
+Ambos movimientos mantienen empleado, puesto del catálogo, departamento,
+salario opcional y periodo de cursos. En una nivelación puedes seleccionar
+el mismo puesto actual o elegir otro puesto registrado, según el caso.
+La clasificación actual sigue determinando el formato, incluida la excepción
+de Almacenista I, II y III. Las capacitaciones respetan el periodo capturado.
+
+VISTA DE REGISTRO
+En Promociones se retiraron:
+- Aviso superior de evaluaciones por vencer y botón Ver prioridades.
+- Tarjetas Vencidas, Próximos 7 días, Con tiempo y Realizadas.
+- Alertas por fila, avisos por departamento y filtros rápidos de vencimiento.
+- Leyenda de colores y orden por urgencia.
+
+La fecha se presenta como Fecha de registro. Las fechas pasadas conservan
+el estado de seguimiento capturado, sin convertirse en Vencida.
+El listado presenta Movimiento, Fecha de registro y periodo de cursos.
+El contador de la pestaña muestra el total de registros del año consultado,
+incluidos los realizados. Se ordenan por fecha de registro más reciente.
+
+Se mantienen Estado Todos, año, planta, departamento, semana, búsqueda,
+clasificación y rango de fechas. En Más filtros puedes consultar por
+Tipo de movimiento: Todos, Promoción o Nivelación.
+
+SEGUIMIENTO E IMPRESIÓN
+Se conservan Actualizar estado, documentos firmados, edición, confirmación
+al eliminar, Formato y descarga Word para indirectos cuando corresponde.
+Antes de imprimir puedes revisar puesto, importe y periodo del mismo registro.
+Los formatos identifican el movimiento elegido como Promoción o Nivelación.
+La entrega por departamento también distingue los movimientos.
+
+Mitad de periodo, Renovación y Anual conservan sus alertas y contadores.
+El apartado registra propuestas; la situación vigente del empleado se gestiona
+en Personal. Los registros y sus documentos se conservan al actualizar.
+
+VERIFICACIÓN
+176 pruebas unitarias y flujos de navegador: registros anteriores, selección
+y cambio de movimiento sin duplicar, nivelación en puesto actual, fechas
+pasadas sin vencimientos, filtros, seguimiento, cursos y PDF/Word de directos
+e indirectos. Se verificó también la apertura del DOCX de nivelación en LibreOffice.
+Las muestras contienen exclusivamente colaboradores y cursos ficticios.
