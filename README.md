@@ -13,7 +13,12 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Descargar evaluaciones de indirectos en Word](descargas/SAMARA_EVALUACIONES_WORD_INDIRECTOS.zip).
+Última adecuación: [Evaluaciones de promoción](descargas/SAMARA_EVALUACIONES_PROMOCIONES.zip).
+Agregar promoción con empleado, puesto del catálogo, salario opcional y periodo
+de cursos. Seguimiento, filtros e impresión con tipo Promoción según clasificación actual.
+[Instrucciones](SAMARA/EVALUACIONES_PROMOCIONES.txt): sustituye cuatro archivos completos.
+
+Entrega anterior: [Descargar evaluaciones de indirectos en Word](descargas/SAMARA_EVALUACIONES_WORD_INDIRECTOS.zip).
 Botón Word junto a Imprimir, con el formato original y el anexo CMCAP editables;
 incluye las capacitaciones del periodo y los datos del colaborador.
 [Instrucciones](SAMARA/EVALUACIONES_WORD_INDIRECTOS.txt): sustituye dos archivos completos.

@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: EVALUACIONES DE PROMOCIÓN.
+Lee EVALUACIONES_PROMOCIONES.txt: sustituye cuatro archivos completos.
+Agregar promoción con empleado, nuevo puesto, salario opcional y periodo de cursos.
+
 ACTUALIZACIÓN MÁS RECIENTE: DESCARGAR EVALUACIONES DE INDIRECTOS EN WORD.
 Lee EVALUACIONES_WORD_INDIRECTOS.txt: sustituye dos archivos completos.
 Botón Word en la vista previa; formato y anexo CMCAP editables en un DOCX.

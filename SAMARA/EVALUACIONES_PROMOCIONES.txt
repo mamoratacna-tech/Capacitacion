@@ -1,0 +1,100 @@
+SAMARA UNIVERSITY — EVALUACIONES DE PROMOCIÓN
+
+INSTALAR SOBRE LA VERSIÓN ACTUAL
+Sustituye completos estos CUATRO archivos de ACTUALIZAR en Apps Script:
+1. App.html
+2. Evaluaciones.html
+3. ImpresionEvaluaciones.html
+4. PlantillasEvaluaciones.html
+
+Guarda y publica: Implementar > Gestionar implementaciones > Editar (lápiz)
+> Nueva versión > Implementar. Recarga la aplicación publicada.
+Si todavía no instalaste las entregas anteriores de Evaluaciones, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y sus instrucciones generales.
+
+AGREGAR PROMOCIÓN
+1. Abre Evaluaciones > Promociones > Agregar promoción.
+2. Busca y selecciona al empleado por nombre o número. Se muestran sus datos
+   actuales y el formato que corresponde a su clasificación.
+3. Busca el nuevo puesto por nombre, departamento o código disponible.
+   Se selecciona del catálogo; cada puesto mantiene su departamento asociado.
+4. Captura el salario propuesto si lo necesitas. Es opcional; acepta importes
+   positivos con hasta dos decimales, sin asumir moneda ni periodicidad.
+5. Ajusta la fecha programada de evaluación, inicialmente la fecha de hoy,
+   y captura desde/hasta qué fechas se deben incluir las capacitaciones.
+6. Pulsa Guardar promoción, o Guardar y ver formato para abrir la vista previa.
+
+El tipo de evaluación se muestra como Promoción.
+Las nuevas propuestas se registran para empleados activos de SAMARA.
+El catálogo excluye puestos y departamentos inactivos y puestos exclusivos
+de TACNA. Un puesto debe tener su departamento completo para poder guardarse.
+Puedes usar las flechas y Enter en las búsquedas para seleccionar un resultado.
+
+PROPUESTA Y CLASIFICACIÓN
+La evaluación corresponde a la clasificación ACTUAL del empleado al registrar
+la propuesta. El nuevo puesto, su departamento y salario son datos de la propuesta.
+Las actualizaciones definitivas de la ficha del colaborador se realizan en Personal.
+
+El registro de la promoción conserva el puesto actual para la evaluación y guarda
+por separado el puesto propuesto. Esto permite distinguir ambos al imprimir.
+Si el nuevo puesto tiene otra clasificación, se conserva esa referencia del catálogo
+y la evaluación sigue utilizando la clasificación actual del colaborador registrado.
+
+FORMATO E IMPRESIÓN
+En la fila de cada promoción encontrarás Editar promoción, Actualizar estado
+y Formato. Al pulsar Formato con permiso de edición, se abre la propuesta
+para revisar puesto, salario y periodo antes de Guardar y ver formato.
+Se actualiza la misma promoción; la impresión no crea otro registro.
+
+- Directos: RHF0005, revisión F; Tipo de evaluación: Promoción.
+  El nuevo puesto llena Puesto promovido y su código, si existe en el catálogo.
+  El importe opcional se imprime en Promoción salarial.
+- Indirectos: Performance Review, con Tipo de evaluación: Promoción,
+  puesto propuesto y salario opcional. Se incluye el anexo CMCAP del periodo.
+  En la vista previa se conserva el botón Word para descargar el DOCX editable.
+- Almacenista I, II y III indirectos: se conserva la excepción de RHF0005.
+
+Se distinguen el código real del puesto y el código de ocupación SIRCE.
+Si el catálogo solo tiene código de ocupación, el código del puesto queda libre.
+Las casillas y firmas del formato permanecen disponibles para llenado.
+Los exámenes de área conservan su aplicación a renovación de personal directo.
+
+CURSOS DEL PERIODO
+Se incluyen las capacitaciones del empleado dentro de Desde y Hasta,
+incluyendo ambas fechas, con listas validadas y firma confirmada.
+Se conserva el orden por fecha y la exclusión de cursos fuera del periodo.
+El periodo puede abarcar distintos años y se captura también para indefinidos.
+En RHF0005 se muestran cuatro cursos y los demás continúan en hojas adicionales.
+En indirectos se incorporan al anexo, con continuidad según el espacio necesario.
+
+SEGUIMIENTO Y CONTROL
+Actualizar estado conserva Pendiente, Entregada, En proceso y Realizada,
+las fechas de entrega/realización y los documentos firmados correspondientes.
+Editar promoción permite ajustar puesto, salario, fecha y periodo.
+La identidad del empleado queda fija para cada promoción registrada.
+Una propuesta repetida para empleado, puesto, fecha y periodo se detecta
+para editar la existente. Cambiar salario o reimprimir mantiene el mismo registro.
+
+Desde el seguimiento puedes eliminar una promoción, previa confirmación emergente.
+Cancelar la confirmación conserva el registro. Eliminar una promoción quita
+esa propuesta y su seguimiento, manteniendo las otras evaluaciones.
+
+Promociones conserva Estado Todos, filtros por año, planta, departamento,
+clasificación y semana, alertas y agrupación por departamento actual.
+El CSV incluye puesto, departamento y código propuestos, salario y periodo.
+La entrega por departamento muestra puesto actual/propuesto y ¿Se promueve?
+La promoción realizada conserva la evaluación anual; la exclusión anual
+sigue correspondiendo a mitad de periodo o renovación realizadas ese año.
+
+PERMISOS
+Los perfiles con Evaluaciones en Captura / edición pueden registrar y modificar.
+Solo consulta permite revisar, imprimir y descargar Word cuando corresponde,
+conservando los controles de edición deshabilitados.
+
+VERIFICACIÓN
+173 pruebas unitarias y flujos de navegador comprobados: altas D/I/almacenistas,
+puestos del catálogo, clasificación actual, salario opcional, periodos, guardado
+y recarga, edición, duplicados, seguimiento, confirmación al eliminar, filtros,
+PDF, Word, continuidad de cursos, perfiles y diseño sin barra horizontal.
+Se verificó también la apertura del DOCX de promoción y su conversión en LibreOffice.
+Las muestras incluidas contienen exclusivamente colaboradores y cursos ficticios.
