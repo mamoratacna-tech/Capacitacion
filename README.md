@@ -13,7 +13,13 @@ el módulo integrado de asistencia junto con las mejoras de CMCAP.
 También puedes pulsar el botón verde **Code → Download ZIP** para descargar
 el repositorio entero.
 
-Última adecuación: [Promociones y nivelaciones como registro](descargas/SAMARA_PROMOCIONES_NIVELACIONES.zip).
+Última adecuación: [Nivelación sin cambio de puesto y seguimiento de mitad de periodo](descargas/SAMARA_EVALUACIONES_NIVELACION_NO_ENTREGO.zip).
+Puesto actual bloqueado en nivelaciones, × roja para eliminar movimientos con
+confirmación y estado «Jefe inmediato no entregó» exclusivo de mitad de periodo,
+sin alertas de vencimiento ni realización ficticia.
+[Instrucciones](SAMARA/EVALUACIONES_NIVELACION_NO_ENTREGO.txt): sustituye tres archivos completos.
+
+Entrega anterior: [Promociones y nivelaciones como registro](descargas/SAMARA_PROMOCIONES_NIVELACIONES.zip).
 Selector Promoción / Nivelación, formatos con el movimiento elegido y consulta
 por fecha de registro, sin alertas ni tarjetas de vencimiento en ese apartado.
 [Instrucciones](SAMARA/PROMOCIONES_NIVELACIONES.txt): sustituye tres archivos completos.

@@ -34,7 +34,7 @@ function appendTrainingPages(doc,font,bold,row,training,{indirect=false,entries=
   cell(X,y,W*.64,18,indirect?'No. Formato: N/A':'Continuación del RHF0005F',{size:8});cell(X+W*.64,y,W*.18,18,'Anexo',{size:8,align:'center'});cell(X+W*.82,y,W*.18,18,'Página '+pages.length,{size:8,align:'center'});y+=18;
   page.drawText(indirect?'Personal indirecto · Performance Review / Mitad de periodo':'Capacitación tomada por el trabajador · '+window.SamaraEvaluations.evaluationType(row),{x:X,y:792-y-17,size:8.5,font,color:black});y+=30;
   if(full){
-   split('No.:',row.no,'Nombre:',row.employeeName);pair('Puesto:',row.position);pair('Dpto.:',row.department);split('Clasificación:',row.classification+' · '+(row.classification==='I'?'Indirecto':'Directo'),'Planta:',row.plant);pair('Tipo de evaluación:',window.SamaraEvaluations.evaluationType(row)||'');if(row.kind==='promotion'){pair('Puesto propuesto:',row.proposedPosition);pair('Dpto. propuesto:',row.proposedDepartment||'');if(row.proposedSalary)pair('Salario propuesto:',window.SamaraEvaluations.salaryText(row.proposedSalary));}pair('Periodo a evaluar:','Del '+period);
+   split('No.:',row.no,'Nombre:',row.employeeName);pair('Puesto:',row.position);pair('Dpto.:',row.department);split('Clasificación:',row.classification+' · '+(row.classification==='I'?'Indirecto':'Directo'),'Planta:',row.plant);pair('Tipo de evaluación:',window.SamaraEvaluations.evaluationType(row)||'');if(row.kind==='promotion'){pair(window.SamaraEvaluations.movementCode(row)==='leveling'?'Puesto que se conserva:':'Puesto propuesto:',row.proposedPosition);pair(window.SamaraEvaluations.movementCode(row)==='leveling'?'Dpto. actual:':'Dpto. propuesto:',row.proposedDepartment||'');if(row.proposedSalary)pair('Salario propuesto:',window.SamaraEvaluations.salaryText(row.proposedSalary));}pair('Periodo a evaluar:','Del '+period);
   }else{pair('Colaborador:',row.no+' · '+row.employeeName);pair('Periodo a evaluar:','Del '+period);}
  }
  const widths=[32,86,86,W-204];
@@ -68,6 +68,7 @@ function appendTrainingPages(doc,font,bold,row,training,{indirect=false,entries=
  return pages.length;
 }
 async function prepare(row,employee={},context={},exam=false){
+ row=window.SamaraEvaluations.levelingRecord(row,employee,context);
  if(!window.PDFLib)throw Error('No se cargó el visor de impresión. Recarga la aplicación.');
  const E=window.SamaraEvaluations,key=exam?E.examKey(row):E.formatKey(row);if(!key)throw Error('El examen aplica solo a personal directo en renovación y requiere un departamento con examen asignado.');
  if(!exam&&row.kind==='promotion')E.validate(row);
@@ -89,7 +90,7 @@ async function prepare(row,employee={},context={},exam=false){
    drawField(doc.getPages()[0],font,{x:175,y:198,w:197,h:14,size:8},row.proposedPosition);drawField(doc.getPages()[0],font,{x:466,y:198,w:94,h:14,size:8},row.proposedPositionCode||'');
    if(salary){const page=doc.getPages()[1];page.drawRectangle({x:494,y:792-164,width:68,height:13,color:PDFLib.rgb(1,1,1)});drawField(page,font,{x:495,y:153,w:65,h:10,size:8},salary);}
   }else if(key==='review'){
-   const page=doc.getPages()[0];drawField(page,font,{x:135,y:189,w:390,h:17,size:8},'Puesto propuesto: '+row.proposedPosition);drawField(page,font,{x:135,y:242,w:390,h:11,size:9},'Tipo de evaluación: '+E.evaluationType(row));if(salary)drawField(page,font,{x:135,y:255,w:390,h:11,size:8},'Salario propuesto: '+salary);
+   const page=doc.getPages()[0];drawField(page,font,{x:135,y:189,w:390,h:17,size:8},(window.SamaraEvaluations.movementCode(row)==='leveling'?'Puesto que se conserva: ':'Puesto propuesto: ')+row.proposedPosition);drawField(page,font,{x:135,y:242,w:390,h:11,size:9},'Tipo de evaluación: '+E.evaluationType(row));if(salary)drawField(page,font,{x:135,y:255,w:390,h:11,size:8},'Salario propuesto: '+salary);
   }
  }
  let annexPages=0;if(!exam&&key==='direct'&&extra.length)annexPages=appendTrainingPages(doc,font,bold,row,training,{entries:extra});

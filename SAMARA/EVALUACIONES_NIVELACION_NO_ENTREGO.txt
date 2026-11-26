@@ -1,0 +1,56 @@
+SAMARA UNIVERSITY — NIVELACIÓN, ELIMINAR MOVIMIENTOS Y SEGUIMIENTO DE MITAD DE PERIODO
+
+INSTALACIÓN SOBRE LA VERSIÓN ACTUAL
+1. Descomprime SAMARA_EVALUACIONES_NIVELACION_NO_ENTREGO.zip.
+2. En Apps Script, sustituye COMPLETOS estos tres archivos por los de ACTUALIZAR:
+   - Evaluaciones.html
+   - ImpresionEvaluaciones.html
+   - PlantillasEvaluaciones.html
+   Conserva sus nombres; no pegues el contenido al final del archivo anterior.
+3. Guarda. Publica: Implementar > Gestionar implementaciones > Editar (lápiz)
+   > Nueva versión > Implementar.
+4. Recarga la aplicación publicada.
+
+Si no instalaste las entregas anteriores de Evaluaciones/Promociones, utiliza
+SAMARA_ARCHIVOS_COMPLETOS.zip y sigue sus instrucciones generales.
+Este paquete contiene código para instalar; no modifica por sí mismo la aplicación
+publicada ni la información real de Google Sheets.
+
+NIVELACIÓN SIN CAMBIO DE PUESTO
+En Promociones > Agregar promoción, selecciona Tipo de movimiento: Nivelación.
+El puesto y departamento del empleado se muestran automáticamente y quedan
+bloqueados. Puedes capturar salario opcional, fecha de registro y periodo de cursos.
+La clasificación y el formato correspondiente se conservan.
+Para Promoción sí se solicita un nuevo puesto del catálogo.
+
+Al consultar o imprimir nivelaciones guardadas con la versión anterior, se utiliza
+el puesto original del registro. Si antes se eligió otro puesto por error, deja de
+mostrarse como puesto propuesto. Al guardar la edición se conserva el mismo registro.
+Esta corrección no cambia el puesto del empleado en Personal.
+
+ELIMINAR PROMOCIÓN O NIVELACIÓN
+La columna Acciones de Promociones incluye una × roja, con el mismo diseño de
+los otros módulos. La ventana de confirmación indica el movimiento y empleado.
+Cancelar conserva el registro. Confirmar elimina ese movimiento y su seguimiento.
+No elimina al empleado ni sus cursos o listas de asistencia.
+Se mantienen los permisos de Evaluaciones: Captura / edición para guardar o borrar;
+Solo consulta permite ver e imprimir.
+
+JEFE INMEDIATO NO ENTREGÓ — SOLO MITAD DE PERIODO
+Abre Mitad de periodo > Actualizar estado y selecciona:
+  Jefe inmediato no entregó
+Guarda el seguimiento. La fila aparece en tono neutro, sin vencimiento ni contador
+rojo, aunque la fecha programada haya pasado. También se puede localizar con
+Estado > Jefe inmediato no entregó. Sigue visible en Todos y Por atender.
+Se conservan las fechas, observaciones y documentos capturados.
+No se registra una realización ficticia ni se excluye la próxima anual.
+Si realmente se realizó, captura su fecha real y el estado Realizada.
+Para reactivar las alertas, cambia el estado a Pendiente, Entregada o En proceso.
+La opción no aparece en Renovación, Anual ni Promociones.
+
+COMPROBACIONES
+179 pruebas automáticas de reglas, contratos, permisos y persistencia aprobadas.
+Flujos de navegador verificados: nivelación con puesto bloqueado y formatos PDF/Word,
+borrado y cancelación, guardado/recarga del nuevo estado, alertas, filtros, periodos,
+continuación de cursos y consulta sin escritura. Diseño revisado en escritorio y móvil.
+Muestras incluidas: exclusivamente datos ficticios.

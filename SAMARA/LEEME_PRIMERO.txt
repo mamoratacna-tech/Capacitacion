@@ -1,3 +1,7 @@
+ACTUALIZACIÓN MÁS RECIENTE: NIVELACIÓN Y ESTADO JEFE INMEDIATO NO ENTREGÓ.
+Lee EVALUACIONES_NIVELACION_NO_ENTREGO.txt: sustituye tres archivos completos.
+Nivelación conserva el puesto; × para borrar movimientos; estatus exclusivo de mitad.
+
 ACTUALIZACIÓN MÁS RECIENTE: PROMOCIONES Y NIVELACIONES COMO REGISTRO.
 Lee PROMOCIONES_NIVELACIONES.txt: sustituye tres archivos completos.
 Selector de movimiento y formatos correspondientes, sin avisos de vencimiento.
